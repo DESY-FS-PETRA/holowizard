@@ -1,5 +1,7 @@
- <img src="logo.png" width="20%" height="20%"> 
+ <img src="logo.png" width="20%" height="20%" align="left"> 
 
+- URL: https://gitlab.desy.de/fs-petra/software/holowizard/
+- ID: 15357
 
 # Table of Contents
 
@@ -10,10 +12,6 @@
 5. [Further Ressources](#further-ressources)
 
 ## Subprojects
-
-### Holowizard
-- URL: https://gitlab.desy.de/fs-petra/software/holowizard/
-- ID: 15357
 
 ### Livereco Server
 - URL: https://gitlab.desy.de/fs-petra/software/livereco_server/
