@@ -1,6 +1,5 @@
- <img src="logo.png" width="20%" height="20%" align="top right"> 
+ <img src="logo.png" width="20%" height="20%"> 
 
-# Holowizard
 
 ## Table of Contents
 
