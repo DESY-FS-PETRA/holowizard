@@ -4,7 +4,7 @@
 
 1. [Subprojects](#subprojects)
 2. [Installation](#installation)
-3. [Publishing](#publishing)
+3. [Publishing](#publish-a-new-pip-package)
 4. [Trouble shooting](#trouble-shooting)
 5. [Further Ressources](#further-ressources)
 
@@ -69,7 +69,7 @@ The following packages are available
 - livereco
 - holomachine
 
-## Publishing
+## Publish A New Pip Package
 
 ### Set-Up Build System
 1. Create personal access token under:
