@@ -9,7 +9,6 @@
 5. [Further Ressources](#further-ressources)
 
 ## Subprojects Info
-### Project IDs of subprojects
 
 ### Holowizard
 - URL: https://gitlab.desy.de/fs-petra/software/holowizard/
