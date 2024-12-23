@@ -158,25 +158,26 @@ Make sure that the files ~/.bashrc, ~/.bash_profile, ~/.zshrc or similar shell i
 ### Project IDs of subprojects
 
 ### Holowizard
-URL: https://gitlab.desy.de/fs-petra/software/holowizard/
-ID: 15357
+- URL: https://gitlab.desy.de/fs-petra/software/holowizard/
+- ID: 15357
 
 ### Livereco Server
-URL: https://gitlab.desy.de/fs-petra/software/livereco_server/
-ID: 1445
+- URL: https://gitlab.desy.de/fs-petra/software/livereco_server/
+- ID: 1445
 
 ### Livereco Interface
-URL: https://gitlab.desy.de/fs-petra/software/livereco_interface/
-ID: 15062
+- URL: https://gitlab.desy.de/fs-petra/software/livereco_interface/
+- ID: 15062
 
 ### Holomachine
-URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
-ID: 9756
+- URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
+- ID: 9756
 
 ## Further Ressources
 ### ASRM Paper:
-URL: https://opg.optica.org/oe/fulltext.cfm?uri=oe-32-7-10801&id=547807###
-DOI: 10.1364/OE.514641
+- URL: https://opg.optica.org/oe/fulltext.cfm?uri=oe-32-7-10801&id=547807###
+- DOI: 10.1364/OE.514641
+
 ```{bibtex}
 @article{Dora:24,
 author = {Johannes Dora and Martin M\"{o}ddel and Silja Flenner and Christian G. Schroer and Tobias Knopp and Johannes Hagemann},
@@ -196,15 +197,17 @@ abstract = {The phase problem is a well known ill-posed reconstruction problem o
 ```
 
 ### Autofocus paper
-URL: https://opg.optica.org/oe/abstract.cfm?doi=10.1364/OE.544573
-DOI: 10.1364/OE.544573
+- URL: https://opg.optica.org/oe/abstract.cfm?doi=10.1364/OE.544573
+- DOI: 10.1364/OE.544573
+
 ```{bibtex}
 ```
 
 ### Python Repo on Zenodo
-Version: 1.3.1
-URL: https://zenodo.org/records/14024980
-DOI: 10.5281/zenodo.14024980
+- Version: 1.3.1
+- URL: https://zenodo.org/records/14024980
+- DOI: 10.5281/zenodo.14024980
+
 ```{bibtex}
 @software{dora_2024_14024980,
   author       = {Dora, Johannes and
