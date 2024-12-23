@@ -1,0 +1,6 @@
+*/
+!*.py
+!LICENCE
+!LICENSE
+!*.toml
+!pip.conf

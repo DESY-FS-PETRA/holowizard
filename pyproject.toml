@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools >= 72.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}
+
+[project]
+name="holowizard"
+version = "1.0.0"
+requires-python = ">=3.11,<=4.0"
+readme = "README.md"
+license = {file="LICENSE"}
+keywords = ["phase retrieval", "near-field holography", "ASRM"]
+authors = [
+  {name = "Johannes Dora", email = "johannes.dora@desy.de"},
+  {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"},
+  {name = "Silja Flenner", email="silja.flenner@hereon.de"},
+]
+classifiers = [
+  "Programming Language :: Python"
+]
+
+maintainers = [
+  {name = "Johannes Dora", email = "johannes.dora@desy.de"},
+  {name = "André Lopes", email="andre.lopes@hereon.de"}
+]
+
+[project.urls]
+Repository = "https://gitlab.desy.de/fs-petra/software/holowizard/"
+Livereco = "https://gitlab.desy.de/fs-petra/software/livereco_server/"
+Livereco_Interface = "https://gitlab.desy.de/fs-petra/software/livereco_interface"
+HoloMachine = "https://gitlab.desy.de/fs-petra/software/holography-data-ml"
+
+
+[project.optional-dependencies]
+all=["livereco","livereco_interface","holomachine"]
+livereco=["livereco","livereco_interface"]
+livereco_interface=["livereco_interface"]
+holomachine=["holomachine"]
+
+
+
+
