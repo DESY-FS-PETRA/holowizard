@@ -10,7 +10,7 @@ dependencies = {file = "requirements.txt"}
 
 [project]
 name="holowizard"
-version = "1.0.0"
+version = "1.0.1"
 requires-python = ">=3.11,<=4.0"
 readme = "README.md"
 license = {file="LICENSE"}
@@ -37,8 +37,8 @@ HoloMachine = "https://gitlab.desy.de/fs-petra/software/holography-data-ml"
 
 
 [project.optional-dependencies]
-all=["livereco","livereco_interface","holomachine"]
-livereco=["livereco","livereco_interface"]
+all=["holowizard[livereco]","holowizard[livereco_interface]","holowizard[holomachine]"]
+livereco=["livereco","holowizard[livereco_interface]"]
 livereco_interface=["livereco_interface"]
 holomachine=["holomachine"]
 

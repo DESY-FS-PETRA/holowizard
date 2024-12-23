@@ -31,10 +31,10 @@ or
 
 ### Install holowizard pip packages
 ```bash
-$ pip install holowizard[<package>]
+$ pip install "holowizard[<package>]"
 ```
 
 The following packages are available
 - livereco_interface
 - livereco
-- simulation
+- holomachine
