@@ -2,13 +2,13 @@
 
 ## Table of Contents
 
-1. [Subprojects Info](#subprojects-info)
+1. [Subprojects](#subprojects)
 2. [Installation](#installation)
 3. [Publishing](#publishing)
 4. [Trouble shooting](#trouble-shooting)
 5. [Further Ressources](#further-ressources)
 
-## Subprojects Info
+## Subprojects
 
 ### Holowizard
 - URL: https://gitlab.desy.de/fs-petra/software/holowizard/
