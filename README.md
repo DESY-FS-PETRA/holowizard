@@ -1,10 +1,30 @@
 ## Table of Contents
 
-1. [Installation](#installation)
-2. [Publishing](#publishing)
-3. [Trouble shooting](#trouble-shooting)
-4. [Subprojects Info](#subprojects-info)
+1. [Subprojects Info](#subprojects-info)
+2. [Installation](#installation)
+3. [Publishing](#publishing)
+4. [Trouble shooting](#trouble-shooting)
 5. [Further Ressources](#further-ressources)
+
+## Subprojects Info
+### Project IDs of subprojects
+
+### Holowizard
+- URL: https://gitlab.desy.de/fs-petra/software/holowizard/
+- ID: 15357
+
+### Livereco Server
+- URL: https://gitlab.desy.de/fs-petra/software/livereco_server/
+- ID: 1445
+
+### Livereco Interface
+- URL: https://gitlab.desy.de/fs-petra/software/livereco_interface/
+- ID: 15062
+
+### Holomachine
+- URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
+- ID: 9756
+
 
 ## Installation
 ### Environment
@@ -154,24 +174,6 @@ Delete unknown packages or the whole <pythonversion> directory if unsure.
 ### Mamba in .bashrc
 Make sure that the files ~/.bashrc, ~/.bash_profile, ~/.zshrc or similar shell initialization files do not initialize mamba or conda.
 
-## Subprojects Info
-### Project IDs of subprojects
-
-### Holowizard
-- URL: https://gitlab.desy.de/fs-petra/software/holowizard/
-- ID: 15357
-
-### Livereco Server
-- URL: https://gitlab.desy.de/fs-petra/software/livereco_server/
-- ID: 1445
-
-### Livereco Interface
-- URL: https://gitlab.desy.de/fs-petra/software/livereco_interface/
-- ID: 15062
-
-### Holomachine
-- URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
-- ID: 9756
 
 ## Further Ressources
 ### ASRM Paper:
