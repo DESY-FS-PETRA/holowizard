@@ -1,4 +1,4 @@
-# Holowizard <img src="logo.png" width="20%" height="20%" align="right"> 
+# Holowizard <img src="logo.png" width="20%" height="20%" align="top right"> 
 
 ## Table of Contents
 
