@@ -1,6 +1,6 @@
  <img src="logo.png" width="200"/> 
 
-###
+### Info
 - URL: https://gitlab.desy.de/fs-petra/software/holowizard/
 - ID: 15357
 
