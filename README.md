@@ -1,9 +1,9 @@
  <img src="logo.png" width="200"/> 
 
 ### Info
-- Gitlab: https://gitlab.desy.de/fs-petra/software/holowizard/
-- ID: 15357
 - Helmholtz: https://helmholtz.software/software/holowizard
+- Gitlab URL: https://gitlab.desy.de/fs-petra/software/holowizard/
+- Gitlab ID: 15357
 
 # Table of Contents
 
