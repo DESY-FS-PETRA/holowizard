@@ -4,7 +4,7 @@
 
 1. [Subprojects](#subprojects)
 2. [Installation](#installation)
-3. [Publishing](#publish-a-new-pip-package)
+3. [Publish a new pip package](#publish-a-new-pip-package)
 4. [Trouble shooting](#trouble-shooting)
 5. [Further Ressources](#further-ressources)
 
