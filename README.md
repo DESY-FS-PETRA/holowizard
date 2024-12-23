@@ -63,9 +63,10 @@ $ pip install "holowizard[<package>]"
 ```
 
 The following packages are available
-1. livereco_interface
-2. livereco
-3. holomachine
+- all
+- livereco_interface
+- livereco
+- holomachine
 
 ## Publishing
 
