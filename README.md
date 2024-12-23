@@ -1,7 +1,7 @@
  <img src="logo.png" width="20%" height="20%"> 
 
 
-## Table of Contents
+# Table of Contents
 
 1. [Subprojects](#subprojects)
 2. [Installation](#installation)
