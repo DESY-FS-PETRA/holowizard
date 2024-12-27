@@ -29,6 +29,8 @@ maintainers = [
   {name = "André Lopes", email="andre.lopes@hereon.de"}
 ]
 
+dependencies = ["holowizard[all]"]
+
 [project.urls]
 Repository = "https://gitlab.desy.de/fs-petra/software/holowizard/"
 Livereco = "https://gitlab.desy.de/fs-petra/software/livereco_server/"
