@@ -23,7 +23,7 @@
 - URL: https://gitlab.desy.de/fs-petra/software/livereco_interface/
 - ID: 15062
 
-### Holomachine
+### Holo Forge
 - URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
 - ID: 9756
 
@@ -68,7 +68,7 @@ The following packages are available
 - all
 - livereco_interface
 - livereco
-- holomachine
+- holoforge
 
 ## Publish A New Pip Package
 
