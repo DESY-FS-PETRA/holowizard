@@ -10,7 +10,7 @@ dependencies = {file = "requirements.txt"}
 
 [project]
 name="holowizard"
-version = "1.0.0"
+version = "1.0.1"
 requires-python = ">=3.11,<=4.0"
 readme = "README.md"
 license = {file="LICENSE"}
@@ -28,8 +28,6 @@ maintainers = [
   {name = "Johannes Dora", email = "johannes.dora@desy.de"},
   {name = "André Lopes", email="andre.lopes@hereon.de"}
 ]
-
-dependencies = ["holowizard[all]"]
 
 [project.urls]
 Repository = "https://gitlab.desy.de/fs-petra/software/holowizard/"
