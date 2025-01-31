@@ -27,6 +27,10 @@
 - URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
 - ID: 9756
 
+### HoloPipe
+- URL: https://gitlab.desy.de/fs-petra/software/holopipe/
+- ID: 16418
+
 
 ## Installation
 ### Environment
@@ -48,6 +52,7 @@ extra-index-url =
 	https://gitlab.desy.de/api/v4/projects/15062/packages/pypi/simple
 	https://gitlab.desy.de/api/v4/projects/15357/packages/pypi/simple
 	https://gitlab.desy.de/api/v4/projects/9756/packages/pypi/simple
+  https://gitlab.desy.de/api/v4/projects/16418/packages/pypi/simple
 ```
 
 Or (Linux) create new pip.conf file in 
@@ -69,6 +74,7 @@ The following packages are available
 - livereco_interface
 - livereco
 - holoforge
+- holopipe
 
 ## Publish A New Pip Package
 
