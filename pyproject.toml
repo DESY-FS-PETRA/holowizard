@@ -41,7 +41,7 @@ all=["holowizard[livereco]","holowizard[livereco_interface]","holowizard[holofor
 livereco=["livereco==1.4.5","holowizard[livereco_interface]"]
 livereco_interface=["livereco_interface==1.0.21"]
 holoforge=["holoforge==1.0.8"]
-holopipe=["holopipe=1.0.0","holowizard[livereco]","holowizard[livereco_interface]"]
+holopipe=["holopipe=1.0.1","holowizard[livereco]","holowizard[livereco_interface]"]
 
 
 
