@@ -8,10 +8,11 @@
 # Table of Contents
 
 1. [Subprojects](#subprojects)
-2. [Installation](#installation)
-3. [Publish a new pip package](#publish-a-new-pip-package)
-4. [Trouble shooting](#trouble-shooting)
-5. [Further Ressources](#further-ressources)
+2. [Versioning](#versioning)
+3. [Installation](#installation)
+4. [Publish a new pip package](#publish-a-new-pip-package)
+5. [Trouble shooting](#trouble-shooting)
+6. [Further Ressources](#further-ressources)
 
 ## Subprojects
 
@@ -27,10 +28,30 @@
 - URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
 - ID: 9756
 
-### HoloPipe
+### Holo Pipe
 - URL: https://gitlab.desy.de/fs-petra/software/holopipe/
 - ID: 16418
 
+
+## Versioning
+### Holo Wizard
+The version number increases each time a subproject/subpackage is updated. Further things are not specified yet.
+
+### Subprojects
+The version numbers of the subprojects usually follow the pattern 
+- {major}.{minor}.{patch}
+
+The **minor or major** version numbers will be increased for:
+- Feature extensions
+- Changes in the api functions
+- Bugfixes with a significant impact on the reconstruction result
+
+The **patch** version number is reserved for 
+- Minor bugfixes
+
+There is a special rule for the **minor** version number:
+- **even number**: Release version meant for production
+- **odd number**: Experimental version e.g. to develop new features
 
 ## Installation
 ### Environment
