@@ -2,6 +2,7 @@
 
 ### Info
 - Helmholtz: https://helmholtz.software/software/holowizard
+- Helmholtz-Imaging: https://connect.helmholtz-imaging.de/solution/71
 - Gitlab URL: https://gitlab.desy.de/fs-petra/software/holowizard/
 - Gitlab ID: 15357
 
@@ -271,3 +272,6 @@ doi = {10.1364/OE.544573},
   url          = {https://doi.org/10.5281/zenodo.14024980},
 }
 ```
+
+### Helmholtz-Imaging Blog Article
+- URL: https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10
