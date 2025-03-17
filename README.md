@@ -13,7 +13,7 @@
 3. [Installation](#installation)
 4. [Publish a new pip package](#publish-a-new-pip-package)
 5. [Trouble shooting](#trouble-shooting)
-6. [Further Ressources](#further-ressources)
+6. [Further Resources](#further-resources)
 
 ## Subprojects
 
@@ -206,7 +206,7 @@ Delete unknown packages or the whole <pythonversion> directory if unsure.
 Make sure that the files ~/.bashrc, ~/.bash_profile, ~/.zshrc or similar shell initialization files do not initialize mamba or conda.
 
 
-## Further Ressources
+## Further Resources
 ### ASRM Paper:
 - URL: https://opg.optica.org/oe/fulltext.cfm?uri=oe-32-7-10801&id=547807###
 - DOI: 10.1364/OE.514641
