@@ -233,6 +233,20 @@ abstract = {The phase problem is a well known ill-posed reconstruction problem o
 - DOI: 10.1364/OE.544573
 
 ```{bibtex}
+@article{Dora:25,
+author = {Johannes Dora and Martin M\"{o}ddel and Silja Flenner and Jan Reimers and Berit Zeller-Plumhoff and Christian G. Schroer and Tobias Knopp and Johannes Hagemann},
+journal = {Opt. Express},
+keywords = {Image analysis; Image metrics; Imaging systems; Phase retrieval; X-ray imaging; Zone plates},
+number = {4},
+pages = {6641--6657},
+publisher = {Optica Publishing Group},
+title = {Model-based autofocus for near-field phase retrieval},
+volume = {33},
+month = {Feb},
+year = {2025},
+url = {https://opg.optica.org/oe/abstract.cfm?URI=oe-33-4-6641},
+doi = {10.1364/OE.544573},
+}
 ```
 
 ### Python Repo on Zenodo
