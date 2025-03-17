@@ -50,10 +50,6 @@ The **minor or major** version numbers will be increased for:
 The **patch** version number is reserved for 
 - Minor bugfixes
 
-There is a special rule for the **minor** version number:
-- **even number**: Release version meant for production
-- **odd number**: Experimental version e.g. to develop new features
-
 ## Installation
 ### Environment
 Create a new environment
