@@ -10,7 +10,7 @@ dependencies = {file = "requirements.txt"}
 
 [project]
 name="holowizard"
-version = "1.0.6"
+version = "1.0.8"
 requires-python = ">=3.11,<=4.0"
 readme = "README.md"
 license = {file="LICENSE"}
@@ -39,9 +39,9 @@ HoloPipe = "https://gitlab.desy.de/fs-petra/software/holopipe"
 [project.optional-dependencies]
 all=["holowizard[livereco]","holowizard[livereco_interface]","holowizard[holoforge]"]
 livereco=["livereco==1.4.5","holowizard[livereco_interface]"]
-livereco_interface=["livereco_interface==1.0.21"]
+livereco_interface=["livereco_interface==1.0.23"]
 holoforge=["holoforge==1.0.8"]
-holopipe=["holopipe==1.0.1","holowizard[livereco]","holowizard[livereco_interface]"]
+holopipe=["holopipe==1.0.6","holowizard[livereco]","holowizard[livereco_interface]"]
 
 
 
