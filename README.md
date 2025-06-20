@@ -66,7 +66,7 @@ The following packages are available
 - all
 - core
 - interface
-- orge
+- forge
 - pipe
 
 ## Publish A New Pip Package
