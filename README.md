@@ -3,8 +3,8 @@
 ### Info
 - Helmholtz: https://helmholtz.software/software/holowizard
 - Helmholtz-Imaging: https://connect.helmholtz-imaging.de/solution/71
-- Gitlab URL: https://gitlab.desy.de/fs-petra/software/holowizard/
-- Gitlab ID: 15357
+- Zenodo: "https://doi.org/10.5281/zenodo.8349364"
+- [Please Cite](#citations)
 
 # Table of Contents
 
@@ -13,26 +13,21 @@
 3. [Installation](#installation)
 4. [Publish a new pip package](#publish-a-new-pip-package)
 5. [Trouble shooting](#trouble-shooting)
-6. [Further Resources](#further-resources)
+6. [Citations](#citations)
 
 ## Subprojects
 
-### Livereco Server
-- URL: https://gitlab.desy.de/fs-petra/software/livereco_server/
-- ID: 1445
+### HoloWizard Core
+- URL: https://github.com/DESY-FS-PETRA/holowizard_core
 
-### Livereco Interface
-- URL: https://gitlab.desy.de/fs-petra/software/livereco_interface/
-- ID: 15062
+### HoloWizard Interface
+- URL: https://github.com/DESY-FS-PETRA/holowizard_interface
 
-### Holo Forge
-- URL: https://gitlab.desy.de/fs-petra/software/holography-data-ml/
-- ID: 9756
+### HoloWizard Forge
+- URL: https://github.com/DESY-FS-PETRA/holowizard_forge
 
-### Holo Pipe
-- URL: https://gitlab.desy.de/fs-petra/software/holopipe/
-- ID: 16418
-
+### HoloWizard Pipe
+- URL: https://github.com/DESY-FS-PETRA/holowizard_pipe
 
 ## Versioning
 ### Holo Wizard
@@ -52,34 +47,14 @@ The **patch** version number is reserved for
 
 ## Installation
 ### Environment
-Create a new environment
+Create a new environment with python 3.11., i.e. with mamba
 ```bash
 $ mamba create -p <path_to_env> python=3.11 
 ```
 
 Activate enviroment
 ```bash
-$ conda activate <path_to_env>
-```
-
-In your pip.conf file, add the lines
-```bash
-[global]
-extra-index-url = 
-	https://gitlab.desy.de/api/v4/projects/1445/packages/pypi/simple
-	https://gitlab.desy.de/api/v4/projects/15062/packages/pypi/simple
-	https://gitlab.desy.de/api/v4/projects/15357/packages/pypi/simple
-	https://gitlab.desy.de/api/v4/projects/9756/packages/pypi/simple
-	https://gitlab.desy.de/api/v4/projects/16418/packages/pypi/simple
-```
-
-Or (Linux) create new pip.conf file in 
-```bash
- ~/.pip/pip.conf
-```
-or
-```bash
-~/.config/pip/pip.conf
+$ mamba activate <path_to_env>
 ```
 
 ### Install holowizard pip packages
@@ -89,10 +64,10 @@ $ pip install "holowizard[<package>]"
 
 The following packages are available
 - all
-- livereco_interface
-- livereco
-- holoforge
-- holopipe
+- core
+- interface
+- orge
+- pipe
 
 ## Publish A New Pip Package
 
@@ -202,7 +177,7 @@ Delete unknown packages or the whole <pythonversion> directory if unsure.
 Make sure that the files ~/.bashrc, ~/.bash_profile, ~/.zshrc or similar shell initialization files do not initialize mamba or conda.
 
 
-## Further Resources
+## Citations
 ### ASRM Paper:
 - URL: https://opg.optica.org/oe/fulltext.cfm?uri=oe-32-7-10801&id=547807###
 - DOI: 10.1364/OE.514641

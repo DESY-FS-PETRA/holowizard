@@ -26,22 +26,25 @@ classifiers = [
 
 maintainers = [
   {name = "Johannes Dora", email = "johannes.dora@desy.de"},
-  {name = "André Lopes", email="andre.lopes@hereon.de"}
+  {name = "André Lopes", email="andre.lopes@hereon.de"},
+  {name = "Johannes Grün", email="johannes.gruen@desy.de"},
+  {name = "Sebastian Eberle", email="sebastian,eberle@desy.de"},
+  {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"}
 ]
 
 [project.urls]
-Repository = "https://gitlab.desy.de/fs-petra/software/holowizard/"
-Livereco = "https://gitlab.desy.de/fs-petra/software/livereco_server/"
-Livereco_Interface = "https://gitlab.desy.de/fs-petra/software/livereco_interface"
-HoloForge = "https://gitlab.desy.de/fs-petra/software/holography-data-ml"
-HoloPipe = "https://gitlab.desy.de/fs-petra/software/holopipe"
+Repository = "https://github.com/DESY-FS-PETRA/holowizard"
+Core = "https://github.com/DESY-FS-PETRA/holowizard_core"
+Interface = "https://github.com/DESY-FS-PETRA/holowizard_interface"
+Forge = "https://gitlab.desy.de/fs-petra/software/holography-data-ml"
+Pipe = "https://github.com/DESY-FS-PETRA/holowizard_forge"
 
 [project.optional-dependencies]
-all=["holowizard[livereco]","holowizard[livereco_interface]","holowizard[holoforge]"]
-livereco=["livereco==1.4.5","holowizard[livereco_interface]"]
-livereco_interface=["livereco_interface==1.0.23"]
-holoforge=["holoforge==1.0.8"]
-holopipe=["holopipe==1.0.6","holowizard[livereco]","holowizard[livereco_interface]"]
+all=["holowizard[core]","holowizard[forge]","holowizard[pipe]"]
+core=["holowizard_core==1.5.0","holowizard[interface]"]
+interface=["holowizard_interface==1.1.0"]
+forge=["holowizard_forge==1.1.0"]
+pipe=["holowizard_pipe==1.1.0","holowizard[core]"]
 
 
 
