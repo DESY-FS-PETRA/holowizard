@@ -28,7 +28,7 @@ maintainers = [
   {name = "Johannes Dora", email = "johannes.dora@desy.de"},
   {name = "André Lopes", email="andre.lopes@hereon.de"},
   {name = "Johannes Grün", email="johannes.gruen@desy.de"},
-  {name = "Sebastian Eberle", email="sebastian,eberle@desy.de"},
+  {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
   {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"}
 ]
 
