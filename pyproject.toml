@@ -28,7 +28,7 @@ maintainers = [
   {name = "Johannes Dora", email = "johannes.dora@desy.de"},
   {name = "André Lopes", email="andre.lopes@hereon.de"},
   {name = "Johannes Grün", email="johannes.gruen@desy.de"},
-  {name = "Sebastian Eberle", email="sebastian,eberle@desy.de"},
+  {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
   {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"}
 ]
 
@@ -41,7 +41,7 @@ Pipe = "https://github.com/DESY-FS-PETRA/holowizard_forge"
 
 [project.optional-dependencies]
 all=["holowizard[core]","holowizard[forge]","holowizard[pipe]"]
-core=["holowizard_core==1.5.0","holowizard[interface]"]
+core=["holowizard_core==1.5.6","holowizard[interface]"]
 interface=["holowizard_interface==1.1.0"]
 forge=["holowizard_forge==1.1.0"]
 pipe=["holowizard_pipe==1.1.0","holowizard[core]"]
