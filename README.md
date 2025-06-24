@@ -1,4 +1,4 @@
- <img src="logo.png" width="200"/> 
+ <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
 ### Info
 - Helmholtz: https://helmholtz.software/software/holowizard
