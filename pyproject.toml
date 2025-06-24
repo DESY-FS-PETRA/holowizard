@@ -36,10 +36,10 @@ maintainers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/DESY-FS-PETRA/holowizard"
+HoloWizard = "https://github.com/DESY-FS-PETRA/holowizard"
 Core = "https://github.com/DESY-FS-PETRA/holowizard_core"
 Interface = "https://github.com/DESY-FS-PETRA/holowizard_interface"
-Forge = "https://gitlab.desy.de/fs-petra/software/holography-data-ml"
+Forge = "https://github.com/DESY-FS-PETRA/holowizard_forge"
 Pipe = "https://github.com/DESY-FS-PETRA/holowizard_forge"
 
 [project.optional-dependencies]
