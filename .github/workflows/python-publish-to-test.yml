@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   release-build:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, self-hosted]
 
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
 
   pypi-publish:
     #if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, self-hosted]
     needs:
       - release-build
     permissions:
