@@ -17,7 +17,7 @@ https://connect.helmholtz-imaging.de/solution/71 \
 https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10 
 
 ## Installation
-### Environment
+### Python Environment
 Create a new environment with python 3.11., i.e. with mamba
 ```bash
 $ mamba create -p <path_to_env> python=3.11 
@@ -28,7 +28,7 @@ Activate enviroment
 $ mamba activate <path_to_env>
 ```
 
-### Install holowizard pip packages
+### Install package
 ```bash
 $ pip install holowizard
 ```
