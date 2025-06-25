@@ -12,9 +12,9 @@
 - [Please Cite](#citations)
 
 ### Further links
-https://helmholtz.software/software/holowizard
-https://connect.helmholtz-imaging.de/solution/71
-https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10
+https://helmholtz.software/software/holowizard \
+https://connect.helmholtz-imaging.de/solution/71 \
+https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10 
 
 ## Installation
 ### Environment
