@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 72.0"]
+requires = ["setuptools >= 72.0", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -10,15 +10,20 @@ dependencies = {file = "requirements.txt"}
 
 [project]
 name="holowizard"
-version = "1.1.7"
+dynamic = ["version"]
 requires-python = ">=3.11,<=4.0"
 readme = "README.md"
 license = {file="LICENSE"}
-keywords = ["phase retrieval", "near-field holography", "ASRM"]
+keywords = ["phase retrieval", "near-field holography", "tomography", "asrm"]
 authors = [
   {name = "Johannes Dora", email = "johannes.dora@desy.de"},
   {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"},
+  {name = "André Lopes", email="andre.lopes@hereon.de"},
+  {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"},
   {name = "Silja Flenner", email="silja.flenner@hereon.de"},
+  {name = "Johannes Grün", email="johannes.gruen@desy.de"},
+  {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
+  {name = "Cem Cinar", email = "cem.cinar@tuhh.de"}
 ]
 classifiers = [
   "Programming Language :: Python"
@@ -34,18 +39,6 @@ maintainers = [
 
 [project.urls]
 Repository = "https://github.com/DESY-FS-PETRA/holowizard"
-Core = "https://github.com/DESY-FS-PETRA/holowizard_core"
-Interface = "https://github.com/DESY-FS-PETRA/holowizard_interface"
-Forge = "https://gitlab.desy.de/fs-petra/software/holography-data-ml"
-Pipe = "https://github.com/DESY-FS-PETRA/holowizard_forge"
 
-[project.optional-dependencies]
-all=["holowizard[core]","holowizard[forge]","holowizard[pipe]"]
-core=["holowizard_core==1.5.6","holowizard[interface]"]
-interface=["holowizard_interface==1.1.0"]
-forge=["holowizard_forge==1.1.5"]
-pipe=["holowizard_pipe==1.1.1","holowizard[core]"]
-
-
-
+[tool.setuptools_scm]
 
