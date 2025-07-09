@@ -8,6 +8,9 @@ where = ["."]  # list of folders that contain the packages (["."] by default)
 [tool.setuptools.dynamic]
 dependencies = {file = "requirements.txt"}
 
+[tool.setuptools.package-data]
+"*" = ["logo.png"]
+
 [project]
 name="holowizard"
 dynamic = ["version"]

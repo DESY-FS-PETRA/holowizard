@@ -1,15 +1,14 @@
- <img src="logo.png" width="200"/> 
+ <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
 
 # Table of Contents
 1. [General Information](#general-information)
 2. [Installation](#installation)
-3. [Citations](#citations)
+3. [Please Cite](#citations)
 
 ## General Information
 - Repository: https://github.com/DESY-FS-PETRA/holowizard
 - Zenodo: https://doi.org/10.5281/zenodo.8349364
-- [Please Cite](#citations)
 
 ### Further links
 https://helmholtz.software/software/holowizard \
