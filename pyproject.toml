@@ -13,12 +13,11 @@ dependencies = {file = "requirements.txt"}
 
 [project]
 name="holowizard"
-dynamic = ["version"]
-requires-python = "==3.11"
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.11,<3.12"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco_server/LICENSE"]
-
 keywords = ["near-field holography", "phase retrieval", "tomography"]
 
 authors = [
