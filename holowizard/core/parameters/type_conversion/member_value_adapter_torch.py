@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-import holowizard.interface
+import holowizard.core
 from holowizard.core.parameters.type_conversion.member_value_adapter_numpy import (
     MemberValueAdapterNumpy,
 )
@@ -26,7 +26,7 @@ if "torch" in sys.modules:
                 return data.to(torch.complex64)
             elif type(data) is np.ndarray:
                 return torch.from_numpy(data.astype(np.complex64)).to(
-                    holowizard.interface.torch_running_device
+                    holowizard.core.torch_running_device
                 )
             else:
                 raise TypeError(
@@ -41,7 +41,7 @@ if "torch" in sys.modules:
                 return data.to(torch.float)
             elif type(data) is np.ndarray:
                 return torch.from_numpy(data.astype(np.single)).to(
-                    holowizard.interface.torch_running_device
+                    holowizard.core.torch_running_device
                 )
             else:
                 raise TypeError(
@@ -56,7 +56,7 @@ if "torch" in sys.modules:
                 return data.to(torch.uint16)
             elif type(data) is np.ndarray:
                 return torch.from_numpy(data.astype(np.uint16)).to(
-                    holowizard.interface.torch_running_device
+                    holowizard.core.torch_running_device
                 )
             else:
                 raise TypeError(

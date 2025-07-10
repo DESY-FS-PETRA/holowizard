@@ -2,7 +2,7 @@ import logging
 import torch
 from typing import List
 
-from holowizard.core.parameters import RecoParams
+from holowizard.core.parameters.reco_params import RecoParams
 
 from holowizard.core.reconstruction.single_projection.reconstruct_multistage import (
     reconstruct as reco_multistage,

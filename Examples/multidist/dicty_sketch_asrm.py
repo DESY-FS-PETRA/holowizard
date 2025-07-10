@@ -7,7 +7,7 @@ import pathlib
 import holowizard.core
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
-from holowizard.core.api.base.single_projection.reconstruction import reconstruct
+from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
 

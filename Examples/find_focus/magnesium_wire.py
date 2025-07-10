@@ -6,9 +6,10 @@ import pathlib
 
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
-from holowizard.core.api.base.find_focus.find_focus import find_focus
+from holowizard.core.api.functions.find_focus.find_focus import find_focus
 from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
+from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
 matplotlib.use("Qt5Agg")
 

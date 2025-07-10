@@ -6,7 +6,7 @@ from holowizard.core.parameters.beam_setup import BeamSetup
 from holowizard.core.parameters.measurement import Measurement
 from holowizard.core.parameters.options import Options
 from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.api.parameters.paths.paths import Paths
+from holowizard.core.parameters.paths import Paths
 
 
 class RecoParams:
