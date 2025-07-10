@@ -1,0 +1,12 @@
+tqdm
+numpy
+torch
+torchvision
+matplotlib
+pandas
+scikit-image
+h5py
+selenium
+bs4
+requests
+xraylib

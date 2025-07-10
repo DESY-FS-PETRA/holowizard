@@ -1,0 +1,108 @@
+{
+    "name": "train",
+    "labeller": {
+        "type": "HDF5Labeller",
+       "args": {
+            "store_hologram": true,
+            "store_gt_hologram": false,
+            "store_phantom": true,
+            "store_probe": false,
+            "store_flatfield": false,
+            "store_polynomial": false,
+            "store_setup": true,
+            "cache_size": 10,
+            "num_conditions": 0
+        }
+    },
+    "data_generator": {
+        "type": "DataGenerator",
+        "args": {
+            "crop_probe": true
+        }
+    },
+    "phantom_generator": {
+        "type": "PhantomGenerator",
+        "args": {
+            "position": "random",
+            "materials": [
+                "Mg"
+            ],
+            "num_shapes_min": 1,
+            "num_shapes_max": 3,
+            "thickness_min": 30,
+            "thickness_max": 30,
+            "smoothing_filter": {
+                "type": "Gaussian",
+                "args": {
+                    "kernel_size": 3,
+                    "sigma": 1.0
+                }
+         }
+        }
+    },
+    "probe_generator": {
+        "type": "ProbeGenerator",
+        "args": {
+            "constant": 1.0,
+            "linear": 0.0,
+            "square": 0.0,
+            "center_beam": true
+        }
+    },
+    "probe_noise": null,
+    "shape_sampler": {
+        "type": "ShapeSampler",
+        "args": {
+            "shapes": [
+                "Rectangle",
+                "Polygon",
+                "Ellipse",
+                "Ball",
+                "Cylinder",
+                "CylinderRoundTip"
+            ],
+            "radius_range": [
+                16,
+                512
+            ],
+            "size_range": [
+                16,
+                1024
+            ],
+            "rotate": true,
+            "polygon_max_corners": 4,
+            "ellipse_max_cut": 0
+        }
+    },
+    "hologram_generator": {
+        "type": "HologramGenerator",
+        "args": {}
+    },
+    "hologram_noise": {
+        "type": "Gaussian",
+        "args": {
+            "mean": 0.0,
+            "std": 1.0,
+            "intensity": 0.05
+        }
+    },
+
+    "flatfield_dataset": null,
+
+    "simulation": {
+        "type": "NFHSimulation",
+        "args": {}
+    },
+    "setup": {
+        "type": "NFHConstantDistSetup",
+        "args": {
+            "detector_px_size": 6500,
+            "detector_size": 2048,
+            "z01": 25,
+            "z02": 20,
+            "energy": 11,
+            "downsample_factor": 1,
+            "padding_factor": 4
+        }
+    }
+}
