@@ -1,0 +1,81 @@
+stages:
+  - test
+  - deploy
+
+run-gpu-tests:
+  stage: test
+  image: ubuntu:22.04
+  tags:
+    - DESY-intern
+  rules:
+    # runs when you push a commit with "ci!" in the message or when a merge request is created
+    - if: '$CI_COMMIT_MESSAGE =~ /ci!/ || $CI_MERGE_REQUEST_ID'
+    # runs when you push a commit to the versions branch or main branch
+    - if: '$CI_COMMIT_BRANCH =~ /versions\/[0-9]+\.[0-9]+\.[0-9]+$/'
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - apt-get update && apt-get install -y openssh-client rsync
+    - mkdir -p ~/.ssh
+    - echo "-----BEGIN OPENSSH PRIVATE KEY-----" > ~/.ssh/gitlab-ci
+    - FORMATTED_BODY=$(echo "$SSH_PRIVATE_KEY" | fold -w 70)
+    - echo "${FORMATTED_BODY[@]}" >> ~/.ssh/gitlab-ci
+    - echo "-----END OPENSSH PRIVATE KEY-----" >> ~/.ssh/gitlab-ci
+    - chmod 600 ~/.ssh/gitlab-ci
+    - export SSH_OPTS="-o StrictHostKeyChecking=no -i ~/.ssh/gitlab-ci"
+    # Generate a unique remote folder
+    - ssh $SSH_OPTS gruenjoh@max-display.desy.de "
+        mkdir ~/jgruen/ci-package/
+      "
+    - export REMOTE_CI_DIR="/home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}"
+    - echo "Using remote folder" + "$REMOTE_CI_DIR"
+    - rsync -az -e "ssh $SSH_OPTS" . gruenjoh@max-display.desy.de:$REMOTE_CI_DIR/
+    # Setup environment, run tests and clean up
+    - ssh $SSH_OPTS gruenjoh@max-display.desy.de "
+        export CI_JOB_ID=${CI_JOB_ID} &&
+        ml maxwell mamba &&
+        . mamba-init &&
+        mamba create -y -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env python=3.11 &&
+        mamba run -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env bash -c '
+          pip install -r /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/requirements.txt --no-cache-dir &&
+          pip install /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID} --no-cache-dir
+        ' &&
+        bash /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/tests/test_run.sh
+      "
+  after_script:
+    - apt-get update && apt-get install -y openssh-client rsync
+    - mkdir -p ~/.ssh
+    - echo "-----BEGIN OPENSSH PRIVATE KEY-----" > ~/.ssh/gitlab-ci
+    - FORMATTED_BODY=$(echo "$SSH_PRIVATE_KEY" | fold -w 70)
+    - echo "${FORMATTED_BODY[@]}" >> ~/.ssh/gitlab-ci
+    - echo "-----END OPENSSH PRIVATE KEY-----" >> ~/.ssh/gitlab-ci
+    - chmod 600 ~/.ssh/gitlab-ci
+    - export SSH_OPTS="-o StrictHostKeyChecking=no -i ~/.ssh/gitlab-ci"
+    # Cleanup
+    - ssh $SSH_OPTS gruenjoh@max-display.desy.de "
+        ml maxwell mamba &&
+        . mamba-init &&
+        mamba deactivate &&
+        mamba remove -y -n ci-env --all &&
+        rm -rf ~/jgruen/ci-package/*
+      "
+
+
+push-to-mirror-target:
+  stage: deploy
+  image: ubuntu:22.04
+  tags:
+    - DESY-intern
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /versions\/[0-9]+\.[0-9]+\.[0-9]+$/'
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - apt-get update && apt-get install -y git git-lfs
+    - git config user.email "johannes.dora@desy.de"
+    - git config user.name "ci-bot"
+    - echo $CI_COMMIT_BRANCH
+    - pwd
+    - ls
+    - cd /builds/fs-petra/software/livereco_server/
+    - git remote add holwizard_core_origin https://oauth2:$ACCESS_TOKEN_HOLOWIZARD_CORE@gitlab.desy.de/fs-petra/software/holowizard_core.git
+    - git fetch holwizard_core_origin
+    - git push holwizard_core_origin HEAD:refs/heads/${CI_COMMIT_BRANCH} -o ci.skip # prevent triggering pipeline again

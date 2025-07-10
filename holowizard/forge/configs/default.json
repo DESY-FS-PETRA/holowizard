@@ -1,0 +1,144 @@
+{
+    "name": "train",
+    "labeller": {
+        "type": "HDF5Labeller",
+        "args": {
+            "store_hologram": true,
+            "store_gt_hologram": true,
+            "store_phantom": true,
+            "store_probe": true,
+            "store_flatfield": true,
+            "store_polynomial": true,
+            "store_setup": true,
+            "cache_size": 10,
+            "num_conditions": 0
+        }
+    },
+    "data_generator": {
+        "type": "DataGenerator",
+        "args": {
+            "crop_probe": true
+        }
+    },
+    "phantom_generator": {
+        "type": "PhantomGenerator",
+        "args": {
+            "position": "random",
+            "materials": [
+                "Mg",
+                "Cu",
+                "Fe",
+                "Ag",
+                "Au"
+            ],
+            "num_shapes_min": 0,
+            "num_shapes_max": 10,
+            "thickness_min": 1,
+            "thickness_max": 10,
+            "smoothing_filter": {
+                "type": "Gaussian",
+                "args": {
+                    "kernel_size": 3,
+                    "sigma": 1.0
+                }
+            }
+        }
+    },
+    "probe_generator": {
+        "type": "ProbeGenerator",
+        "args": {
+            "constant": 1.0,
+            "linear": 0.0,
+            "square": 0.0,
+            "center_beam": true
+        }
+    },
+    "probe_noise": {
+        "type": "Poisson",
+        "args": {
+            "intensity": 0.1,
+            "lam": 0.7
+        }
+    },
+    "shape_sampler": {
+        "type": "ShapeSampler",
+        "args": {
+            "shapes": [
+                "Rectangle",
+                "Polygon",
+                "Ellipse",
+                "Ball",
+                "Cylinder",
+                "CylinderRoundTip"
+            ],
+            "radius_range": [
+                1,
+                512
+            ],
+            "size_range": [
+                1,
+                1024
+            ],
+            "rotate": true,
+            "polygon_max_corners": 4,
+            "ellipse_max_cut": 0,
+            "smoothing": 0.5
+        }
+    },
+    "flatfield_generator": {
+        "type": "FlatFieldGenerator",
+        "args": {}
+    },
+    "flatfield_dataset": {
+        "type": "TIFFDataset",
+        "args": {
+            "dirs": ["/"],
+            "patterns": "",
+            "recursive": false,
+            "remove_outliers": true,
+            "augmentations": [
+                "ExpandDim",
+                "AdjustBrightness",
+                {
+                    "type": "AdjustContrast",
+                    "args": {
+                        "tol": [0.7, 1.6]
+                    }
+                },
+                "RandomCropAndResize",
+                {
+                    "type": "VerticalFlip",
+                    "args": {}
+                }
+            ]
+        }
+    },
+    "hologram_generator": {
+        "type": "HologramGenerator",
+        "args": {}
+    },
+    "hologram_noise": {
+        "type": "GaussianNoise",
+        "args": {
+            "mean": 0.0,
+            "std": 1.0,
+            "intensity": 0.1
+        }
+    },
+    "simulation": {
+        "type": "NFHSimulation",
+        "args": {}
+    },
+    "setup": {
+        "type": "NFHConstantDistSetup",
+        "args": {
+            "detector_px_size": 6500,
+            "detector_size": 2048,
+            "z01": 25,
+            "z02": 20,
+            "energy": 11,
+            "downsample_factor": 1,
+            "padding_factor": 2
+        }
+    }
+}

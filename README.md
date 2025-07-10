@@ -5,6 +5,7 @@
 1. [General Information](#general-information)
 2. [Installation](#installation)
 3. [Please Cite](#citations)
+4. [HoloWizard Forge](#holowizard-forge)
 
 ## General Information
 - Repository: https://github.com/DESY-FS-PETRA/holowizard
@@ -79,3 +80,51 @@ doi = {10.1364/OE.544573},
 ### Python Repository on Zenodo
 - URL: https://zenodo.org/records/14024980
 - DOI: 10.5281/zenodo.8349364
+
+
+# HoloWizard Forge
+
+This framework can be used to generate large datasets of simulated holograms of randomly sampled objects. 
+
+## How to use this Framework
+
+The framework exports bash commands. Open a terminal and create a new config file with 
+
+```{bash}
+$ holowziard_forge_create_testconfig <args>
+```
+
+| Argument        | Description                                               | Position |
+|-----------------|-----------------------------------------------------------|----------|
+| `name`          | Name of the new config file (without file name extension) | 1        |
+| `--output_dir`  | Output directory                                          | optional |
+| `--override`    | Overrides existing configuration file                     | optional |
+
+
+The config file can then be customized and used to create a new dataset with
+
+```{bash}
+$ holowizard_forge_generate_data <args>
+```
+
+| Argument      | Description                                          | Position |
+|---------------|------------------------------------------------------|----------|
+| `config`      | Path to the custom configuration file.               | 1        |
+| `output_dir`  | Output directory where the generated data is stored. | 2        |
+| `num_samples` | Number of data samples that should be generated.     | 3        |
+| `--override`  | Override the output folder if it already exists.     | optional |
+
+## Output Structure
+```
+output/
+└── train.hdf5
+└── train.json
+```
+
+The file train.hdf5 contains the training data
+The file `train.json` contains the config parameters which have been used for the training data creation.
+
+## Developer Info
+
+### Add new Parameters
+To add a new parameter, add it to the default configuration `holowizard/forge/configs/default.json`.
