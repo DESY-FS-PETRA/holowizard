@@ -45,7 +45,7 @@ maintainers = [
 [project.urls]
 Repository = "https://github.com/DESY-FS-PETRA/holowizard"
 Paper_ASRM = "https://doi.org/10.1364/OE.514641"
-Paper_Autofocus = "https://doi.org/10.1364/OE.514641"
+Paper_Autofocus = "https://doi.org/10.1364/OE.544573"
 Zenodo = "https://doi.org/10.5281/zenodo.8349364"
 
 [tool.setuptools_scm]
