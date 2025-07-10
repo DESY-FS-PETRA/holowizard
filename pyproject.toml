@@ -17,7 +17,7 @@ dynamic = ["version"]
 requires-python = "==3.11"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/interface/LICENSE"]
+license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/interface/LICENSE", "holowizard/core/LICENSE"]
 
 keywords = ["near-field holography", "phase retrieval", "tomography"]
 
@@ -45,11 +45,15 @@ maintainers = [
 
 [project.urls]
 Repository = "https://github.com/DESY-FS-PETRA/holowizard"
+Paper_ASRM = "https://doi.org/10.1364/OE.514641"
+Paper_Autofocus = "https://doi.org/10.1364/OE.514641"
+Zenodo = "https://doi.org/10.5281/zenodo.8349364"
 
 [tool.setuptools_scm]
 
 [project.scripts]
 holowizard_forge_generate_data = "holowizard.forge.scripts.generate_data:main"
 holowizard_forge_create_testconfig = "holowizard.forge.scripts.create_testconfig:main"
+holowizard_livereco_server_start = "holowizard.core.server.main:main"
 
 
