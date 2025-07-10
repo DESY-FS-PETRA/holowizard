@@ -1,10 +1,10 @@
 import torch
 from typing import List
 
-from holowizard.interface.parameters.measurement import Measurement
-from holowizard.interface.parameters.beam_setup import BeamSetup
-from holowizard.interface.parameters.options import Options
-from holowizard.interface.parameters.data_dimensions import DataDimensions
+from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.parameters.beam_setup import BeamSetup
+from holowizard.core.parameters.options import Options
+from holowizard.core.parameters.data_dimensions import DataDimensions
 from holowizard.core.reconstruction.logging import *
 from holowizard.core.reconstruction.single_projection.context import Context
 from holowizard.core.reconstruction.viewer import Viewer

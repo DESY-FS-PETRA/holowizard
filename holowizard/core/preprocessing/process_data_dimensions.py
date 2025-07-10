@@ -1,5 +1,5 @@
-from holowizard.interface.parameters.data_dimensions import DataDimensions
-from holowizard.interface.parameters.padding import Padding
+from holowizard.core.parameters.data_dimensions import DataDimensions
+from holowizard.core.parameters.padding import Padding
 
 from .boundaries import Boundaries
 

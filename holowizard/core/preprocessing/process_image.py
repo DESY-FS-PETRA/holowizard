@@ -4,13 +4,12 @@ import torch.nn as nn
 import torchvision.transforms as ttf
 import math
 from torchvision.transforms import InterpolationMode
-import matplotlib.pyplot as plt
 
 from holowizard.core.utils.transform import crop_center
 from holowizard.core.utils.transform import pad_to_size
 
-from holowizard.interface.parameters.data_dimensions import DataDimensions
-from holowizard.interface.parameters.padding import Padding
+from holowizard.core.parameters.data_dimensions import DataDimensions
+from holowizard.core.parameters.padding import Padding
 from holowizard.core.reconstruction.constraints.window_2d import get_2d_window
 
 from .boundaries import Boundaries

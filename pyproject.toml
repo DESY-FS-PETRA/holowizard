@@ -17,7 +17,7 @@ dynamic = ["version"]
 requires-python = "==3.11"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/interface/LICENSE", "holowizard/core/LICENSE"]
+license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco_server/LICENSE"]
 
 keywords = ["near-field holography", "phase retrieval", "tomography"]
 

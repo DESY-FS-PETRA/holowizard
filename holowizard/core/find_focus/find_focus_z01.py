@@ -9,10 +9,10 @@ from holowizard.core.logging.logger import Logger
 from holowizard.core.reconstruction.single_projection.reconstruct_multistage import (
     reconstruct,
 )
-from holowizard.interface.parameters.options import Options
-from holowizard.interface.parameters.measurement import Measurement
-from holowizard.interface.parameters.data_dimensions import DataDimensions
-from holowizard.interface.parameters.beam_setup import BeamSetup
+from holowizard.core.parameters.options import Options
+from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.parameters.data_dimensions import DataDimensions
+from holowizard.core.parameters.beam_setup import BeamSetup
 from holowizard.core.utils.transform import crop_center
 
 

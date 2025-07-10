@@ -1,13 +1,11 @@
 import numpy
 from copy import deepcopy
 import pathlib
-import sys
-
 
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.base.single_projection.reconstruction import reconstruct
 import holowizard.core.utils.fileio as fileio
-from holowizard.interface.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
 
 def test_spider_hair():

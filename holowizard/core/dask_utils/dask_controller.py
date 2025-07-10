@@ -7,7 +7,7 @@ import time
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
 
-from holowizard.interface.parameters.dask_options import DaskOptions
+from holowizard.core.parameters.dask_options import DaskOptions
 
 
 class DaskController:

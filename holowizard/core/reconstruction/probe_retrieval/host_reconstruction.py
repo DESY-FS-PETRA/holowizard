@@ -1,12 +1,12 @@
 from typing import List
 
-from holowizard.interface.parameters.dask_options import DaskOptions
+from holowizard.core.parameters.dask_options import DaskOptions
 from holowizard.core.dask_utils.dask_controller import DaskController
 
-from holowizard.interface.parameters.options import Options
-from holowizard.interface.parameters.measurement import Measurement
-from holowizard.interface.parameters.beam_setup import BeamSetup
-from holowizard.interface.parameters.data_dimensions import DataDimensions
+from holowizard.core.parameters.options import Options
+from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.parameters.beam_setup import BeamSetup
+from holowizard.core.parameters.data_dimensions import DataDimensions
 
 from holowizard.core.reconstruction.viewer import Viewer
 

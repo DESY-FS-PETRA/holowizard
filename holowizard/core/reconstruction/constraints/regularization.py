@@ -1,8 +1,7 @@
 import torch
-from typing import List
 
-from holowizard.interface.parameters.padding import Padding
-from holowizard.interface.parameters.data_dimensions import DataDimensions
+from holowizard.core.parameters.padding import Padding
+from holowizard.core.parameters.data_dimensions import DataDimensions
 from holowizard.core.preprocessing.process_image import flip_and_pad
 
 

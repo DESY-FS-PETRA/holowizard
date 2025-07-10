@@ -3,13 +3,12 @@ import skimage.transform as sktf
 import matplotlib
 import matplotlib.pyplot as plt
 import pathlib
-import torch
 
 import holowizard.core
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.base.single_projection.reconstruction import reconstruct
-from holowizard.interface.parameters import *
+from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
 
 if "cuda" in holowizard.core.torch_running_device_name:

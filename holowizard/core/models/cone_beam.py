@@ -1,6 +1,6 @@
 import logging
-from holowizard.interface.parameters.beam_setup import BeamSetup
-from holowizard.interface.parameters.measurement import Measurement
+from holowizard.core.parameters.beam_setup import BeamSetup
+from holowizard.core.parameters.measurement import Measurement
 
 
 class ConeBeam(BeamSetup):

@@ -1,4 +1,3 @@
-import numpy
 from copy import deepcopy
 import matplotlib
 import matplotlib.pyplot as plt
@@ -7,7 +6,6 @@ import pathlib
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.base.single_projection.reconstruction import reconstruct
-from holowizard.interface.parameters import *
 import holowizard.core.utils.fileio as fileio
 
 matplotlib.use("Qt5Agg")

@@ -1,16 +1,15 @@
 import numpy
-import sys
 import os
 from copy import deepcopy
 from skimage import io
 import skimage.transform as sktf
 
 from holowizard.core.logging.logger import Logger
-from holowizard.interface.parameters import *
-from holowizard.interface.paths.focus_series_paths import FocusSeriesPaths
+from holowizard.core.parameters import *
+from holowizard.core.api.parameters.paths.focus_series_paths import FocusSeriesPaths
 from holowizard.core.api.base.single_projection.reconstruction import reconstruct
 from holowizard.core.utils.fileio import load_img_data
-from holowizard.interface.paths.project_paths import ProjectPaths
+from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
 
 z01_guess = 48.051
 

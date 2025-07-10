@@ -1,4 +1,3 @@
-import numpy
 import os
 from copy import deepcopy
 import matplotlib
@@ -7,10 +6,9 @@ import pathlib
 
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
-from holowizard.interface.parameters import *
 from holowizard.core.api.base.find_focus.find_focus import find_focus
 from holowizard.core.utils.fileio import load_img_data
-from holowizard.interface.paths.project_paths import ProjectPaths
+from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
 
 matplotlib.use("Qt5Agg")
 
