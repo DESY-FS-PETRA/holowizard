@@ -8,7 +8,7 @@ from holowizard.core.reconstruction.single_projection.reconstruct_multistage imp
     reconstruct as reco_multistage,
 )
 from holowizard.core.utils.transform import crop_center
-from holowizard.core.api.viewer import Viewer
+from holowizard.core.reconstruction.viewer import Viewer
 
 
 def reconstruct(reco_params: RecoParams, viewer: List[Viewer] = []):

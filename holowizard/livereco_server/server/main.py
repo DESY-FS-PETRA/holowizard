@@ -7,7 +7,7 @@ Created on Fri Sep  3 13:35:22 2021
 """
 import zmq
 import traceback
-import holowizard.interface
+import holowizard.livereco_server
 from holowizard.livereco_server.server.flatfield_correction import FlatfieldCorrection
 from holowizard.livereco_server.server.reconstruction import Reconstruction
 from holowizard.livereco_server.server.find_focus import FindFocus
@@ -24,9 +24,9 @@ def main():
 
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
-    socket.bind("tcp://*:" + str(holowizard.interface.server_port))
+    socket.bind("tcp://*:" + str(holowizard.livereco_server.server_port))
 
-    zeromqViewer = ZeroMQViewer(holowizard.interface.viewer_port)
+    zeromqViewer = ZeroMQViewer(holowizard.livereco_server.viewer_port)
     lossViewer = LossViewer()
     flat = FlatfieldCorrection([zeromqViewer, lossViewer])
     rec = Reconstruction([zeromqViewer, lossViewer])

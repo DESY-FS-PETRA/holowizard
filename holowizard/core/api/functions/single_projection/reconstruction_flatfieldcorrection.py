@@ -2,10 +2,10 @@ import logging
 import pickle
 from typing import List
 
-from holowizard.core.parameters import RecoParams
-from holowizard.core.parameters import FlatfieldCorrectionParams
+from holowizard.core.parameters.reco_params import RecoParams
+from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
 from holowizard.core.preprocessing.correct_flatfield import correct_flatfield
-from holowizard.core.api.viewer import Viewer
+from holowizard.core.reconstruction.viewer import Viewer
 
 from holowizard.core.api.functions.single_projection.reconstruction import (
     reconstruct as reconstruct_base,

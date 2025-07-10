@@ -1,11 +1,11 @@
 import torch
 from typing import List
 
-from holowizard.core.parameters import RecoParams
+from holowizard.core.parameters.reco_params import RecoParams
 from holowizard.core.find_focus.find_focus_z01_a0_orthogonal_search import (
     find_focus as find_focus_internal,
 )
-from holowizard.core.api.viewer import Viewer
+from holowizard.core.reconstruction.viewer import Viewer
 
 
 def find_focus(reco_params: RecoParams, viewer: List[Viewer] = None):

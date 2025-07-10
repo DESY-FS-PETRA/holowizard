@@ -1,11 +1,11 @@
 import numpy as np
 from typing import List
 
-from holowizard.core.parameters import RecoParams
-from holowizard.core.parameters import FlatfieldCorrectionParams
+from holowizard.core.parameters.reco_params import RecoParams
+from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
 from holowizard.core.utils.transform import crop_center
 import holowizard.core.utils.fileio as fileio
-from holowizard.core.api.viewer import Viewer
+from holowizard.core.reconstruction.viewer import Viewer
 
 from .reconstruction_flatfieldcorrection_i import (
     reconstruct as reconstruct_ffc_i,

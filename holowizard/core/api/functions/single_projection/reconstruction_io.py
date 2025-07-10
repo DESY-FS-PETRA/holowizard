@@ -1,8 +1,8 @@
 import numpy as np
 from typing import List
 
-from holowizard.core.parameters import RecoParams
-from holowizard.core.api.viewer import Viewer
+from holowizard.core.parameters.reco_params import RecoParams
+from holowizard.core.reconstruction.viewer import Viewer
 import holowizard.core.utils.fileio as fileio
 
 from holowizard.core.api.functions.default_load_data_callback import (

@@ -9,7 +9,7 @@ from holowizard.core.reconstruction.probe_retrieval.host_reconstruction import (
 )
 
 from holowizard.core.utils.transform import crop_center
-from holowizard.core.api.viewer import Viewer
+from holowizard.core.reconstruction.viewer import Viewer
 
 
 def reconstruct(

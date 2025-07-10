@@ -8,7 +8,7 @@ from holowizard.core.preprocessing.correct_flatfield import (
 )
 from holowizard.core.utils.fileio import load_img_data
 
-from holowizard.core.parameters import FlatfieldCorrectionParams
+from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
 
 
 def correct_flatfield(flatfield_correction_params: FlatfieldCorrectionParams):
