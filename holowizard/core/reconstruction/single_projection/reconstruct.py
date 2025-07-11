@@ -25,6 +25,7 @@ def print_infos(iteration, context: Context, force_update):
 
 def reconstruct(context: Context):
     with torch.no_grad():
+        iteration = -1
         for iteration in range(
             context.current_options.regularization_object.iterations
         ):

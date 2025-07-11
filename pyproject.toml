@@ -45,7 +45,7 @@ maintainers = [
 [project.urls]
 Repository = "https://github.com/DESY-FS-PETRA/holowizard"
 Paper_ASRM = "https://doi.org/10.1364/OE.514641"
-Paper_Autofocus = "https://doi.org/10.1364/OE.514641"
+Paper_Autofocus = "https://doi.org/10.1364/OE.544573"
 Zenodo = "https://doi.org/10.5281/zenodo.8349364"
 
 [tool.setuptools_scm]
@@ -54,5 +54,6 @@ Zenodo = "https://doi.org/10.5281/zenodo.8349364"
 holowizard_forge_generate_data = "holowizard.forge.scripts.generate_data:main"
 holowizard_forge_create_testconfig = "holowizard.forge.scripts.create_testconfig:main"
 holowizard_livereco_server_start = "holowizard.livereco_server.server.main:main"
+holowizard_core_create_examples = "holowizard.core.scripts.create_examples:main"
 
 

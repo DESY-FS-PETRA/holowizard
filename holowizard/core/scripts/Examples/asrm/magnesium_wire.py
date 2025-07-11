@@ -75,7 +75,7 @@ options_upscale_2 = Options(
 
 options_mainrun = Options(
     regularization_object=Regularization(
-        iterations=500,
+        iterations=1,
         update_rate=1.1,
         l2_weight=0.0 + 0.0 * 1j,
         gaussian_filter_fwhm=2.0 + 8.0j,
