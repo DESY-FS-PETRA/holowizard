@@ -46,9 +46,9 @@ $ holowizard_core_create_examples <directory>
 
 This framework can be used to generate large datasets of simulated holograms of randomly sampled objects. 
 
-## How to use this Framework
+## Create New Dataset
 
-The framework exports bash commands. Open a terminal and create a new config file with 
+Open a terminal and create a new config file with 
 
 ```{bash}
 $ holowziard_forge_create_testconfig <args>
