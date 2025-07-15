@@ -1,0 +1,4 @@
+prune .github
+prune tests
+exclude .gitignore .gitattributes
+exclude .gitlab-ci.yml
