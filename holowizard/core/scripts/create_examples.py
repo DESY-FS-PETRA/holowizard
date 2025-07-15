@@ -84,7 +84,7 @@ def get_filename_from_url(url):
 Created by claude.ai
 """
 def copy_examples(dest_path):
-    source_path = Path(__file__).parent.resolve() / "Examples"
+    source_path = Path(__file__).parent.resolve() / "examples"
 
     # Walk through source directory
     for item in source_path.rglob('*'):

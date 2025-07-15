@@ -1,0 +1,5 @@
+beamtime:
+  _target_: holopipe.beamtime.P05
+  name: 11021679
+  year: 2025
+

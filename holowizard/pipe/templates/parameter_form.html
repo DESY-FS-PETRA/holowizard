@@ -1,0 +1,8 @@
+<form id="parmeter-form" method="post" action="/tuning">
+  {% from "parameter.html" import render_field %}
+  {{ render_field(scans, '') }}
+    <input type="hidden" name="stage" id="stage-hidden" value="find_focus">
+    <label for="param-set-name">Save as:</label>
+    <input type="text" id="param-set-name" name="param_set_name" required><br>
+  <input type="submit" value="Submit">
+</form>

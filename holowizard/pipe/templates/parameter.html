@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parameter Tuning</title>
+
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    .form-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    label { font-weight: bold; }
+    select, input { padding: 0.4rem; font-size: 1rem; }
+    .two-column { display: flex; gap: 2rem; }
+    .two-column > div { flex: 1; }
+    #stages { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+    fieldset { border: 1px solid #ccc; padding: 0.5rem; margin-bottom: 1rem; }
+    .loader {
+      width: 100px;
+      margin: auto;
+      padding: 20px;
+      aspect-ratio: 1;
+      --g: conic-gradient(from -90deg at 10px 10px,#740000 90deg,#0000 0);
+      background: var(--g), var(--g), var(--g);
+      background-size: 50% 50%;
+      animation: l16 1s infinite;
+    }
+    @keyframes l16 {
+      0%   {background-position:0    0   ,10px 10px,20px 20px} 
+      50%  {background-position:0    20px,10px 10px,20px 0   } 
+      100% {background-position:20px 20px,10px 10px,0    0   } 
+    }
+
+  </style>
+  <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <h1>Dynamic Parameter Form</h1>
+  <div class="two-column">
+    <div>
+      <div class="form-row">
+        <label for="stage-select">Select Stage:</label>
+        <select id="stage-select">
+          <option value="find_focus">Find Focus</option>
+          <option value="reconstruction">Reconstruction</option>
+        </select>
+        <label for="parameter-select">Base Parameters:</label>
+        <select id="parameter-select"></select>
+      </div>
+      <div id="form-container">
+        <form id="parameter-form" method="post" action="/tuning">
+          {% macro render_field(value, key_path) %}
+            {% if value is mapping %}
+              <fieldset><legend>{{ key_path or 'root' }}</legend>
+                {% for k,v in value.items() %}
+                  {% set name = key_path ~ (key_path and '.') ~ k %}
+                  {% if k in ['_target_','update_blocks'] %}
+                    <input type="hidden" name="{{ name }}" value="{{ v }}">
+                  {% else %}
+                    {{ render_field(v,name) }}
+                  {% endif %}
+                {% endfor %}
+              </fieldset>
+            {% elif value is iterable and not value is string %}
+              {% for item in value %}
+                {{ render_field(item, key_path ~ '[' ~ loop.index0 ~ ']') }}
+              {% endfor %}
+            {% else %}
+              <label>{{ key_path.split('.')[-1].split('[')[0].replace('_',' ').title() }}:
+                <input name="{{ key_path }}" type="text" value="{{ value }}">
+              </label><br>
+            {% endif %}
+          {% endmacro %}
+          {{ render_field(scans, '') }}
+        </form>
+      </div>
+    </div>
+    <div>
+      <div class="form-row">
+        <label for="scan-select">Folder:</label>
+        <select id="scan-select"></select>
+        <label for="img-select">Image:</label>
+        <select id="img-select"></select>
+      </div>
+      <div class="form-row">
+        <label>a₀:<input id="a0" name="a0" type="number" step="any" value="1.0"></label>
+        <label>z₀₁ (in cm):<input id="z01" name="z01" type="number" step="any" value="{{ z01 }}" autocomplete="off"></label>
+        <label>Energy (in keV):<input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off"></label>
+        <label>Save prefix:<input id="prefix" name="prefix" value="{{ basepath }}" autocomplete="off"></label>
+      </div>
+      <button id="optimize-btn" type="button">Reconstruct</button><button id="find-focus-btn" type="button">Find Focus</button>
+      <div id="preview-image" style="display:none; max-width:100%;" alt="Preview"></div>
+      <label>v_min:<input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off"></label>
+      <label>v_max:<input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off"></label>
+      <div id="loss-image" style="display:none; max-width:100%;" alt="Preview"></div>
+      <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
+      <!-- Static stages section -->
+      <div id="stages">
+        <div class="stage-item">
+          <label><input type="checkbox" name="stages" value="find_focus" checked>Find Focus</label><br>
+          <select id="find_focus-select" name="find_focus_option">
+            <option value="">-- Select Find Focus Option --</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="stage-item">
+          <label><input type="checkbox" name="stages" value="reconstruction" checked>Phase Retrieval</label><br>
+          <select id="reconstruction-select" name="reconstruction_method">
+            <option value="">-- Select Phase Retrieval Option --</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="stage-item">
+          <label><input type="checkbox" name="stages" value="tomography" checked>Tomography</label>
+        </div>
+      </div>
+
+      <label>Holder:<input id="holder" name="holder" type="number" step="any"></label>
+      
+      <button id="submit-btn" type="button">Submit All</button>
+    </div>
+  </div>
+
+  <script>
+    const endpoints = {
+      stage: v => `/stage/${v}`,
+      parameter: v => `/parameter/${v}`,
+      folder: v => `/folder/${v}`
+    };
+    const qs = s => document.getElementById(s);
+    const fetchJson = async (url, opts) => (await fetch(url, opts)).json();
+
+    const fill = (sel, items) => {
+      if (!Array.isArray(items)) {
+        console.error(`Cannot fill select #${sel.id}: expected array, got`, items);
+        return;
+      }
+      sel.innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join('');
+      sel.onchange();
+    };
+
+    qs('stage-select').onchange = async () => {
+      const opts = await fetchJson(endpoints.stage(qs('stage-select').value));
+      fill(qs('parameter-select'), opts);
+      
+    };
+    qs('parameter-select').onchange = async () => {
+      const url = endpoints.parameter(qs('parameter-select').value);
+      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dropdown: qs('stage-select').value}) });
+      qs('form-container').innerHTML = await res.text();
+      qs('stage-hidden').value = qs('stage-select').value;
+    };
+
+    qs('scan-select').onchange = async () => {
+      const opts = await fetchJson(endpoints.folder(qs('scan-select').value));
+      fill(qs('img-select'), opts);
+      resetLivePreview();
+    };
+    const resetLivePreview = () => {
+      qs('live-preview').src = '';
+      qs('live-preview').style.display = 'none';
+      qs('loss-image').style.display = 'none';
+      
+    };
+
+    qs('img-select').onchange = async () => {
+      const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
+      const blob = await (await fetch(url)).blob();
+      fetch(url).then(res => res.json()).then(fig =>{
+        Plotly.react(qs('preview-image'), fig.data, fig.layout);  
+        qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
+        qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
+      }
+    )
+    
+    
+      qs('preview-image').style.display = 'block';
+      resetLivePreview();
+    };
+
+    const changeRange = () => {
+      const vmin = parseFloat(qs('vmin').value);
+      const vmax = parseFloat(qs('vmax').value);
+      if (isNaN(vmin) || isNaN(vmax)) {
+        console.warn('Invalid vmin/vmax values');
+        return;
+      }
+      Plotly.relayout(qs('preview-image'), {
+        'coloraxis.cmin': vmin,
+        'coloraxis.cmax': vmax
+      });
+    };
+
+    // Safely get the parameter form
+    const getFormData = () => {
+      const form = document.querySelector('#form-container form');
+      if (!form) {
+        console.error('Parameter form not found');
+        return {};
+      }
+      return Object.fromEntries(new FormData(form));
+    };
+    const retrieveReco = () => ({
+      form_data: getFormData(qs('parameter-form')),
+      a0: +qs('a0').value,
+      z01: +qs('z01').value,
+      scan_name: qs('scan-select').value,
+      img_name: qs('img-select').value,
+      energy: +qs('energy').value,
+      base_dir: qs('prefix').value
+    });
+    const retrieveStages = () => {
+      const stages = Array.from(document.querySelectorAll('input[name="stages"]:checked')).map(cb => cb.value);
+      const options = Object.fromEntries(stages.map(s => [s, qs(`${s}-select`)? qs(`${s}-select`).value: null]));
+      return {stages, options};
+    };
+
+    
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize stage params
+      qs('stage-select').onchange();
+      // Populate scan-select from root folder list
+      fetchJson(endpoints.folder('')).then(folders => {
+        fill(qs('scan-select'), folders);
+      }).catch(err => console.error(err));
+
+      const socket = new WebSocket(`ws://${location.host}/ws/preview`);
+      
+      socket.binaryType = 'arraybuffer';
+      socket.onmessage = e => {
+        qs('loss-image').classList.remove('loader');
+        const data = e.data;
+        if (data instanceof ArrayBuffer) {
+           const blob = new Blob([data]);
+          qs('live-preview').src = URL.createObjectURL(blob);
+          qs('live-preview').style.display = 'block';
+
+      } else { // Handle Blob or other data types
+        const json_data = JSON.parse(data)
+        const num = parseFloat(json_data.z01);
+        const fig = json_data.data;
+        if (!isNaN(num)) {
+          qs('z01').value = num.toFixed(3);
+        } else {
+          console.warn('Received non-numeric data:', text);    
+          }
+           Plotly.react(qs('loss-image'), fig.data, fig.layout);  
+          qs('loss-image').style.display = 'block';
+        }
+      };
+
+      qs('optimize-btn').onclick = () => {
+        socket.send(JSON.stringify(retrieveReco()));
+        qs('loss-image').style.display = 'block';
+        qs('loss-image').classList.add('loader');
+      };
+      qs('find-focus-btn').onclick = () => {
+        const data = retrieveReco();
+        data.find_focus = true;
+        socket.send(JSON.stringify(data));
+        qs('loss-image').style.display = 'block';
+        qs('loss-image').classList.add('loader');
+      };
+      qs('submit-btn').onclick = async () => {
+        const data = {...retrieveReco(), ...retrieveStages(), holder:+qs('holder').value};
+        const res = await fetch('api/submit_scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        alert(res.ok? 'Submitted!':'Submit failed');
+      };
+    });
+    
+    const reconSelect = qs('reconstruction-select');
+    const focusSelect = qs('find_focus-select');
+    async function loadOptionsOnce(e, stage) {
+      const select = e.target;
+      try {
+        const opts = await fetchJson(endpoints.stage(stage));
+        opts.forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o;
+          opt.textContent = o;
+          select.appendChild(opt);
+        });
+      } catch(err) {
+        console.error('Error loading options for', stage, err);
+      }
+    }
+    if (reconSelect) reconSelect.addEventListener('mousedown', e => loadOptionsOnce(e, 'reconstruction'), { once: true });
+    if (focusSelect) focusSelect.addEventListener('mousedown', e => loadOptionsOnce(e, 'find_focus'), { once: true });
+  </script>
+</body>
+</html>
+

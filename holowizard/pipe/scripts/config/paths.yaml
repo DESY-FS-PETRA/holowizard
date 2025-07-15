@@ -1,0 +1,10 @@
+paths:
+  base_dir: "holopipe1"
+  phase_dir: "phase_retrieval"
+  absorption_dir: "absorption"
+  tomo_dir: "tomo_reco"
+  params_dir: "params"
+  logs_dir: "logs"
+  checkpoints_dir: "logs/checkpoints"
+  config_path: "holowizard_config"
+  parameter_testing: "parameter_testing"

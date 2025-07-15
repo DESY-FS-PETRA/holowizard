@@ -1,0 +1,11 @@
+cluster:
+  _target_: holopipe.cluster.SlurmCluster
+  slurm_dir: "slurm"
+  num_slurm_workers: 120
+  check_interval: 2
+  queue: allgpu
+  memory: 256GB
+  walltime: "0-06:00:00"
+  partitions:
+    - allgpu
+

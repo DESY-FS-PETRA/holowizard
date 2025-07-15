@@ -9,7 +9,10 @@ where = ["."]  # list of folders that contain the packages (["."] by default)
 dependencies = {file = "requirements.txt"}
 
 [tool.setuptools.package-data]
-"*" = ["logo.png", "*.json", "*.csv"]
+"*" = ["logo.png", "*.json", "*.csv", "README.md"]
+"holowizard.pipe.scripts.config" = ["*.ini", "*.yaml", "*.yml", "**/*.yaml", "**/*.yml"]
+"holowizard.pipe.templates" = ["*.html"]
+"holowizard.pipe" = ["*.yaml"]
 
 [project]
 name="holowizard"
@@ -17,7 +20,7 @@ dynamic = ["version", "dependencies"]
 requires-python = ">=3.11,<3.12"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco_server/LICENSE"]
+license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco_server/LICENSE", "holowizard/pipe/LICENSE"]
 keywords = ["near-field holography", "phase retrieval", "tomography"]
 
 authors = [
@@ -55,5 +58,7 @@ holowizard_forge_generate_data = "holowizard.forge.scripts.generate_data:main"
 holowizard_forge_create_testconfig = "holowizard.forge.scripts.create_testconfig:main"
 holowizard_livereco_server_start = "holowizard.livereco_server.server.main:main"
 holowizard_core_create_examples = "holowizard.core.scripts.create_examples:main"
+holowizard_pipe_start = "holowizard.pipe.scripts.holopipe:main"
+holowizard_pipe_reconstruct_scan = "holowizard.pipe.script.reco:main"
 
 
