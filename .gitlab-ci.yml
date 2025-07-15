@@ -1,6 +1,25 @@
+default:
+  image: python:3.11
+  cache:
+    paths:
+      - .pip-cache/
+  before_script:
+    - python --version
+    - pip install --upgrade pip
+    - pip install build twine
+
 stages:
+  - build
   - test
   - deploy
+
+build:
+  stage: build
+  script:
+    - python -m build
+  artifacts:
+    paths:
+      - dist/
 
 run-gpu-tests:
   stage: test
