@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # local libraries
-from holoforge.objects.shapes import *
+from holowizard.forge.objects.shapes import *
 
 
 __all__ = [

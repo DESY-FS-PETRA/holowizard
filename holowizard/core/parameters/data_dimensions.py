@@ -136,7 +136,7 @@ class DataDimensions:
 
     @window.setter
     def window(self, window):
-        self._window = member_value_adapter.get_array(window)
+        self._window = member_value_adapter.get_array_float(window)
 
     @fading_width.setter
     def fading_width(self, fading_width) -> None:
