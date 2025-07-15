@@ -45,19 +45,6 @@ $ holowizard_core_create_examples <directory>
 
 # HoloWizard Pipe
 
-## Getting Started (P05 DESY + Maxwell User)
-
-Before using the pipeline, some configuration is required.
-
-Open the `scripts/config/cluster.yaml` file and update the cluster settings accordingly — especially the list of usable partitions.
-
-Install the package into your Python environment by running the following command from the root of the repository:
-
-```bash
-pip install .
-```
-
-
 ## Setting Up an Instance
 
 We provide a CLI command to initialize everything:
