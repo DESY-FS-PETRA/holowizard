@@ -1,5 +1,5 @@
 tqdm
-numpy
+numpy==1.26.4
 torch
 torchvision
 matplotlib
@@ -21,8 +21,6 @@ dask_jobqueue
 pytest
 bokeh
 scipy
-pandas
-numpy
 astra-toolbox
 pyqtgraph
 uvicorn
