@@ -1,12 +1,11 @@
 import holowizard.core.utils.fileio as fileio
 from pathlib import Path
 
-REPOROOT = (Path(__file__).parent / "..").resolve()
-DATAPATH = REPOROOT / "Examples/data/"
+REPOROOT = Path(__file__).parent.resolve()
 
 def test_load_img_data():
 
-    dp = DATAPATH / "holograms" / "spider_hair.tiff"
+    dp = REPOROOT / "data" / "spider_hair.tiff"
 
     assert dp.exists()
 
