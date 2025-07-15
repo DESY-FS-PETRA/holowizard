@@ -5,8 +5,9 @@
 1. [General Information](#general-information)
 2. [Installation](#installation)
 3. [HoloWizard Core](#holowizard-core)
-4. [HoloWizard Forge](#holowizard-forge)
-5. [Please Cite](#citations)
+4. [HoloWizard Pipe](#holowizard-pipe)
+5. [HoloWizard Forge](#holowizard-forge)
+6. [Please Cite](#citations)
 
 ## General Information
 - Repository: https://github.com/DESY-FS-PETRA/holowizard
