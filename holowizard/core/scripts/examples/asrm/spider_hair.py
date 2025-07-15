@@ -14,7 +14,7 @@ matplotlib.use("Qt5Agg")
 object_shape = (2048, 2048)
 
 root = str(pathlib.Path(__file__).parent.resolve()) + "/"
-data_path = root + "../data/holograms/spider_hair.tiff"
+data_path = root + "../data/spider_hair.tiff"
 working_dir = root + "../logs/"
 session_name = "spider_hair_asrm"
 

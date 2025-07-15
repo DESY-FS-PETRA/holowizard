@@ -1,37 +1,52 @@
+import numpy
 import os
 from copy import deepcopy
-import matplotlib
-import matplotlib.pyplot as plt
-import pathlib
+from skimage import io
+import skimage.transform as sktf
 
 from holowizard.core.logging.logger import Logger
-from holowizard.core.api.viewer import LossViewer, PyPlotViewer
-from holowizard.core.api.functions.find_focus.find_focus import find_focus
+from holowizard.core.parameters import *
+from holowizard.core.api.parameters.paths.focus_series_paths import FocusSeriesPaths
+from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
-from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
-matplotlib.use("Qt5Agg")
+z01_guess = 47.071
 
-z01_guess = 47.051
+z01_resolution = int(sys.argv[1])
+z01_slurm_job_id_int = int(sys.argv[2])
+z01_slurm_job_id = str(z01_slurm_job_id_int).zfill(4)
 z01_confidence = 1.0
+z01_confidence_interval = numpy.linspace(
+    -z01_confidence, z01_confidence, z01_resolution
+)
+z01_current_corr = z01_confidence_interval[int(z01_slurm_job_id_int % z01_resolution)]
+
+focus_series_paths = FocusSeriesPaths(
+    root_dir="/gpfs/petra3/scratch/"
+    + os.environ.get("USER")
+    + "/focus_series_singledim/magnesium_wire"
+)
 
 project_paths = ProjectPaths(
-    root_dir=str(pathlib.Path(__file__).parent.resolve()) + "/",
-    session_name="magnesium_wire_find_focus",
-    session_id=0,
+    output_dir="/gpfs/petra3/scratch/"
+    + os.environ.get("USER")
+    + "/focus_series_singledim/magnesium_wire/projections",
+    session_name="magnesium_wire_focus_series",
+    session_id=z01_slurm_job_id,
+    other=focus_series_paths,
 )
 
 project_paths.data_path = (
     os.path.dirname(os.path.realpath(__file__))
-    + "/../data/holograms/magnesium_wire.tiff"
+    + "/../data/magnesium_wire.tiff"
 )
-project_paths.logs_dir = os.path.dirname(os.path.realpath(__file__)) + "/../logs"
 
 Logger.current_log_level = Logger.level_num_loss
 Logger.configure(
     session_name=project_paths.session_logs_name, working_dir=project_paths.logs_dir
 )
+project_paths.mkdirs()
 
 flatfield_offset_corr = 1.1
 setup = BeamSetup(energy=11.0, px_size=6.5, z02=19.661)
@@ -39,7 +54,7 @@ measurements = [
     Measurement(
         data_path=project_paths.data_path,
         data=load_img_data(project_paths.data_path),
-        z01=z01_guess,
+        z01=z01_guess + z01_current_corr,
         z01_confidence=z01_confidence,
     )
 ]
@@ -102,44 +117,24 @@ reco_params = RecoParams(
     data_dimensions=data_dimensions,
 )
 
-result, z01_records, loss_values_history = find_focus(
-    reco_params, viewer=[LossViewer(), PyPlotViewer()]
+result, loss_records = reconstruct(reco_params)
+
+x_predicted = result.cpu().numpy()
+loss_records = loss_records.cpu().numpy()
+
+reco_phaseshift = sktf.rotate(x_predicted.real, 90)
+
+with open(
+    focus_series_paths.se_losses + "/loss_" + str(z01_current_corr) + ".txt", "w"
+) as f:
+    f.write("(" + str(z01_current_corr) + "," + str(loss_records[-1]) + ")")
+
+io.imsave(
+    focus_series_paths.projections_dir
+    + "/img_"
+    + z01_slurm_job_id
+    + "_"
+    + str(z01_current_corr).zfill(2)
+    + ".tiff",
+    reco_phaseshift,
 )
-
-print("Found z01=", result, " after ", len(z01_records), " iterations")
-
-plt.close("all")
-plt.ioff()
-
-plt.plot(z01_records, loss_values_history)
-
-ylims = plt.ylim()
-ylims = (ylims[0] - (ylims[1] - ylims[0]) / 6, ylims[1])
-plt.ylim(ylims)
-
-for i in range(4):
-    plt.annotate(
-        str(i),
-        (z01_records[i], loss_values_history[i]),
-        xytext=(0, -20),
-        textcoords="offset points",
-        size="large",
-        horizontalalignment="center",
-    )
-
-plt.show()
-
-#### For additional a0 search
-"""
-z01_guess, z01_records, a0_guess, a0_records, loss_values_history = find_focus(reco_params,viewer=[LossViewer()])
-
-print("Found z01=",z01_guess,"a0=",a0_guess," after ", len(loss_values_history)," iterations")
-
-plt.close("all")
-plt.ioff()
-
-ax = plt.figure().add_subplot(projection='3d')
-ax.plot(z01_records,a0_records,loss_values_history)
-
-plt.show()
-"""

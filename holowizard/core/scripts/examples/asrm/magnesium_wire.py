@@ -14,7 +14,7 @@ matplotlib.use("Qt5Agg")
 object_shape = (2048, 2048)
 
 root = str(pathlib.Path(__file__).parent.resolve()) + "/"
-data_path = root + "../data/holograms/magnesium_wire.tiff"
+data_path = root + "../data/magnesium_wire.tiff"
 working_dir = root + "../logs/"
 session_name = "magnesium_wire_asrm"
 

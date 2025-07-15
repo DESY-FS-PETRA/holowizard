@@ -11,12 +11,12 @@ from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
 from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
-z01_guess = 7.995
+z01_guess = 48.051
 
 z01_resolution = int(sys.argv[1])
 z01_slurm_job_id_int = int(sys.argv[2])
 z01_slurm_job_id = str(z01_slurm_job_id_int).zfill(4)
-z01_confidence = 1.0
+z01_confidence = 3.0
 z01_confidence_interval = numpy.linspace(
     -z01_confidence, z01_confidence, z01_resolution
 )
@@ -32,20 +32,21 @@ a0_current = a0_confidence_interval[int(a0_slurm_job_id_int % a0_resolution)]
 focus_series_paths = FocusSeriesPaths(
     root_dir="/gpfs/petra3/scratch/"
     + os.environ.get("USER")
-    + "/focus_series_multidim/spider_hair"
+    + "/focus_series_multidim/magnesium_wire"
 )
 
 project_paths = ProjectPaths(
     output_dir="/gpfs/petra3/scratch/"
     + os.environ.get("USER")
-    + "/focus_series_multidim/spider_hair/projections",
-    session_name="spider_hair_focus_series",
+    + "/focus_series_multidim/magnesium_wire/projections",
+    session_name="magnesium_wire_focus_series",
     session_id=z01_slurm_job_id + "_" + a0_slurm_job_id,
     other=focus_series_paths,
 )
 
 project_paths.data_path = (
-    os.path.dirname(os.path.realpath(__file__)) + "/../data/holograms/spider_hair.tiff"
+    os.path.dirname(os.path.realpath(__file__))
+    + "/../data/magnesium_wire.tiff"
 )
 project_paths.logs_dir = os.path.dirname(os.path.realpath(__file__)) + "/../logs"
 
@@ -67,7 +68,7 @@ measurements = [
 ]
 padding_options = Padding(
     padding_mode=Padding.PaddingMode.MIRROR_ALL,
-    padding_factor=7,
+    padding_factor=4,
     down_sampling_factor=16,
     cutting_band=0,
     a0=a0_current,
@@ -78,7 +79,6 @@ options_warmup = Options(
         iterations=700,
         update_rate=0.9,
         l2_weight=0.0 + 10.0 * 1j,
-        values_min=-sys.float_info.max + 1j * 0,
         gaussian_filter_fwhm=2.0 + 0.0j,
     ),
     nesterov_object=Regularization(update_rate=1.0, gaussian_filter_fwhm=8.0 + 8.0j),
@@ -91,7 +91,6 @@ options_upscale_4 = Options(
         iterations=300,
         update_rate=1.1,
         l2_weight=0.0 + 10.0 * 1j,
-        values_min=-sys.float_info.max + 1j * 0,
         gaussian_filter_fwhm=2.0 + 8.0j,
     ),
     nesterov_object=Regularization(update_rate=1.0, gaussian_filter_fwhm=16.0 + 16.0j),
@@ -104,7 +103,6 @@ options_upscale_4_lowreg = Options(
         iterations=500,
         update_rate=1.1,
         l2_weight=0.0 + 1.0 * 1j,
-        values_min=-sys.float_info.max + 1j * 0,
         gaussian_filter_fwhm=2.0 + 8.0j,
     ),
     nesterov_object=Regularization(update_rate=1.0, gaussian_filter_fwhm=16.0 + 16.0j),

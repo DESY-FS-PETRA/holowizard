@@ -23,7 +23,7 @@ project_paths = ProjectPaths(
 )
 
 project_paths.data_path = (
-    os.path.dirname(os.path.realpath(__file__)) + "/../data/holograms/spider_hair.tiff"
+    os.path.dirname(os.path.realpath(__file__)) + "/../data/spider_hair.tiff"
 )
 project_paths.logs_dir = os.path.dirname(os.path.realpath(__file__)) + "/../logs"
 
