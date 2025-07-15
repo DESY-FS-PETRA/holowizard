@@ -9,10 +9,8 @@
 name: Upload Python Package
 
 on:
-  push:
-    # Pattern matched against refs/tags
-    tags:
-      - '**'           # Push events to every tag including hierarchical tags like v1.0/beta
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -52,8 +50,8 @@ jobs:
     # Dedicated environments with protections for publishing are strongly recommended.
     # For more information, see: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#deployment-protection-rules
     environment:
-      name: testpypi
-      url: https://test.pypi.org/p/holowizard
+      name: pypi
+      url: https://pypi.org/p/holowizard
 
     steps:
       - name: Retrieve release distributions
@@ -64,5 +62,3 @@ jobs:
 
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
