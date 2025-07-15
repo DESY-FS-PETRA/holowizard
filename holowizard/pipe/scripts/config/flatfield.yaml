@@ -1,0 +1,3 @@
+flatfield:
+  components_num: 28
+  save_path: params/flatfield_components.pkl

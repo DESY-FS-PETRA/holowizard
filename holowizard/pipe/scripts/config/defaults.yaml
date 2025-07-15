@@ -1,0 +1,13 @@
+defaults:
+- cluster
+- flatfield
+- paths
+- beamtime
+- scan
+- tomography
+- reconstruction: 
+  - spider
+  - wire
+- find_focus: 
+  - spider
+  - wire

@@ -1,0 +1,92 @@
+stages:
+  - update_blocks: 0
+    _target_: holowizard.interface.parameters.Options
+    regularization_object:
+      _target_: holowizard.interface.parameters.Regularization
+      iterations: 700
+      values_min: auto
+      values_max: auto
+      update_rate: 0.9
+      gaussian_filter_fwhm: "(2+0j)"
+      l2_weight: "10j"
+      l1_weight: "0j"
+    nesterov_object:
+      _target_: holowizard.interface.parameters.Regularization
+      update_rate: 1.0
+      gaussian_filter_fwhm: "(4+4j)"
+    regularization_probe:
+      _target_: holowizard.interface.parameters.Regularization
+    padding:
+      _target_: holowizard.interface.parameters.Padding
+      padding_factor: 4
+      down_sampling_factor: 16
+    verbose_interval: 100
+
+  - update_blocks: 0
+    _target_: holowizard.interface.parameters.Options
+    regularization_object:
+      _target_: holowizard.interface.parameters.Regularization
+      iterations: 300
+      values_min: auto
+      values_max: auto
+      update_rate: 1.1
+      gaussian_filter_fwhm: "(2+8j)"
+      l2_weight: "1j"
+      l1_weight: "0j"
+    nesterov_object:
+      _target_: holowizard.interface.parameters.Regularization
+      update_rate: 1.0
+      gaussian_filter_fwhm: "(8+8j)"
+    regularization_probe:
+      _target_: holowizard.interface.parameters.Regularization
+    padding:
+      _target_: holowizard.interface.parameters.Padding
+      padding_factor: 4
+      down_sampling_factor: 4
+    verbose_interval: 100
+
+  - update_blocks: 0
+    _target_: holowizard.interface.parameters.Options
+    regularization_object:
+      _target_: holowizard.interface.parameters.Regularization
+      iterations: 500
+      values_min: auto
+      values_max: auto
+      update_rate: 1.1
+      gaussian_filter_fwhm: "(2+8j)"
+      l2_weight: "0.1j"
+      l1_weight: "0j"
+    nesterov_object:
+      _target_: holowizard.interface.parameters.Regularization
+      update_rate: 1.0
+      gaussian_filter_fwhm: "(32+32j)"
+    regularization_probe:
+      _target_: holowizard.interface.parameters.Regularization
+    padding:
+      _target_: holowizard.interface.parameters.Padding
+      padding_factor: 4
+      down_sampling_factor: 2
+    verbose_interval: 100
+
+  - update_blocks: 0
+    _target_: holowizard.interface.parameters.Options
+    regularization_object:
+      _target_: holowizard.interface.parameters.Regularization
+      iterations: 500
+      values_min: auto
+      values_max: auto
+      update_rate: 1.1
+      gaussian_filter_fwhm: "(2+8j)"
+      l2_weight: "0j"
+      l1_weight: "0j"
+    nesterov_object:
+      _target_: holowizard.interface.parameters.Regularization
+      update_rate: 1.0
+      gaussian_filter_fwhm: "0j"
+    regularization_probe:
+      _target_: holowizard.interface.parameters.Regularization
+    padding:
+      _target_: holowizard.interface.parameters.Padding
+      padding_factor: 4
+      down_sampling_factor: 2
+    verbose_interval: 100

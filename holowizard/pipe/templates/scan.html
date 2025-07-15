@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scan: {{ scan.name }}</title>
+  {% if scan.cancelled %}
+    <div style="color: red; font-weight: bold;">
+      ⚠️ Warning: The reconstruction has been cancelled!
+    </div>
+  {% endif %}
+  {% for f in scan.done %}
+      {% if f.name == "find_focus" and f.status == "failed" %}
+          <div style="color: red; font-weight: bold;">
+              ⚠️ Warning: find_focus did not compute. Have a look into the logs. Use default z01!
+          </div>
+      {% endif %}
+  {% endfor %}
+
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    pre { background: #f5f5f5; border-radius: 5px; }
+    .citation {
+      font-size: 0.9rem;   /* overall citation size */
+      color: #555;
+      margin-top: 0.5rem;
+    }
+    .citation-label {
+      font-size: 1.2rem;   /* bigger “Please cite:” */
+      font-weight: bold;
+      color: #333;
+      margin-right: 0.25em;
+      vertical-align: middle;
+    }
+    .citation a {
+      text-decoration: none;
+    }
+     .measurement-details {
+    margin-left: 1em;   /* tweak this value to taste */
+  }
+  </style>
+</head>
+<body>
+  <h1>Scan Report: {{ scan.name }}</h1>
+  <p><a href="/dashboard">← Back to Dashboard</a></p>
+<span class="citation-label">Please cite:</span>
+    {% for task, info in citations.items() %}
+    {% if task in scan.config.scan.tasks %}
+        <p class="citation">
+        <em>{{ info.title }}</em>, {{ info.authors }},
+        <strong>{{ info.journal }}</strong> {{ info.vol_issue }} ({{ info.year }}).
+        <a href="https://doi.org/{{ info.doi }}" target="_blank">doi:{{ info.doi }}</a>
+        </p>
+    {% endif %}
+    {% endfor %}
+
+  <h2>Measurement Details</h2>
+  <ul>
+    <li><strong>Scan ID:</strong> {{ scan.name }}</li>
+    <li><strong>Scan Date:</strong> {{ scan.date }}</li>
+    <li><strong>Number of Projections:</strong> {{ scan.hologram_path | length }}</li>
+    <li><strong>Energy:</strong> {{ scan.energy }} keV</li>
+    <li><strong>Detector:</strong> {{ scan.config.scan.detector }}</li>
+    <li><strong>Detector Pixel Size:</strong> {{ scan.config.scan.px_size | round(3) }} μm</li>
+    <li><strong>z01:</strong> {{ scan.z01 | round(3) }} cm</li>
+    <li><strong>z02:</strong> {{ scan.z02 | round(3) }} m</li>
+    <li><strong>Magnification</strong> {{ scan.M | round(2) }}</li>
+    <li><strong>Effective Propagation Distance:</strong> {{ scan.z_eff | round(3) }} m</li>
+   </ul> 
+  <h2>Reconstruction Details</h2>
+    <ul>
+    <li><strong>Binning:</strong> {{ scan.binning }}</li>
+    <li><strong>Effective Pixel Size (raw):</strong> {{ (scan.dx_eff / scan.binning) | round(3) }} μm</li>
+    <li><strong>Effective Pixel Size (binned):</strong> {{ scan.dx_eff | round(3) }} μm</li>
+    <li><strong>Fresnel Number (binned):</strong> {{ scan.fr_eff }} </li>
+  </ul>
+  <h2>Processing Details</h2>
+    <ul>
+    {% for task in scan.config.scan.tasks %}
+        <li>
+        <strong>{{ task | capitalize }}</strong>
+        <pre><code class="language-yaml">
+            {%   set cfg = scan.config[task] %}
+            {{ cfg | to_yaml | indent(12) }}
+        </code></pre>
+        </li>
+    {% endfor %}
+    </ul>
+ 
+</body>
+</html>

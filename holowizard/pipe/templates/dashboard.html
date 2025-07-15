@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Progress Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+        }
+        .progress-container {
+            display: flex;
+            height: 30px;
+            width: 100%;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #ddd;
+        }
+        .progress-segment {
+            height: 100%;
+            text-align: center;
+            color: black;
+            font-size: 0.8rem;
+            line-height: 30px;
+        }
+        .filled {
+            background-color: #4caf50;
+        }
+        .partial {
+            background-color: #ffa500;
+        }
+        .empty {
+            background-color: #bbb;
+        }
+       
+
+    </style>
+</head>
+<body>
+    <script>
+        setTimeout(() => {
+            fetch(window.location.href)
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        console.warn("Page reload failed; staying on current page.");
+                    }
+                })
+                .catch(() => {
+                    console.warn("Network error; staying on current page.");
+                });
+        }, 5000);
+    </script>
+    <script>
+        function confirmCancel(scanName) {
+            if (confirm("Are you sure you want to cancel this scan?")) {
+                fetch(`/api/cancel/${scanName}`)
+            }
+        }
+    </script>
+    <h1>Scan Progress Dashboard</h1>
+    <p><strong>Active Workers:</strong> {{ num_workers }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                <th>Scan</th>
+                <th>Base Directory</th>
+                <th>Progress</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for scan_name, scan_info in progress.items() %}
+            <tr>
+                <td>
+                    {% if scan_info.cancelled %}
+                        <button 
+                            disabled
+                            style="background-color: #ccc; color: #666; padding: 8px 16px; border: none; border-radius: 4px; cursor: not-allowed;">
+                            Cancel
+                        </button>
+                    {% else %}
+                        <button 
+                            onclick="confirmCancel('{{ scan_name }}')" 
+                            style="background-color: red; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                            Cancel
+                        </button>
+                    {% endif %}
+                </td>
+                <td><a href="/scan/{{ scan_name }}">{{ scan_info.name }}</a></td>
+                <td><a href="file://{{ scan_info.path }}"> {{ scan_info.base_dir }}</a></td>
+                <td>
+                    <div class="progress-container">
+                        {% set tasks = scan_info.tasks %}
+                        {% set total_tasks = tasks|length %}
+                        {% for task_name, data in tasks.items() %}
+                            {% set total = data.total %}
+                            {% set done = data.done %}
+                            {% set running = data.running %}
+                            {% set remaining = total - done - running %}
+                            {% set done_pct = (done / total * 100) if total > 0 else 0 %}
+                            {% set running_pct = (running / total * 100) if total > 0 else 0 %}
+                            {% set remaining_pct = (100 - done_pct - running_pct) %}
+                            {% set segments = [] %}
+                            {% if done_pct > 0 %}
+                                {% set _ = segments.append("#28a745 0%") %}
+                                {% set _ = segments.append("#28a745 " ~ done_pct ~ "%") %}
+                            {% endif %}
+                            {% if running_pct > 0 %}
+                                {% set _ = segments.append("#ffc107 " ~ done_pct ~ "%") %}
+                                {% set _ = segments.append("#ffc107 " ~ (done_pct + running_pct) ~ "%") %}
+                            {% endif %}
+                            {% if remaining_pct > 0 %}
+                                {% set _ = segments.append("#e0e0e0 " ~ (done_pct + running_pct) ~ "%") %}
+                                {% set _ = segments.append("#e0e0e0 100%") %}
+                            {% endif %}
+                            <div
+                                class="progress-segment{% if data.cancelled %} cancelled{% endif %}"
+                                style="
+                                    width: {{ 100/total_tasks }}%;
+                                    background: linear-gradient(to right, {{ segments | join(', ') }});
+                                    {% if scan_info.cancelled %}
+                                    text-decoration: line-through;
+                                    color: black;
+                                    {% endif %}
+                                    
+                                    {% if data.failed %}
+                                    background: #f44336;
+                                    color: black;
+                                    {% endif %}
+                                "
+                                >
+                                {{ task_name }} ({{ data.done }}/{{ data.total }})
+                            </div>
+
+                    
+                        {% endfor %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
