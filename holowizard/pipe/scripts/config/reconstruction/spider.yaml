@@ -1,8 +1,8 @@
 stages:
   - update_blocks: 0
-    _target_: holowizard.interface.parameters.Options
+    _target_: holowizard.core.api.parameters.Options
     regularization_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       iterations: 700
       values_min: auto
       values_max: auto
@@ -12,22 +12,22 @@ stages:
       l1_weight: "0j"
   
     nesterov_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       update_rate: 1.0
       gaussian_filter_fwhm: "(16+16j)"
   
     regularization_probe:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
     padding:
-      _target_: holowizard.interface.parameters.Padding
+      _target_: holowizard.core.api.parameters.Padding
       padding_factor: 4.0
       down_sampling_factor: 16
     verbose_interval: 100
   
   - update_blocks: 0
-    _target_: holowizard.interface.parameters.Options
+    _target_: holowizard.core.api.parameters.Options
     regularization_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       iterations: 300
       values_min: auto
       values_max: auto
@@ -36,21 +36,21 @@ stages:
       l2_weight: "1j"
       l1_weight: "0j"
     nesterov_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       update_rate: 1.0
       gaussian_filter_fwhm: "(8+8j)"
     regularization_probe:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
     padding:
-      _target_: holowizard.interface.parameters.Padding
+      _target_: holowizard.core.api.parameters.Padding
       padding_factor: 4.0
       down_sampling_factor: 4
     verbose_interval: 100
   
   - update_blocks: 0
-    _target_: holowizard.interface.parameters.Options
+    _target_: holowizard.core.api.parameters.Options
     regularization_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       iterations: 500
       values_min: auto
       values_max: auto
@@ -59,21 +59,21 @@ stages:
       l2_weight: "0.1j"
       l1_weight: "0j"
     nesterov_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       update_rate: 1.0
       gaussian_filter_fwhm: "(64+64j)"
     regularization_probe:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
     padding:
-      _target_: holowizard.interface.parameters.Padding
+      _target_: holowizard.core.api.parameters.Padding
       padding_factor: 4.0
       down_sampling_factor: 2
     verbose_interval: 100
   
   - update_blocks: 0
-    _target_: holowizard.interface.parameters.Options
+    _target_: holowizard.core.api.parameters.Options
     regularization_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       iterations: 500
       values_min: auto
       values_max: auto
@@ -82,13 +82,13 @@ stages:
       l2_weight: "0j"
       l1_weight: "0j"
     nesterov_object:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
       update_rate: 1.0
       gaussian_filter_fwhm: "0j"
     regularization_probe:
-      _target_: holowizard.interface.parameters.Regularization
+      _target_: holowizard.core.api.parameters.Regularization
     padding:
-      _target_: holowizard.interface.parameters.Padding
+      _target_: holowizard.core.api.parameters.Padding
       padding_factor: 4.0
       down_sampling_factor: 2
     verbose_interval: 100

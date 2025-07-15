@@ -1,9 +1,9 @@
 import os
 import logging
 from pathlib import Path
-from holowizard.core.api.base.flatfield_correction.calc_flatfield_components_o import \
+from holowizard.core.api.functions.flatfield_correction.calc_flatfield_components_o import \
     calculate_flatfield_components
-from holowizard.interface.parameters import FlatfieldComponentsParams, FlatfieldCorrectionParams
+from holowizard.core.api.parameters import FlatfieldComponentsParams, FlatfieldCorrectionParams
 from holowizard.pipe.scan import Scan
 
 class FlatFieldTask:

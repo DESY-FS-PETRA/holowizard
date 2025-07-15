@@ -5,11 +5,11 @@ from pathlib import Path
 import numpy as np
 import torch
 import gc
-from holowizard.core.api.base.single_projection.reconstruction_flatfieldcorrection import reconstruct
+from holowizard.core.api.functions.single_projection.reconstruction_flatfieldcorrection import reconstruct
 from holowizard.core.logging.logger import Logger
 from holowizard.core.utils import fileio
 from holowizard.core.utils.transform import crop_center
-from holowizard.interface.parameters import FlatfieldCorrectionParams
+from holowizard.core.api.parameters import FlatfieldCorrectionParams
 from holowizard.pipe.scan import Scan
 from holowizard.pipe.utils.reco_params import build_reco_params
 

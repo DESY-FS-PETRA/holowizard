@@ -3,8 +3,8 @@ from pathlib import Path
 import skimage.io as skio
 import numpy as np
 from holowizard.pipe.scan.scan import Scan
-from holowizard.interface.parameters.measurement import Measurement
-from holowizard.interface.parameters.beam_setup import BeamSetup
+from holowizard.core.api.parameters.measurement import Measurement
+from holowizard.core.api.parameters.beam_setup import BeamSetup
 import pandas as pd
 class P05Scan(Scan):
     """

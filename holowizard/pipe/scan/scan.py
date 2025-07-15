@@ -8,8 +8,8 @@ import yaml
 from omegaconf import OmegaConf
 from holowizard.pipe.utils.clean_yaml import remove_keys,to_clean_yaml
 from holowizard.core.models.cone_beam import ConeBeam
-from holowizard.interface.parameters.beam_setup import BeamSetup
-from holowizard.interface.parameters.measurement import Measurement
+from holowizard.core.api.parameters.beam_setup import BeamSetup
+from holowizard.core.api.parameters.measurement import Measurement
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 citations_path = Path(__file__).parent.parent / "citations.yaml"

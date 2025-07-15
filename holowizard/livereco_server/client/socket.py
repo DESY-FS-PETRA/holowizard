@@ -1,10 +1,10 @@
 import traceback
-import holowizard.interface
+import holowizard.livereco_server
 from holowizard.livereco_server.client import *
 from holowizard.livereco_server.client.send import send
 
 
-def connect(ip, port=holowizard.interface.server_port):
+def connect(ip, port=holowizard.livereco_server.server_port):
     address = "tcp://" + ip + ":" + str(port)
     try:
         if module_context.network_socket:

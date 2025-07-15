@@ -1,4 +1,4 @@
-from holowizard.interface.parameters import RecoParams, BeamSetup, Measurement, DataDimensions
+from holowizard.core.api.parameters import RecoParams, BeamSetup, Measurement, DataDimensions
 from holowizard.pipe.scan import Scan
 from hydra.utils import instantiate
 import sys
