@@ -19,3 +19,14 @@ GitPython
 dask
 dask_jobqueue
 pytest
+bokeh
+scipy
+pandas
+numpy
+astra-toolbox
+pyqtgraph
+uvicorn
+hydra-core
+fastapi[standard]
+markdown
+plotly
