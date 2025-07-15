@@ -57,7 +57,6 @@ Install the package into your Python environment by running the following comman
 pip install .
 ```
 
----
 
 ## Setting Up an Instance
 

@@ -1,19 +1,20 @@
 import numpy
 from copy import deepcopy
 import pathlib
+import os
 
 from holowizard.core.logging.logger import Logger
-from holowizard.core.api.base.single_projection.reconstruction import reconstruct
+from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 import holowizard.core.utils.fileio as fileio
-from holowizard.core.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
 
 def test_spider_hair():
     object_shape = (2048, 2048)
 
     root = str(pathlib.Path(__file__).parent.resolve()) + "/"
-    data_path = root + "../Examples/data/holograms/spider_hair.tiff"
-    working_dir = root + "../Examples/logs/"
+    data_path = root + "/data/spider_hair.tiff"
+    working_dir = root + "/logs/"
     session_name = "spider_hair_asrm"
 
     Logger.current_log_level = Logger.level_num_image_debug

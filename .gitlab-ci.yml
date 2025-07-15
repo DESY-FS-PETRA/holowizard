@@ -1,6 +1,25 @@
+default:
+  image: python:3.11
+  cache:
+    paths:
+      - .pip-cache/
+  before_script:
+    - python --version
+    - pip install --upgrade pip
+    - pip install build twine
+
 stages:
+  - build
   - test
   - deploy
+
+build:
+  stage: build
+  script:
+    - python -m build
+  artifacts:
+    paths:
+      - dist/
 
 run-gpu-tests:
   stage: test
@@ -58,24 +77,3 @@ run-gpu-tests:
         mamba remove -y -n ci-env --all &&
         rm -rf ~/jgruen/ci-package/*
       "
-
-
-push-to-mirror-target:
-  stage: deploy
-  image: ubuntu:22.04
-  tags:
-    - DESY-intern
-  rules:
-    - if: '$CI_COMMIT_BRANCH =~ /versions\/[0-9]+\.[0-9]+\.[0-9]+$/'
-    - if: $CI_COMMIT_BRANCH == "main"
-  script:
-    - apt-get update && apt-get install -y git git-lfs
-    - git config user.email "johannes.dora@desy.de"
-    - git config user.name "ci-bot"
-    - echo $CI_COMMIT_BRANCH
-    - pwd
-    - ls
-    - cd /builds/fs-petra/software/livereco_server/
-    - git remote add holwizard_core_origin https://oauth2:$ACCESS_TOKEN_HOLOWIZARD_CORE@gitlab.desy.de/fs-petra/software/holowizard_core.git
-    - git fetch holwizard_core_origin
-    - git push holwizard_core_origin HEAD:refs/heads/${CI_COMMIT_BRANCH} -o ci.skip # prevent triggering pipeline again

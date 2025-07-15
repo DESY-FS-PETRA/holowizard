@@ -177,3 +177,6 @@ pyrightconfig.json
 
 *.tiff
 holowizard/core/scripts/Examples/logs/*
+
+data_generation_test
+logs
