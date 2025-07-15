@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 
 # local libraries
-from holoforge.utils import fileIO
+from holowizard.forge.utils import fileIO
 
 
 __all__ = [
@@ -13,7 +13,7 @@ __all__ = [
 
 
 def load_phantom_test(
-    path: str = "holoforge/tests/output/data/7000/train/phantoms/phantom_000001.pkl", output: str = None
+    path: str = "holowizard.forge/tests/output/data/7000/train/phantoms/phantom_000001.pkl", output: str = None
 ) -> None:
     phantom = fileIO.load_phantom(path)
 
