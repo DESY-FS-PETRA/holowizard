@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from typing import List
 from copy import deepcopy
@@ -72,10 +73,10 @@ class Context:
         string_list = []
 
         string_list.append(
-            f"{'z02':<17}{self.beam_setup_original.z02} " + BeamSetup.unit_z02()[0]
+            f"{'z02':<17}{round(self.beam_setup_original.z02,int(np.log10(BeamSetup.unit_z02()[1])))} " + BeamSetup.unit_z02()[0]
         )
         string_list.append(
-            f"{'Energy':<17}{self.beam_setup_original.energy} "
+            f"{'Energy':<17}{round(self.beam_setup_original.energy,int(np.log10(BeamSetup.unit_energy()[1])))} "
             + BeamSetup.unit_energy()[0]
         )
         for i in range(len(self.measurements_original)):
@@ -84,15 +85,15 @@ class Context:
             )
             string_list.append("Distance " + str(i) + ":")
             string_list.append(
-                f"{'z01':<17}{self.measurements_original[i].z01} "
+                f"{'z01':<17}{round(self.measurements_original[i].z01,int(np.log10(Measurement.unit_z01()[1])))} "
                 + Measurement.unit_z01()[0]
             )
-            string_list.append(f"{'Magnification':<17}{round(M, 2)}")
+            string_list.append(f"{'Magnification':<17}{round(M, 3)}")
             string_list.append(
-                f"{'Effective dx':<17}{round(dx_eff,3)} " + BeamSetup.unit_px_size()[0]
+                f"{'Effective dx':<17}{round(dx_eff,int(np.log10(BeamSetup.unit_px_size()[1])))} " + BeamSetup.unit_px_size()[0]
             )
             string_list.append(
-                f"{'Effective z12':<17}{round(z_eff,3)} " + Measurement.unit_z01()[0]
+                f"{'Effective z12':<17}{round(z_eff,int(np.log10(Measurement.unit_z01()[1])))} " + Measurement.unit_z01()[0]
             )
             string_list.append(f"{'Fresnel Number':<17}{fr_eff}")
 
