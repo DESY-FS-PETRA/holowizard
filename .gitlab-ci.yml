@@ -1,13 +1,3 @@
-default:
-  image: python:3.11
-  cache:
-    paths:
-      - .pip-cache/
-  before_script:
-    - python --version
-    - pip install --upgrade pip
-    - pip install build twine
-
 stages:
   - build
   - test
@@ -15,7 +5,11 @@ stages:
 
 build:
   stage: build
+  image: python:3.11
   script:
+    - python --version
+    - pip install --upgrade pip
+    - pip install build twine
     - python -m build
   artifacts:
     paths:
