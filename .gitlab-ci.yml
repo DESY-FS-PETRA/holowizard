@@ -44,7 +44,7 @@ run-gpu-tests:
     - export SSH_OPTS="-o StrictHostKeyChecking=no -i ~/.ssh/gitlab-ci"
     # Generate a unique remote folder
     - ssh $SSH_OPTS gruenjoh@max-display.desy.de "
-        mkdir ~/jgruen/ci-package/
+        mkdir -p ~/jgruen/ci-package/
       "
     - export REMOTE_CI_DIR="/home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}"
     - echo "Using remote folder" + "$REMOTE_CI_DIR"
