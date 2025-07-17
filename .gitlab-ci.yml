@@ -56,7 +56,7 @@ run-gpu-tests:
         . mamba-init &&
         mamba create -y -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env python=3.11 &&
         mamba run -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env bash -c '
-          pip install pytest &&
+          pip install pytest --no-cache-dir &&
           pip install -r /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/requirements.txt --no-cache-dir &&
           pip install /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID} --no-cache-dir &&
         ' &&
