@@ -6,6 +6,12 @@ stages:
 build:
   stage: build
   image: python:3.11
+  rules:
+    # runs when you push a commit with "ci!" in the message or when a merge request is created
+    - if: '$CI_COMMIT_MESSAGE =~ /ci!/ || $CI_MERGE_REQUEST_ID'
+    # runs when you push a commit to the versions branch or main branch
+    - if: '$CI_COMMIT_BRANCH =~ /versions\/[0-9]+\.[0-9]+\.[0-9]+$/'
+    - if: $CI_COMMIT_BRANCH == "main"
   script:
     - python --version
     - pip install --upgrade pip
