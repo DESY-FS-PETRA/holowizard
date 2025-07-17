@@ -57,9 +57,9 @@ run-gpu-tests:
         mamba create -y -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env python=3.11 &&
         mamba run -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env bash -c '
           pip install -r /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/requirements.txt --no-cache-dir &&
-          pip install /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID} --no-cache-dir &&
-          /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/tests/test_run.sh
-        '
+          pip install /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID} --no-cache-dir
+        ' &&
+        bash /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/tests/test_run.sh
       "
   after_script:
     - apt-get update && apt-get install -y openssh-client rsync
