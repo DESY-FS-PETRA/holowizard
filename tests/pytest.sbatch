@@ -16,4 +16,4 @@ mamba activate /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env
 which python
 which pytest
 
-pytest ~/jgruen/ci-package/ci_${CI_JOB_ID}/tests/
+/home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env/bin/pytest ~/jgruen/ci-package/ci_${CI_JOB_ID}/tests/
