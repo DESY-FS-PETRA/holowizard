@@ -1,5 +1,5 @@
 paths:
-  base_dir: "holopipe1"
+  base_dir: "holopipe"
   phase_dir: "phase_retrieval"
   absorption_dir: "absorption"
   tomo_dir: "tomo_reco"
