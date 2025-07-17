@@ -8,10 +8,11 @@ import holowizard.forge.generators as module_generators
 def data_generator_test() -> None:
     # alternatively using the CLI
     # python generate_data.py holowizard.forge/tests/output 3 --energy 11000 --override --config configs/custom/test_config.json
-    output = './test_output/data_generation_test'
+    root = Path(__file__).parent.resolve()
+    output = root / "test_output/data_generation_test"
 
-    config = ConfigParser(Path('../holowizard/forge/configs/test_config.json'))
-    output_file = Path(output) / (config["name"] + ".hdf5")
+    config = ConfigParser(root / '/../../holowizard/forge/configs/test_config.json')
+    output_file = output / (config["name"] + ".hdf5")
 
     num_samples = 10
     hologram_generator = HologramGenerator(config)
@@ -20,7 +21,7 @@ def data_generator_test() -> None:
     flatfield_generator = config.init_obj("flatfield_generator", module_generators, config=config)
 
     data_generator = DataGenerator(
-        output=output,
+        output=str(output),
         num_samples=num_samples,
         config=config,
         override=True,
