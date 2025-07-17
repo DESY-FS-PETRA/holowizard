@@ -59,17 +59,17 @@
     <li><strong>Number of Projections:</strong> {{ scan.hologram_path | length }}</li>
     <li><strong>Energy:</strong> {{ scan.energy }} keV</li>
     <li><strong>Detector:</strong> {{ scan.config.scan.detector }}</li>
-    <li><strong>Detector Pixel Size:</strong> {{ scan.config.scan.px_size | round(3) }} μm</li>
-    <li><strong>z01:</strong> {{ scan.z01 | round(3) }} cm</li>
-    <li><strong>z02:</strong> {{ scan.z02 | round(3) }} m</li>
+    <li><strong>Detector Pixel Size:</strong> {{ scan.config.scan.px_size | round(6) }} mm</li>
+    <li><strong>z01:</strong> {{ scan.z01 | round(6) }} mm</li>
+    <li><strong>z02:</strong> {{ scan.z02 | round(6) }} mm</li>
     <li><strong>Magnification</strong> {{ scan.M | round(2) }}</li>
-    <li><strong>Effective Propagation Distance:</strong> {{ scan.z_eff | round(3) }} m</li>
+    <li><strong>Effective Propagation Distance:</strong> {{ scan.z_eff | round(6) }} mm</li>
    </ul> 
   <h2>Reconstruction Details</h2>
     <ul>
     <li><strong>Binning:</strong> {{ scan.binning }}</li>
-    <li><strong>Effective Pixel Size (raw):</strong> {{ (scan.dx_eff / scan.binning) | round(3) }} μm</li>
-    <li><strong>Effective Pixel Size (binned):</strong> {{ scan.dx_eff | round(3) }} μm</li>
+    <li><strong>Effective Pixel Size (raw):</strong> {{ (scan.dx_eff / scan.binning) | round(6) }} mm</li>
+    <li><strong>Effective Pixel Size (binned):</strong> {{ scan.dx_eff | round(6) }} mm</li>
     <li><strong>Fresnel Number (binned):</strong> {{ scan.fr_eff }} </li>
   </ul>
   <h2>Processing Details</h2>

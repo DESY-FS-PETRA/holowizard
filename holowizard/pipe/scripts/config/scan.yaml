@@ -3,14 +3,14 @@ scan:
   name: t
   energy: 17.0
   holder: 220
-  z01: 19
-  z02: 19.826473541018642
+  z01: 190
+  z02: 19826.0
   tasks:
     - flatfield
     - find_focus
     - reconstruction
     - tomography
-  px_size: 6.500
+  px_size: 0.0065
   z01_confidence: 1
   detector: Hamamatsu
   data:

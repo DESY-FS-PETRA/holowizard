@@ -1,13 +1,3 @@
-default:
-  image: python:3.11
-  cache:
-    paths:
-      - .pip-cache/
-  before_script:
-    - python --version
-    - pip install --upgrade pip
-    - pip install build twine
-
 stages:
   - build
   - test
@@ -15,7 +5,17 @@ stages:
 
 build:
   stage: build
+  image: python:3.11
+  rules:
+    # runs when you push a commit with "ci!" in the message or when a merge request is created
+    - if: '$CI_COMMIT_MESSAGE =~ /ci!/ || $CI_MERGE_REQUEST_ID'
+    # runs when you push a commit to the versions branch or main branch
+    - if: '$CI_COMMIT_BRANCH =~ /versions\/[0-9]+\.[0-9]+\.[0-9]+$/'
+    - if: $CI_COMMIT_BRANCH == "main"
   script:
+    - python --version
+    - pip install --upgrade pip
+    - pip install build twine
     - python -m build
   artifacts:
     paths:
@@ -44,7 +44,7 @@ run-gpu-tests:
     - export SSH_OPTS="-o StrictHostKeyChecking=no -i ~/.ssh/gitlab-ci"
     # Generate a unique remote folder
     - ssh $SSH_OPTS gruenjoh@max-display.desy.de "
-        mkdir ~/jgruen/ci-package/
+        mkdir -p ~/jgruen/ci-package/
       "
     - export REMOTE_CI_DIR="/home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}"
     - echo "Using remote folder" + "$REMOTE_CI_DIR"
@@ -56,6 +56,7 @@ run-gpu-tests:
         . mamba-init &&
         mamba create -y -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env python=3.11 &&
         mamba run -p /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env bash -c '
+          pip install --force-reinstall pytest --no-cache-dir &&
           pip install -r /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}/requirements.txt --no-cache-dir &&
           pip install /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID} --no-cache-dir
         ' &&

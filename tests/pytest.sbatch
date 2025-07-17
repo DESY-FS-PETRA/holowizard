@@ -13,4 +13,7 @@ ml maxwell mamba
 . mamba-init
 mamba activate /home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env
 
-pytest ~/jgruen/ci-package/ci_${CI_JOB_ID}/tests/
+which python
+which pytest
+
+/home/gruenjoh/jgruen/ci-package/ci_${CI_JOB_ID}_env/bin/pytest ~/jgruen/ci-package/ci_${CI_JOB_ID}/tests/
