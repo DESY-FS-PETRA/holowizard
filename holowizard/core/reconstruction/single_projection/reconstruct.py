@@ -25,7 +25,7 @@ def print_infos(iteration, context: Context, force_update):
 
 def reconstruct(context: Context):
     with torch.no_grad():
-        iteration = -1
+        iteration = None
         for iteration in range(
             context.current_options.regularization_object.iterations
         ):
@@ -91,4 +91,5 @@ def reconstruct(context: Context):
                 context.current_iter_offset + iteration, context, force_update=False
             )
 
-        print_infos(context.current_iter_offset + iteration, context, force_update=True)
+        if iteration is not None:
+            print_infos(context.current_iter_offset + iteration, context, force_update=True)
