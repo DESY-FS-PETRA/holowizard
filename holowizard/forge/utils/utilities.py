@@ -12,7 +12,7 @@ from holowizard.forge.utils import fileIO
 from holowizard.forge.utils.unit_conversions import (
     convert_z01,
     convert_z02,
-    convert_det_pixel_size,
+    convert_det_px_size,
     convert_energy,
 )
 
