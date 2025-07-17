@@ -13,8 +13,8 @@ from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Opti
 
 matplotlib.use("Qt5Agg")
 
-z01_guess = 47.051
-z01_confidence = 1.0
+z01_guess = 470.51
+z01_confidence = 10.0
 
 project_paths = ProjectPaths(
     root_dir=str(pathlib.Path(__file__).parent.resolve()) + "/",
@@ -34,7 +34,7 @@ Logger.configure(
 )
 
 flatfield_offset_corr = 1.1
-setup = BeamSetup(energy=11.0, px_size=6.5, z02=19.661)
+setup = BeamSetup(energy=11.0, px_size=0.0065, z02=19_661.0)
 measurements = [
     Measurement(
         data_path=project_paths.data_path,

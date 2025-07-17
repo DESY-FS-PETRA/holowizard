@@ -22,10 +22,10 @@ Logger.current_log_level = Logger.level_num_image_info
 Logger.configure(session_name=session_name, working_dir=working_dir)
 
 flatfield_offset_corr = 1.1
-setup = BeamSetup(energy=11.0, px_size=6.5, z02=19.661)
+setup = BeamSetup(energy=11.0, px_size=0.0065, z02=19_661.0)
 measurements = [
     Measurement(
-        data_path=data_path, data=fileio.load_img_data(data_path), z01=47.071
+        data_path=data_path, data=fileio.load_img_data(data_path), z01=470.71
     )
 ]
 padding_options = Padding(
