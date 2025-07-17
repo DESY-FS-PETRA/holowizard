@@ -9,9 +9,10 @@ def data_generator_test() -> None:
     # alternatively using the CLI
     # python generate_data.py holowizard.forge/tests/output 3 --energy 11000 --override --config configs/custom/test_config.json
     root = Path(__file__).parent.resolve()
+    print("Root Path: ", root)
     output = root / "test_output/data_generation_test"
 
-    config = ConfigParser(root / '/../../holowizard/forge/configs/test_config.json')
+    config = ConfigParser(root / "../../holowizard/forge/configs/test_config.json")
     output_file = output / (config["name"] + ".hdf5")
 
     num_samples = 10
