@@ -10,13 +10,14 @@ from holowizard.core.api.parameters.paths.focus_series_paths import FocusSeriesP
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
+from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
-z01_guess = 7.945
+z01_guess = 79.45
 
 z01_resolution = int(sys.argv[1])
 z01_slurm_job_id_int = int(sys.argv[2])
 z01_slurm_job_id = str(z01_slurm_job_id_int).zfill(4)
-z01_confidence = 1.0
+z01_confidence = 10.0
 z01_confidence_interval = numpy.linspace(
     -z01_confidence, z01_confidence, z01_resolution
 )
@@ -48,7 +49,7 @@ Logger.configure(
 project_paths.mkdirs()
 
 flatfield_offset_corr = 0.98
-setup = BeamSetup(energy=11.0, px_size=6.5, z02=19.661)
+setup = BeamSetup(energy=11.0, px_size=0.0065, z02=19_661.0)
 measurements = [
     Measurement(
         data_path=project_paths.data_path,

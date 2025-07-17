@@ -18,11 +18,11 @@ class BeamSetup:
 
     @staticmethod
     def unit_px_size():
-        return "um", 1000
+        return "mm", 1e6
 
     @staticmethod
     def unit_z02():
-        return "m", 1e9
+        return "mm", 1e6
 
     def to_log_json(self):
         class JsonWritable:

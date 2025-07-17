@@ -6,7 +6,7 @@ from holowizard.core.parameters.type_conversion.json_writable import JsonWritabl
 
 
 class Measurement:
-    def __init__(self, z01, data_path="", data=None, z01_confidence=5 * 1e6):
+    def __init__(self, z01, data_path="", data=None, z01_confidence=5.0):
         self.z01 = z01
         self.z01_confidence = z01_confidence
         self.data = data
@@ -14,7 +14,7 @@ class Measurement:
 
     @staticmethod
     def unit_z01():
-        return "cm", 1e7
+        return "mm", 1e6
 
     def to_log_json(self):
         class JsonWritable:
