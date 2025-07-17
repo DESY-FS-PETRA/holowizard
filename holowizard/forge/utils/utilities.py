@@ -12,7 +12,8 @@ from holowizard.forge.utils import fileIO
 from holowizard.forge.utils.unit_conversions import (
     convert_z01,
     convert_z02,
-    livereco_energy,
+    convert_det_pixel_size,
+    convert_energy,
 )
 
 
@@ -21,7 +22,7 @@ __all__ = [
     "append_row_df",
     "calc_Fr",
     "crop_center",
-    "livereco_energy",
+    "convert_energy",
     "map_str",
     "randint_from_range",
     "show_phantom",
@@ -40,9 +41,9 @@ def calc_Fr(energy: int, z01: float, z02: float, det_px_size: int) -> float:
     Returns:
         float: Fresnel number.
     """
-    lam = 1.2398 / livereco_energy(energy)  # h*c / E[keV]
+    lam = 1.2398 / convert_energy(energy)  # h*c / E[keV]
     M = convert_z02(z02) / convert_z01(z01)
-    Fr = det_px_size**2 / (lam * (convert_z02(z02) - convert_z01(z01)) * M)
+    Fr = convert_det_px_size(det_px_size)**2 / (lam * (convert_z02(z02) - convert_z01(z01)) * M)
     return Fr
 
 

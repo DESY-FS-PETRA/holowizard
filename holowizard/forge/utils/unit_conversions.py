@@ -16,43 +16,23 @@ Example:
 
 
 __all__ = [
-    "livereco_energy",
+    "convert_energy",
     "convert_z01",
     "convert_z02",
+    "convert_det_px_size",
 ]
 
 
-def livereco_energy(energy: int) -> float:
-    """Converts the energy used in this repository to the same format as in the livereco-project.
-
-    Args:
-        energy (int): Energy in [keV].
-
-    Returns:
-        float: Energy in [keV].
-    """
+def convert_energy(energy: int) -> float:
     return energy
 
 
 def convert_z01(z01: float) -> float:
-    """Transforms the value for z01 to the globally used unit (in [nm]).
-
-    Args:
-        z01 (float): Distance z01 (in [cm]).
-
-    Returns:
-        float: Distance transformed into correct unit (in [nm]).
-    """
-    return round(z01, 7) * 1e7
+    return round(z01, 3) * 1e6
 
 
 def convert_z02(z02: float) -> float:
-    """Transforms the value for z02 to the globally used unit (in [nm]).
+    return round(z02, 3) * 1e6
 
-    Args:
-        z02 (float): Distance z02 (in [m]).
-
-    Returns:
-        float: Distance transformed into correct unit (in [nm]).
-    """
-    return round(z02, 9) * 1e9
+def convert_det_px_size(det_px_size: float) -> float:
+    return det_px_size * 1e6

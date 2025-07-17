@@ -132,10 +132,10 @@
     "setup": {
         "type": "NFHConstantDistSetup",
         "args": {
-            "detector_px_size": 6500,
+            "detector_px_size": 0.0065,
             "detector_size": 2048,
-            "z01": 25,
-            "z02": 20,
+            "z01": 250,
+            "z02": 20000,
             "energy": 11,
             "downsample_factor": 1,
             "padding_factor": 2
