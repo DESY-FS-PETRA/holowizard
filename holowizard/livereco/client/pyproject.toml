@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools >= 72.0", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}
+
+[tool.setuptools.package-data]
+"*" = ["logo.png", "README.md"]
+
+[project]
+name="holowizard_livereco_client"
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.11,<3.12"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "holowizard/core/LICENSE", "holowizard/livereco_server/LICENSE"]
+keywords = ["near-field holography", "phase retrieval", "tomography"]
+
+authors = [
+  {name = "Johannes Dora", email = "johannes.dora@desy.de"},
+  {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"},
+  {name = "André Lopes", email="andre.lopes@hereon.de"},
+  {name = "Silja Flenner", email="silja.flenner@hereon.de"},
+  {name = "Johannes Grün", email="johannes.gruen@desy.de"},
+  {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
+  {name = "Cem Cinar", email = "cem.cinar@tuhh.de"}
+]
+classifiers = [
+  "Programming Language :: Python"
+]
+
+maintainers = [
+  {name = "Johannes Dora", email = "johannes.dora@desy.de"},
+  {name = "André Lopes", email="andre.lopes@hereon.de"},
+  {name = "Johannes Grün", email="johannes.gruen@desy.de"},
+  {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
+  {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"}
+]
+
+[project.urls]
+Repository = "https://github.com/DESY-FS-PETRA/holowizard"
+Paper_ASRM = "https://doi.org/10.1364/OE.514641"
+Paper_Autofocus = "https://doi.org/10.1364/OE.544573"
+Zenodo = "https://doi.org/10.5281/zenodo.8349364"
+
+[tool.setuptools_scm]
+
+
