@@ -10,5 +10,5 @@ include holowizard/__init__.py
 include holowizard/core/__init__.py
 include holowizard/core/api/__init__.py
 
-graft holowizard/livereco/cient
+graft holowizard/livereco/client
 include holowizard/livereco/__init__.py
