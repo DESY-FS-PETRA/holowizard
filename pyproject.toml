@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
 enabled = true
-version_file = "holowizard/VERSION"
+dev_template = "{tag}.dev{ccount}"
+dirty_template = "{tag}.dev{ccount}+dirty"
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["."] by default)
@@ -25,7 +26,7 @@ dynamic = ["version", "dependencies"]
 requires-python = ">=3.11,<3.12"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco_server/LICENSE", "holowizard/pipe/LICENSE"]
+license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco/LICENSE", "holowizard/pipe/LICENSE"]
 keywords = ["near-field holography", "phase retrieval", "tomography"]
 
 authors = [
