@@ -9,6 +9,7 @@
 name: Upload Holowizard To Test
 
 on:
+  workflow_dispatch:
   push:
     # Pattern matched against refs/tags
     tags:
