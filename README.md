@@ -7,7 +7,8 @@
 3. [HoloWizard Core](#holowizard-core)
 4. [HoloWizard Pipe](#holowizard-pipe)
 5. [HoloWizard Forge](#holowizard-forge)
-6. [Please Cite](#citations)
+6. [HoloWizard Livereco](#holowizard-livereco)
+7. [Please Cite](#citations)
 
 ## General Information
 - Repository: https://github.com/DESY-FS-PETRA/holowizard
@@ -65,8 +66,6 @@ INFO:     Uvicorn running on http://MY_IP_ADDRESS:MY_PORT (Press CTRL+C to quit)
 Click the address to open a browser window showing that `holopipe` is running.  
 Visit: `http://MY_IP_ADDRESS:MY_PORT/dashboard` for useful runtime information.
 
-
----
 
 ## Usage
 
@@ -161,6 +160,14 @@ The file `train.json` contains the config parameters which have been used for th
 
 ### Add new Parameters
 To add a new parameter, add it to the default configuration `holowizard/forge/configs/default.json`.
+
+# HoloWizard Livereco
+
+Start the online reconstruction server with
+
+```{bash}
+$ holowizard_livereco_server_start
+```
 
 # Citations
 ### Artifact-suppressing reconstruction method:
