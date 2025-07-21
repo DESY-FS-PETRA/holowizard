@@ -1,7 +1,14 @@
  <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
+HoloWizard is a collection of sowftware tools for phase retrieval in the setting of near-field holographic microscopy and tomography.
+It is developed at DESY, Hamburg in the group X-Ray Nanoscience and X-Ray Optics.
+Our software is designed to cover all steps in experimental/algorithm development:
+- The Forge generates datasets within given variation bouds either for testing new algorithms or provide training data sets for ML applications
+- The Core implements the ASRM algorithm, our phase retrieval engine. It includes also all neccessary auxillary functions to load and preprocess single holograms/diffraction patterns.
+- The Pipe enables the **online** and **offline** batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.
+- The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.  
 
-# Table of Contents
+## Table of Contents
 1. [General Information](#general-information)
 2. [Installation](#installation)
 3. [HoloWizard Core](#holowizard-core)
