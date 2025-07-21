@@ -1,4 +1,7 @@
- <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
+![LICENCE](https://img.shields.io/github/license/DESY-FS-PETRA/holowizard)
+[![DOI](https://zenodo.org/badge/1004186013.svg)](https://doi.org/10.5281/zenodo.16275927)
+
+<img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
 
 # Table of Contents
