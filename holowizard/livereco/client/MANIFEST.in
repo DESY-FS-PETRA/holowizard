@@ -7,8 +7,9 @@ exclude .gitlab-ci.yml
 graft holowizard/core/api/parameters
 graft holowizard/core/parameters
 include holowizard/__init__.py
+include holowizard/logo.png
 include holowizard/core/__init__.py
 include holowizard/core/api/__init__.py
 
-graft holowizard/livereco/cient
+graft holowizard/livereco/client
 include holowizard/livereco/__init__.py

@@ -6,9 +6,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Upload Livereco Client to Test
 
 on:
+  workflow_dispatch:
   push:
     # Pattern matched against refs/tags
     tags:
@@ -41,7 +42,7 @@ jobs:
         run: |
           # NOTE: put your own distribution build steps here.
           python -m pip install build
-          python -m build
+          python -m build --outdir dist_livereco_client
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
@@ -74,4 +75,5 @@ jobs:
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: dist_livereco_client/
           repository-url: https://test.pypi.org/legacy/

@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Holowizard To Production
+name: Upload Livereco Client to Production
 
 on:
   release:
@@ -25,20 +25,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      
+      - name: Move project description files to root
+        run: |
+          rm pyproject.toml
+          rm MANIFEST.in
+          rm requirements.txt
+          mv holowizard/livereco/client/pyproject.toml ./
+          mv holowizard/livereco/client/MANIFEST.in ./
+          mv holowizard/livereco/client/requirements.txt ./
 
       - name: Build release distributions
         run: |
           # NOTE: put your own distribution build steps here.
           python -m pip install build
-          python -m build
+          python -m build --outdir dist_livereco_client
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
           name: release-dists
-          path: dist/
+          path: dist_livereco_client/
 
-  pypi-publish:
+  testpypi-publish:
     #if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     needs:
@@ -51,14 +60,16 @@ jobs:
     # For more information, see: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#deployment-protection-rules
     environment:
       name: pypi
-      url: https://pypi.org/p/holowizard
+      url: https://pypi.org/p/holowizard_livereco_client
 
     steps:
       - name: Retrieve release distributions
         uses: actions/download-artifact@v4
         with:
           name: release-dists
-          path: dist/
+          path: dist_livereco_client/
 
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist_livereco_client/

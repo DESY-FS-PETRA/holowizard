@@ -6,9 +6,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Upload Holowizard To Test
 
 on:
+  workflow_dispatch:
   push:
     # Pattern matched against refs/tags
     tags:
