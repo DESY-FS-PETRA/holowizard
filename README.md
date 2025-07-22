@@ -1,26 +1,18 @@
 <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
+[![GitHub](https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white)](https://github.com/DESY-FS-PETRA/holowizard)
 [![LICENCE](https://img.shields.io/github/license/DESY-FS-PETRA/holowizard)](https://github.com/DESY-FS-PETRA/holowizard/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/1004186013.svg)](https://doi.org/10.5281/zenodo.16275927)
 [![PYPI](https://img.shields.io/pypi/v/holowizard)](https://pypi.org/project/holowizard/)
 
 # Table of Contents
-1. [General Information](#general-information)
-2. [Installation](#installation)
-3. [HoloWizard Core](#holowizard-core)
-4. [HoloWizard Pipe](#holowizard-pipe)
-5. [HoloWizard Forge](#holowizard-forge)
-6. [HoloWizard Livereco](#holowizard-livereco)
-7. [Please Cite](#citations)
-
-## General Information
-- Repository: https://github.com/DESY-FS-PETRA/holowizard
-- Zenodo: https://doi.org/10.5281/zenodo.8349364
-
-### Further links
-https://helmholtz.software/software/holowizard \
-https://connect.helmholtz-imaging.de/solution/71 \
-https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10 
+1. [Installation](#installation)
+2. [HoloWizard Core](#holowizard-core)
+3. [HoloWizard Pipe](#holowizard-pipe)
+4. [HoloWizard Forge](#holowizard-forge)
+5. [HoloWizard Livereco](#holowizard-livereco)
+6. [Please Cite](#citations)
+7. [Further Links](#further-links)
 
 ## Installation
 ### Python Environment
@@ -216,6 +208,7 @@ doi = {10.1364/OE.544573},
 }
 ```
 
-### Python Repository on Zenodo
-- URL: https://zenodo.org/records/14024980
-- DOI: 10.5281/zenodo.8349364
+## Further links
+https://helmholtz.software/software/holowizard \
+https://connect.helmholtz-imaging.de/solution/71 \
+https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10 
