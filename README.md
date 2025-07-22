@@ -1,33 +1,36 @@
- <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
+# HoloWizard
+<img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
-HoloWizard is a collection of sowftware tools for phase retrieval in the setting of near-field holographic microscopy and tomography.
+[![GitHub](https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white)](https://github.com/DESY-FS-PETRA/holowizard)
+[![LICENCE](https://img.shields.io/github/license/DESY-FS-PETRA/holowizard)](https://github.com/DESY-FS-PETRA/holowizard/blob/main/LICENSE)
+![GitHub top language](https://img.shields.io/github/languages/top/DESY-FS-PETRA/holowizard)
+[![PYPI](https://img.shields.io/pypi/v/holowizard)](https://pypi.org/project/holowizard/)
+[![DOI](https://zenodo.org/badge/1004186013.svg)](https://doi.org/10.5281/zenodo.16275927)
+
+HoloWizard is a collection of software tools for phase retrieval in the setting of near-field holographic microscopy and tomography.
 It is developed at DESY, Hamburg in the group X-Ray Nanoscience and X-Ray Optics.
-Our software is designed to cover all steps in experimental/algorithm development:
+The software is designed to cover all steps in experimental/algorithm development:
 - The Forge generates datasets within given variation bouds either for testing new algorithms or provide training data sets for ML applications
 - The Core implements the ASRM algorithm, our phase retrieval engine. It includes also all neccessary auxillary functions to load and preprocess single holograms/diffraction patterns.
 - The Pipe enables the **online** and **offline** batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.
-- The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.  
+- The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.
 
-## Table of Contents
-1. [General Information](#general-information)
-2. [Installation](#installation)
-3. [HoloWizard Core](#holowizard-core)
-4. [HoloWizard Pipe](#holowizard-pipe)
-5. [HoloWizard Forge](#holowizard-forge)
-6. [HoloWizard Livereco](#holowizard-livereco)
-7. [Please Cite](#citations)
+# Table of Contents
+- [Installation](#installation)
+  - [Python Environment](#python-environment)
+  - [Install package](#install-package)
+- [Tools](#tools)
+  - [The Core](#the-core)
+  - [The Pipe](#the-pipe)
+  - [The Forge](#the-forge)
+  - [The Livereco](#the-livereco)
+- [Citations](#citations)
+    - [Artifact-suppressing reconstruction method:](#artifact-suppressing-reconstruction-method)
+    - [Model-based autofocus:](#model-based-autofocus)
+  - [Further links](#further-links)
 
-## General Information
-- Repository: https://github.com/DESY-FS-PETRA/holowizard
-- Zenodo: https://doi.org/10.5281/zenodo.8349364
-
-### Further links
-https://helmholtz.software/software/holowizard \
-https://connect.helmholtz-imaging.de/solution/71 \
-https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10 
-
-## Installation
-### Python Environment
+# Installation
+## Python Environment
 Create a new environment with python 3.11., i.e. with mamba
 ```bash
 $ mamba create -p <path_to_env> python=3.11 
@@ -38,12 +41,14 @@ Activate enviroment
 $ mamba activate <path_to_env>
 ```
 
-### Install package
+## Install package
 ```bash
 $ pip install holowizard
 ```
 
-# HoloWizard Core
+# Tools
+
+## The Core
 
 To create examples, open a terminal and run
 
@@ -51,9 +56,9 @@ To create examples, open a terminal and run
 $ holowizard_core_create_examples <directory>
 ```
 
-# HoloWizard Pipe
+## The Pipe
 
-## Setting Up an Instance
+### Setting Up an Instance
 
 We provide a CLI command to initialize everything:
 
@@ -73,8 +78,6 @@ INFO:     Uvicorn running on http://MY_IP_ADDRESS:MY_PORT (Press CTRL+C to quit)
 Click the address to open a browser window showing that `holopipe` is running.  
 Visit: `http://MY_IP_ADDRESS:MY_PORT/dashboard` for useful runtime information.
 
-
-## Usage
 
 ### Add a scan with default parameters. 
 
@@ -121,11 +124,11 @@ If you want to reconstruct the whole scan you can click `Submit All` after chosi
 
 If you change the detector or anything else like removing tasks adapt parameters the full config files are located in the `beamtime/processed/holowizard_config/`folder. Changes here will reflect onto future curl requests!
 
-# HoloWizard Forge
+## The Forge
 
 This framework can be used to generate large datasets of simulated holograms of randomly sampled objects. 
 
-## Create New Dataset
+### Create New Dataset
 
 Open a terminal and create a new config file with 
 
@@ -153,7 +156,7 @@ $ holowizard_forge_generate_data <args>
 | `num_samples` | Number of data samples that should be generated.     | 3        |
 | `--override`  | Override the output folder if it already exists.     | optional |
 
-## Output Structure
+### Output Structure
 ```
 output/
 └── train.hdf5
@@ -163,12 +166,12 @@ output/
 The file train.hdf5 contains the training data
 The file `train.json` contains the config parameters which have been used for the training data creation.
 
-## Developer Info
+### Developer Info
 
-### Add new Parameters
+#### Add new Parameters
 To add a new parameter, add it to the default configuration `holowizard/forge/configs/default.json`.
 
-# HoloWizard Livereco
+## The Livereco
 
 Start the online reconstruction server with
 
@@ -220,6 +223,7 @@ doi = {10.1364/OE.544573},
 }
 ```
 
-### Python Repository on Zenodo
-- URL: https://zenodo.org/records/14024980
-- DOI: 10.5281/zenodo.8349364
+## Further links
+https://helmholtz.software/software/holowizard \
+https://connect.helmholtz-imaging.de/solution/71 \
+https://connect.helmholtz-imaging.de/blog_gallery/blogpost/10 
