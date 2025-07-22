@@ -1,3 +1,4 @@
+# HoloWizard
 <img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
 
 [![GitHub](https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white)](https://github.com/DESY-FS-PETRA/holowizard)
