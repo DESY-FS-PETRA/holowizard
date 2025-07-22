@@ -16,16 +16,21 @@ The software is designed to cover all steps in experimental/algorithm developmen
 - The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.
 
 # Table of Contents
-1. [Installation](#installation)
-2. [HoloWizard Core](#holowizard-core)
-3. [HoloWizard Pipe](#holowizard-pipe)
-4. [HoloWizard Forge](#holowizard-forge)
-5. [HoloWizard Livereco](#holowizard-livereco)
-6. [Please Cite](#citations)
-7. [Further Links](#further-links)
+- [Installation](#installation)
+  - [Python Environment](#python-environment)
+  - [Install package](#install-package)
+- [Tools](#tools)
+  - [The Core](#the-core)
+  - [The Pipe](#the-pipe)
+  - [The Forge](#the-forge)
+  - [The Livereco](#the-livereco)
+- [Citations](#citations)
+    - [Artifact-suppressing reconstruction method:](#artifact-suppressing-reconstruction-method)
+    - [Model-based autofocus:](#model-based-autofocus)
+  - [Further links](#further-links)
 
-## Installation
-### Python Environment
+# Installation
+## Python Environment
 Create a new environment with python 3.11., i.e. with mamba
 ```bash
 $ mamba create -p <path_to_env> python=3.11 
@@ -36,12 +41,14 @@ Activate enviroment
 $ mamba activate <path_to_env>
 ```
 
-### Install package
+## Install package
 ```bash
 $ pip install holowizard
 ```
 
-# HoloWizard Core
+# Tools
+
+## The Core
 
 To create examples, open a terminal and run
 
@@ -49,9 +56,9 @@ To create examples, open a terminal and run
 $ holowizard_core_create_examples <directory>
 ```
 
-# HoloWizard Pipe
+## The Pipe
 
-## Setting Up an Instance
+### Setting Up an Instance
 
 We provide a CLI command to initialize everything:
 
@@ -71,8 +78,6 @@ INFO:     Uvicorn running on http://MY_IP_ADDRESS:MY_PORT (Press CTRL+C to quit)
 Click the address to open a browser window showing that `holopipe` is running.  
 Visit: `http://MY_IP_ADDRESS:MY_PORT/dashboard` for useful runtime information.
 
-
-## Usage
 
 ### Add a scan with default parameters. 
 
@@ -119,11 +124,11 @@ If you want to reconstruct the whole scan you can click `Submit All` after chosi
 
 If you change the detector or anything else like removing tasks adapt parameters the full config files are located in the `beamtime/processed/holowizard_config/`folder. Changes here will reflect onto future curl requests!
 
-# HoloWizard Forge
+## The Forge
 
 This framework can be used to generate large datasets of simulated holograms of randomly sampled objects. 
 
-## Create New Dataset
+### Create New Dataset
 
 Open a terminal and create a new config file with 
 
@@ -151,7 +156,7 @@ $ holowizard_forge_generate_data <args>
 | `num_samples` | Number of data samples that should be generated.     | 3        |
 | `--override`  | Override the output folder if it already exists.     | optional |
 
-## Output Structure
+### Output Structure
 ```
 output/
 └── train.hdf5
@@ -161,12 +166,12 @@ output/
 The file train.hdf5 contains the training data
 The file `train.json` contains the config parameters which have been used for the training data creation.
 
-## Developer Info
+### Developer Info
 
-### Add new Parameters
+#### Add new Parameters
 To add a new parameter, add it to the default configuration `holowizard/forge/configs/default.json`.
 
-# HoloWizard Livereco
+## The Livereco
 
 Start the online reconstruction server with
 
