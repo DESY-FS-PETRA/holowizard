@@ -1,10 +1,8 @@
+<img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
+
 [![LICENCE](https://img.shields.io/github/license/DESY-FS-PETRA/holowizard)](https://github.com/DESY-FS-PETRA/holowizard/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/1004186013.svg)](https://doi.org/10.5281/zenodo.16275927)
 [![PYPI](https://img.shields.io/pypi/v/holowizard)](https://pypi.org/project/holowizard/)
-
-
-<img src="https://connect.helmholtz-imaging.de/media/solution/Holowizard_logo.png" width="200"/> 
-
 
 # Table of Contents
 1. [General Information](#general-information)
