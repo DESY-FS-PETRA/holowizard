@@ -3,8 +3,9 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white)](https://github.com/DESY-FS-PETRA/holowizard)
 [![LICENCE](https://img.shields.io/github/license/DESY-FS-PETRA/holowizard)](https://github.com/DESY-FS-PETRA/holowizard/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/1004186013.svg)](https://doi.org/10.5281/zenodo.16275927)
+![GitHub top language](https://img.shields.io/github/languages/top/DESY-FS-PETRA/holowizard)
 [![PYPI](https://img.shields.io/pypi/v/holowizard)](https://pypi.org/project/holowizard/)
+[![DOI](https://zenodo.org/badge/1004186013.svg)](https://doi.org/10.5281/zenodo.16275927)
 
 HoloWizard is a collection of software tools for phase retrieval in the setting of near-field holographic microscopy and tomography.
 It is developed at DESY, Hamburg in the group X-Ray Nanoscience and X-Ray Optics.
