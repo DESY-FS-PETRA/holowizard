@@ -10,6 +10,7 @@ from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
+from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
 if "cuda" in holowizard.core.torch_running_device_name:
     from holowizard.core.models.fresnel_propagator import FresnelPropagator
@@ -33,8 +34,8 @@ session_name = "dicty_sketch_multidist"
 Logger.current_log_level = Logger.level_num_image_info
 Logger.configure(session_name=session_name, working_dir=working_dir)
 
-setup = BeamSetup(energy=17.0, px_size=6.5, z02=20.00)
-measurements = [Measurement(z01=8.0), Measurement(z01=15.0)]
+setup = BeamSetup(energy=17.0, px_size=0.0065, z02=20_000)
+measurements = [Measurement(z01=80.0), Measurement(z01=150.0)]
 
 padding_options = Padding(
     padding_mode=Padding.PaddingMode.MIRROR_ALL,
