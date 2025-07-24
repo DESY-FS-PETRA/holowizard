@@ -10,6 +10,7 @@ from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
+from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
 
 if "cuda" in holowizard.core.torch_running_device_name:
     from holowizard.core.models.fresnel_propagator import FresnelPropagator
