@@ -34,8 +34,8 @@ session_name = "dicty_sketch_multidist"
 Logger.current_log_level = Logger.level_num_image_info
 Logger.configure(session_name=session_name, working_dir=working_dir)
 
-setup = BeamSetup(energy=17.0, px_size=6.5, z02=20.00)
-measurements = [Measurement(z01=8.0), Measurement(z01=15.0)]
+setup = BeamSetup(energy=17.0, px_size=0.0065, z02=20_000)
+measurements = [Measurement(z01=80.0), Measurement(z01=150.0)]
 
 padding_options = Padding(
     padding_mode=Padding.PaddingMode.MIRROR_ALL,
