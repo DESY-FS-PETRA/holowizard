@@ -1,0 +1,112 @@
+{
+  "metadata": {
+    "title": "HoloWizard: A Python framework for processing X-ray near-field holography data",
+    "description": "<p>HoloWizard is a collection of software tools for phase retrieval in the setting of near-field holographic microscopy and tomography. It is developed at DESY, Hamburg in the group X-Ray Nanoscience and X-Ray Optics. The software is designed to cover all steps in experimental/algorithm development:</p> <ul><li>The Forge generates datasets within given variation bounds either for testing new algorithms or provide training data sets for ML applications</li> <li>The Core implements the ASRM algorithm, our phase retrieval engine. It includes also all necessary auxiliary functions to load and preprocess single holograms/diffraction patterns.</li> <li>The Pipe enables the online and offline batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.</li> <li>The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.</li></ul>This repository contains the implementation and examples shown in the papers:<ul><li> \"Artifact-suppressing reconstruction of strongly interacting objects in X-ray near-field holography without a spatial support constraint\". https://doi.org/10.1364/OE.514641 </li> <li>\"Model-based autofocus for near-field phase retrieval\". https://doi.org/10.1364/OE.544573</li></ul>  This package is a continuation of https://doi.org/10.5281/zenodo.8349364 Newest development versions and more documentation can be found in the README.md of this package and in the GitHub repository https://github.com/DESY-FS-PETRA/holowizard\n\nThis package is available as a pypi package under https://pypi.org/project/holowizard/",
+    "creators": [
+      {
+        "name": "Dora, Johannes",
+        "orcid": "0009-0001-4283-8499",
+        "affiliation": "Deutsches Elektronen-Synchrotron DESY"
+      },
+      {
+        "name": "Flenner, Silja",
+        "orcid": "0000-0002-2951-2304",
+        "affiliation": "Helmholtz-Zentrum Hereon GmbH"
+      },
+      {
+        "name": "Lopes Marinho, André",
+        "orcid": "0009-0008-5205-7822",
+        "affiliation": "Deutsches Elektronen-Synchrotron DESY"
+      },
+      {
+        "name": "Grün, Johannes",
+        "orcid": "0000-0002-9154-3929",
+        "affiliation": "Deutsches Elektronen-Synchrotron DESY"
+      },
+      {
+        "name": "Hagemann, Johannes",
+        "orcid": "0000-0003-2768-9496",
+        "affiliation": "Deutsches Elektronen-Synchrotron DESY"
+      }
+    ],
+    "contributors": [
+      {
+        "name": "Möddel, Martin",
+        "type": "Researcher",
+        "orcid": "0000-0002-4737-7863",
+        "affiliation": "Hamburg University of Technology"
+      },
+      {
+        "name": "Greving, Imke",
+        "type": "Researcher"
+      },
+      {
+        "name": "Reimers, Jan",
+        "type": "Researcher",
+        "orcid": "0000-0002-4430-9240",
+        "affiliation": "Forschungszentrum Jülich"
+      },
+      {
+        "name": "Schroer, Christian G.",
+        "type": "Researcher",
+        "orcid": "0000-0002-9759-1200",
+        "affiliation": "Deutsches Elektronen-Synchrotron DESY"
+      },
+      {
+        "name": "Zeller-Plumhoff, Berit",
+        "type": "Researcher",
+        "orcid": "0000-0002-7562-9423",
+        "affiliation": "Helmholtz-Zentrum Hereon GmbH"
+      },
+      {
+        "name": "Knopp, Tobias",
+        "type": "Researcher",
+        "orcid": "0000-0002-1589-8517",
+        "affiliation": "Hamburg University of Technology"
+      },
+      {
+        "name": "Eberle, Sebastian",
+        "type": "Researcher",
+        "orcid": "0000-0002-2706-6662",
+        "affiliation": "Deutsches Elektronen-Synchrotron DESY"
+      },
+      {
+        "name": "Cinar, Cem",
+        "type": "Researcher",
+        "affiliation": "Hamburg University of Technology"
+      }
+    ],
+    "keywords": [
+      "X-ray holography",
+      "phase retrieval",
+      "tomography",
+      "microscopy",
+      "Python",
+      "scientific computing"
+    ],
+    "license": "MIT",
+    "upload_type": "software",
+    "related_identifiers": [
+      {
+        "relation": "isSupplementTo",
+        "identifier": "https://github.com/DESY-FS-PETRA/holowizard/tree/v2.0.0",
+        "resource_type": "software"
+      },
+      {
+        "relation": "continues",
+        "identifier": "10.5281/zenodo.8349364",
+        "resource_type": "software"
+      },
+      {
+        "relation": "isSupplementTo",
+        "identifier": "10.1364/OE.514641",
+        "resource_type": "publication-article"
+      },
+      {
+        "relation": "isSupplementTo",
+        "identifier": "10.1364/OE.544573",
+        "resource_type": "publication-article"
+      }
+    ]
+  }
+}
