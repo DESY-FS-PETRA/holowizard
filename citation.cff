@@ -1,0 +1,73 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "HoloWizard: A Python framework for processing X-ray near-field holography data"
+version: v2.0.0
+date-released: 2025-07-21
+url: "https://github.com/DESY-FS-PETRA/holowizard"
+repository-code: "https://github.com/DESY-FS-PETRA/holowizard"
+doi: 10.5281/zenodo.16275928
+license: MIT
+abstract: |
+  HoloWizard is a collection of software tools for phase retrieval in the setting of 
+  near-field holographic microscopy and tomography. It is developed at DESY, Hamburg 
+  in the group X-Ray Nanoscience and X-Ray Optics. The software is designed to cover 
+  all steps in experimental/algorithm development:
+
+  - The Forge generates datasets within given variation bounds either for testing new 
+    algorithms or provide training data sets for ML applications
+  - The Core implements the ASRM algorithm, our phase retrieval engine. It includes 
+    also all necessary auxiliary functions to load and preprocess single holograms/diffraction patterns.
+  - The Pipe enables the online and offline batch processing of holo tomograms, i.e. 
+    the phase retrieval of individual projections(along with all preprocessing steps) 
+    and the computation of the tomographic volume from the retrieved projections.
+  - The Livereco module can show online reconstructions of single projections during 
+    an experiment i.e. for finding a suited region of interest. It can be integrated 
+    in existing experimental control software.
+
+keywords:
+  - "X-ray holography"
+  - "phase retrieval"
+  - "tomography"
+  - "microscopy"
+  - "Python"
+  - "scientific computing"
+
+authors:
+  - family-names: "Dora"
+    given-names: "Johannes"
+    orcid: "https://orcid.org/0009-0001-4283-8499"
+    affiliation: "Deutsches Elektronen-Synchrotron DESY"
+  - family-names: "Flenner"
+    given-names: "Silja"
+    orcid: "https://orcid.org/0000-0002-2951-2304"
+    affiliation: "Helmholtz-Zentrum Hereon GmbH"
+  - family-names: "Lopes Marinho"
+    given-names: "André"
+    orcid: "https://orcid.org/0009-0008-5205-7822"
+    affiliation: "Deutsches Elektronen-Synchrotron DESY"
+  - family-names: "Grün"
+    given-names: "Johannes"
+    orcid: "https://orcid.org/0000-0002-9154-3929"
+    affiliation: "Deutsches Elektronen-Synchrotron DESY"
+  - family-names: "Hagemann"
+    given-names: "Johannes"
+    orcid: "https://orcid.org/0000-0003-2768-9496"
+    affiliation: "Deutsches Elektronen-Synchrotron DESY"
+
+contact:
+  - family-names: "Dora"
+    given-names: "Johannes"
+    orcid: "https://orcid.org/0009-0001-4283-8499"
+    affiliation: "Deutsches Elektronen-Synchrotron DESY"
+
+references:
+  - type: article
+    title: "Artifact-suppressing reconstruction of strongly interacting objects in X-ray near-field holography without a spatial support constraint"
+    doi: 10.1364/OE.514641
+    journal: "Optics Express"
+  - type: article
+    title: "Model-based autofocus for near-field phase retrieval"
+    doi: 10.1364/OE.544573
+    journal: "Optics Express"
+
