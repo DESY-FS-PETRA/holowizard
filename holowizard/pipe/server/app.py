@@ -28,19 +28,32 @@ from fastapi.concurrency import run_in_threadpool
 from contextlib import asynccontextmanager
 from omegaconf import OmegaConf
 
-from holowizard.pipe.cluster import SlurmCluster
-from holowizard.pipe.scan import P05Scan
-from holowizard.pipe.beamtime import P05Beamtime
+import holowizard
+from holowizard.pipe.cluster import SlurmCluster as Cluster
+from holowizard.pipe.scan import P05Scan as Scan
+from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
 import plotly.express as px
 import json 
 
+def find_free_port(host: str = "127.0.0.1") -> int:
+    # Bind to port 0 tells the OS to pick an unused port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind((host, 0))
+        return sock.getsockname()[1]
+    
 # --- Environment & Config ---
 HOSTNAME = socket.gethostname()
+sub_port = find_free_port()
+pub_port = find_free_port()
 os.environ.setdefault("HNAME", HOSTNAME)
+os.environ.setdefault("SUB_PORT", str(sub_port))
+os.environ.setdefault("PUB_PORT", str(pub_port))
 env_path = Path('.') / '.env'
 with env_path.open('w') as f:
     f.write(f"HNAME={HOSTNAME}\n")
+    f.write(f"SUB_PORT={sub_port}\n")
+    f.write(f"PUB_PORT={pub_port}\n")
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_DIR = BASE_DIR / "configs"
 CITATIONS_FILE = BASE_DIR.parent / "citations.yaml"
@@ -102,8 +115,8 @@ def load_yaml(path: Path) -> Dict[str, Any]:
 async def _lifespan(app: FastAPI):
     cfg = getattr(app.state, "_initial_cfg",
                   OmegaConf.load(str(CONFIG_DIR / "defaults.yaml")))
-    cluster = SlurmCluster(cfg)
-    app.state.beamtime = P05Beamtime(
+    cluster = Cluster(cfg)
+    app.state.beamtime = Beamtime(
         beamtime_name=cfg.beamtime.name,
         year=cfg.beamtime.year,
         cluster=cluster
@@ -120,9 +133,9 @@ async def _lifespan(app: FastAPI):
 def run_broker():
     ctx  = zmq.Context.instance()
     xsub = ctx.socket(zmq.XSUB)
-    xsub.bind("tcp://0.0.0.0:6000")
+    xsub.bind(f"tcp://0.0.0.0:{os.getenv('SUB_PORT', '6000')}")
     xpub = ctx.socket(zmq.XPUB)
-    xpub.bind("tcp://0.0.0.0:6001")
+    xpub.bind(f"tcp://0.0.0.0:{os.getenv('PUB_PORT', '6001')}")
     zmq.proxy(xsub, xpub)
 
 # create_app factory
@@ -196,7 +209,7 @@ def _register_routes(app: FastAPI):
         if cfg_in.base_dir is not None:
             cfg.paths.base_dir = cfg_in.base_dir
 
-        scan = P05Scan(
+        scan = Scan(
             name=cfg_in.scan_name,
             holder=cfg_in.holder,
             path_raw=app.state.beamtime.path_raw,
@@ -218,7 +231,7 @@ def _register_routes(app: FastAPI):
     # UI routes
     @ui.get("/")
     async def home():
-        readme_path = Path(__file__).resolve().parents[3] / "README.md"
+        readme_path = Path(__file__).resolve().parents[1] / "README.md"
         md_text = readme_path.read_text(encoding="utf-8")
 
         # 2. Convert to HTML
@@ -255,7 +268,7 @@ def _register_routes(app: FastAPI):
         scan = app.state.beamtime.get_scan(name)
         if not scan:
             raise HTTPException(status_code=404, detail="Scan not found")
-        return app.state.templates.TemplateResponse("scan.html", {"request": request, "scan": scan, "citations": citations})
+        return app.state.templates.TemplateResponse("scan.html", {"request": request, "scan": scan, "citations": citations, "hw": {"version": holowizard.__version__}})
 
     @ui.get("/parameter")
     async def parameter_form(request: Request):
@@ -288,13 +301,15 @@ def _register_routes(app: FastAPI):
             raise HTTPException(status_code=404, detail="Stage not found")
         return os.listdir(path)
 
+    ## TODO that has to be changed to the beamtime object
     @ui.get("/folder")
     async def list_folders():
         path = Path(app.state.beamtime.path_raw)
         if not path.exists():
             raise HTTPException(status_code=404, detail="Folder not found")
         return sorted(os.listdir(path))
-
+    
+    ## TODO that has to be changed to the beamtime object 
     @ui.get("/folder/{folder_name}")
     async def list_folder(folder_name: str):
         path = Path(app.state.beamtime.path_raw) / folder_name
@@ -302,6 +317,7 @@ def _register_routes(app: FastAPI):
             raise HTTPException(status_code=404, detail="Folder not found")
         return sorted([x for x in os.listdir(path) if "img" in x])
 
+    ## TODO that has to be changed to a scan object
     @ui.get("/image/{scan}/{img}")
     async def get_image(scan: str, img: str):
         path = Path(app.state.beamtime.path_raw) / scan / img
@@ -338,7 +354,7 @@ def _register_routes(app: FastAPI):
         session = str(uuid.uuid4())
         ctx = zmq.asyncio.Context.instance()
         sub = ctx.socket(zmq.SUB)
-        sub.connect(f"tcp://{os.getenv('HNAME')}:6001")
+        sub.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('PUB_PORT', '6001')}")
         sub.setsockopt(zmq.SUBSCRIBE, session.encode())
         forward = asyncio.create_task(_forward_zmq(ws, sub))
         cfg = app.state.cfg
@@ -349,7 +365,7 @@ def _register_routes(app: FastAPI):
                 cfg.reconstruction = form
                 cfg.find_focus = form
                 cfg.paths.base_dir = data.get("base_dir", cfg.paths.base_dir)
-                scan = P05Scan(
+                scan = Scan(
                     name=data["scan_name"], holder=0,
                     path_raw=app.state.beamtime.path_raw,
                     path_processed=app.state.beamtime.log_path,

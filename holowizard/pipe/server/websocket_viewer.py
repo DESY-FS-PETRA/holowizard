@@ -24,8 +24,8 @@ from holowizard.core.utils.transform import crop_center
 zmq_ctx = zmq.Context.instance()
 pub_sock = zmq_ctx.socket(zmq.PUB)
 
-pub_sock.connect(f"tcp://{os.getenv('HNAME')}:6000")
-print(f"WebsocketViewer connected to PUB socket at tcp://{os.getenv('HNAME')}:6000")
+pub_sock.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('SUB_PORT', '6000')}")
+print(f"WebsocketViewer connected to PUB socket at tcp://{os.getenv('HNAME')}:{os.getenv('SUB_PORT', '6000')}")
 
 
 class WebsocketViewer(Viewer):

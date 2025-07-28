@@ -7,8 +7,10 @@
 
   <style>
     body { font-family: sans-serif; padding: 1rem; }
-    .form-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-    label { font-weight: bold; }
+    .form-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; justify-content: space-around;}
+    .row-item { flex: 1;}
+    .stage-item { margin-bottom: 1rem; }
+    label { font-weight: bold; margin-right: 0.5rem; }
     select, input { padding: 0.4rem; font-size: 1rem; }
     .two-column { display: flex; gap: 2rem; }
     .two-column > div { flex: 1; }
@@ -38,19 +40,23 @@
   <div class="two-column">
     <div>
       <div class="form-row">
+        <div class="row-item">
         <label for="stage-select">Select Stage:</label>
         <select id="stage-select">
           <option value="find_focus">Find Focus</option>
           <option value="reconstruction">Reconstruction</option>
         </select>
-        <label for="parameter-select">Base Parameters:</label>
-        <select id="parameter-select"></select>
+        </div>
+        <div class="row-item">
+          <label for="parameter-select">Base Parameters:</label>
+          <select id="parameter-select"></select>
+        </div>
       </div>
       <div id="form-container">
         <form id="parameter-form" method="post" action="/tuning">
           {% macro render_field(value, key_path) %}
             {% if value is mapping %}
-              <fieldset><legend>{{ key_path or 'root' }}</legend>
+              <fieldset class="stage-item"><legend>{{ key_path or 'root' }}</legend>
                 {% for k,v in value.items() %}
                   {% set name = key_path ~ (key_path and '.') ~ k %}
                   {% if k in ['_target_','update_blocks'] %}
@@ -67,7 +73,7 @@
             {% else %}
               <label>{{ key_path.split('.')[-1].split('[')[0].replace('_',' ').title() }}:
                 <input name="{{ key_path }}" type="text" value="{{ value }}">
-              </label><br>
+              </label><br class="stage-item">
             {% endif %}
           {% endmacro %}
           {{ render_field(scans, '') }}
@@ -76,47 +82,72 @@
     </div>
     <div>
       <div class="form-row">
-        <label for="scan-select">Folder:</label>
-        <select id="scan-select"></select>
-        <label for="img-select">Image:</label>
-        <select id="img-select"></select>
+          <div class="row-item">
+            
+            <label for="scan-select">Folder:</label>
+            <select id="scan-select"></select>
+          </div>
+          <div class="row-item">
+            <label for="img-select">Image:</label>
+            <select id="img-select"></select>
+          </div>
       </div>
       <div class="form-row">
-        <label>a₀:<input id="a0" name="a0" type="number" step="any" value="1.0"></label>
-        <label>z₀₁ (in cm):<input id="z01" name="z01" type="number" step="any" value="{{ z01 }}" autocomplete="off"></label>
-        <label>Energy (in keV):<input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off"></label>
-        <label>Save prefix:<input id="prefix" name="prefix" value="{{ basepath }}" autocomplete="off"></label>
+      <div class="row-item">
+        <label>a₀:</label><input id="a0" name="a0" type="number" step="any" value="1.0">
       </div>
-      <button id="optimize-btn" type="button">Reconstruct</button><button id="find-focus-btn" type="button">Find Focus</button>
+      <div class="row-item">
+        <label>z₀₁ (in mm):</label><input id="z01" name="z01" type="number" step="any" value="{{ z01 }}" autocomplete="off">
+      </div>
+      <div class="row-item">
+        <label>Energy (in keV):</label><input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off">
+      </div>
+      <div class="row-item">
+        <label>Save prefix:</label><input id="prefix" name="prefix" value="{{ basepath }}" autocomplete="off">
+      </div>
+      </div>
+      <input id="optimize-btn" type="submit" value="Reconstruct" class="row-item">
+      <input id="find-focus-btn" type="button" value="Find Focus" class="row-item">
       <div id="preview-image" style="display:none; max-width:100%;" alt="Preview"></div>
-      <label>v_min:<input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off"></label>
-      <label>v_max:<input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off"></label>
+      <div class="form-row">
+        <div class="row-item">
+          <label>v_min:</label><input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off">
+        </div>
+        <div class="row-item">
+          <label>v_max:</label><input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
+        </div>
+      </div>
       <div id="loss-image" style="display:none; max-width:100%;" alt="Preview"></div>
       <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
       <!-- Static stages section -->
       <div id="stages">
         <div class="stage-item">
-          <label><input type="checkbox" name="stages" value="find_focus" checked>Find Focus</label><br>
+          <input type="checkbox" name="stages" value="find_focus" checked>
+          <label>Find Focus</label>
+          <br class="stage-item">
           <select id="find_focus-select" name="find_focus_option">
             <option value="">-- Select Find Focus Option --</option>
             <option value="custom">Custom</option>
           </select>
         </div>
         <div class="stage-item">
-          <label><input type="checkbox" name="stages" value="reconstruction" checked>Phase Retrieval</label><br>
+          <input type="checkbox" name="stages" value="reconstruction" checked>
+          <label>Phase Retrieval</label>
+          <br class="stage-item">
           <select id="reconstruction-select" name="reconstruction_method">
             <option value="">-- Select Phase Retrieval Option --</option>
             <option value="custom">Custom</option>
           </select>
         </div>
         <div class="stage-item">
-          <label><input type="checkbox" name="stages" value="tomography" checked>Tomography</label>
+          <input type="checkbox" name="stages" value="tomography" checked>
+          <label>Tomography</label>
         </div>
       </div>
 
-      <label>Holder:<input id="holder" name="holder" type="number" step="any"></label>
-      
-      <button id="submit-btn" type="button">Submit All</button>
+      <label>Holder:</label><input id="holder" name="holder" type="number" step="any">
+
+      <input id="submit-btn" type="button" value="Submit All">
     </div>
   </div>
 
@@ -158,10 +189,11 @@
     const resetLivePreview = () => {
       qs('live-preview').src = '';
       qs('live-preview').style.display = 'none';
+      qs('loss-image').children = [];
       qs('loss-image').style.display = 'none';
       
     };
-
+    
     qs('img-select').onchange = async () => {
       const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
       const blob = await (await fetch(url)).blob();
@@ -250,11 +282,13 @@
       };
 
       qs('optimize-btn').onclick = () => {
+        resetLivePreview();
         socket.send(JSON.stringify(retrieveReco()));
         qs('loss-image').style.display = 'block';
         qs('loss-image').classList.add('loader');
       };
       qs('find-focus-btn').onclick = () => {
+        resetLivePreview();
         const data = retrieveReco();
         data.find_focus = true;
         socket.send(JSON.stringify(data));
