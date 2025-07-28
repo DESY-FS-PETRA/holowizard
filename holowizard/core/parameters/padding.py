@@ -55,22 +55,13 @@ class Padding:
 
     @staticmethod
     def from_dict(data):
-
         if not isinstance(data, dict):
             return None
 
-        if (
-            not "padding_mode" in data
-            or not "padding_factor" in data
-            or not "down_sampling_factor" in data
-        ):
+        if not "padding_mode" in data or not "padding_factor" in data or not "down_sampling_factor" in data:
             return None
 
-        if (
-            not "cutting_band" in data
-            or not "a0" in data
-            or not "prototype_field" in data
-        ):
+        if not "cutting_band" in data or not "a0" in data or not "prototype_field" in data:
             return None
 
         padding_mode = Padding.PaddingMode[data["padding_mode"]]
@@ -117,45 +108,37 @@ class Padding:
         elif type(padding_mode) is str:
             self._padding_mode = Padding.PaddingMode[padding_mode].name
         else:
-            raise TypeError(
-                "Expected PaddingMode or int but got ", type(padding_mode)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected PaddingMode or int but got ", type(padding_mode)).with_traceback(
+                sys.exc_info()[2]
+            )
 
     @padding_factor.setter
     def padding_factor(self, padding_factor):
         if type(padding_factor) is int or type(padding_factor) is float:
             self._padding_factor = padding_factor
         else:
-            raise TypeError(
-                "Expected int or float but got ", type(padding_factor)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected int or float but got ", type(padding_factor)).with_traceback(sys.exc_info()[2])
 
     @down_sampling_factor.setter
     def down_sampling_factor(self, down_sampling_factor):
         if type(down_sampling_factor) is int:
             self._down_sampling_factor = down_sampling_factor
         else:
-            raise TypeError(
-                "Expected int but got ", type(down_sampling_factor)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected int but got ", type(down_sampling_factor)).with_traceback(sys.exc_info()[2])
 
     @cutting_band.setter
     def cutting_band(self, cutting_band):
         if type(cutting_band) is int:
             self._cutting_band = cutting_band
         else:
-            raise TypeError("Expected int but got ", type(cutting_band)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected int but got ", type(cutting_band)).with_traceback(sys.exc_info()[2])
 
     @a0.setter
     def a0(self, a0):
         if isinstance(a0, float) or isinstance(a0, numpy.float32):
             self._a0 = float(a0)
         else:
-            raise TypeError("Expected int or float but got ", type(a0)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected int or float but got ", type(a0)).with_traceback(sys.exc_info()[2])
 
     @prototype_field.setter
     def prototype_field(self, prototype_field):

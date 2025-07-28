@@ -9,7 +9,15 @@ from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.find_focus.find_focus import find_focus
 from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
-from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.api.parameters import (
+    BeamSetup,
+    Measurement,
+    Padding,
+    Options,
+    Regularization,
+    DataDimensions,
+    RecoParams,
+)
 
 matplotlib.use("Qt5Agg")
 
@@ -22,15 +30,11 @@ project_paths = ProjectPaths(
     session_id=0,
 )
 
-project_paths.data_path = (
-    os.path.dirname(os.path.realpath(__file__)) + "/../data/spider_hair.tiff"
-)
+project_paths.data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data/spider_hair.tiff"
 project_paths.logs_dir = os.path.dirname(os.path.realpath(__file__)) + "/../logs"
 
 Logger.current_log_level = Logger.level_num_loss
-Logger.configure(
-    session_name=project_paths.session_logs_name, working_dir=project_paths.logs_dir
-)
+Logger.configure(session_name=project_paths.session_logs_name, working_dir=project_paths.logs_dir)
 
 flatfield_offset_corr = 0.98
 setup = BeamSetup(energy=11.0, px_size=0.0065, z02=19_661)
@@ -86,9 +90,7 @@ options_upscale_4_lowreg = Options(
     padding=deepcopy(padding_options),
 )
 
-data_dimensions = DataDimensions(
-    total_size=(2048, 2048), fov_size=(2048, 2048), window_type="blackman"
-)
+data_dimensions = DataDimensions(total_size=(2048, 2048), fov_size=(2048, 2048), window_type="blackman")
 
 options_upscale_4.padding.down_sampling_factor = 4
 options_upscale_4_lowreg.padding.down_sampling_factor = 4
@@ -101,9 +103,7 @@ reco_params = RecoParams(
     data_dimensions=data_dimensions,
 )
 
-result, z01_records, loss_values_history = find_focus(
-    reco_params, viewer=[LossViewer(), PyPlotViewer()]
-)
+result, z01_records, loss_values_history = find_focus(reco_params, viewer=[LossViewer(), PyPlotViewer()])
 
 print("Found z01=", result, " after ", len(z01_records), " iterations")
 

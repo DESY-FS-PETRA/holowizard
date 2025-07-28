@@ -14,7 +14,6 @@ __all__ = [
 
 
 class Labeller(ABC):
-
     def __init__(
         self,
         output: Path,

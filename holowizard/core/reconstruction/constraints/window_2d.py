@@ -20,9 +20,7 @@ def check_edge_conditions(start_1, end_2, window_steepness, data_length):
     return start_1, end_2, window_start_1, window_end_2
 
 
-def get_2d_window_from_function(
-    data_shape, support, window_steepness, window_func, torch_device
-):
+def get_2d_window_from_function(data_shape, support, window_steepness, window_func, torch_device):
     mask = torch.zeros(data_shape, device=torch_device)
 
     window_indices_x_1 = torch.linspace(
@@ -77,13 +75,9 @@ def get_2d_window_from_function(
     )
 
     for i in range(start_y_1, end_y_2):
-        mask[start_x_1:end_x_1, i] = window_values_x_1[
-            window_start_x_1 : int(window_steepness[0][0] / 2)
-        ]
+        mask[start_x_1:end_x_1, i] = window_values_x_1[window_start_x_1 : int(window_steepness[0][0] / 2)]
 
-        offset_correction = (window_end_x_2 - int(window_steepness[0][1] / 2)) - (
-            end_x_2 - start_x_2
-        )
+        offset_correction = (window_end_x_2 - int(window_steepness[0][1] / 2)) - (end_x_2 - start_x_2)
 
         mask[start_x_2:end_x_2, i] = window_values_x_2[
             int(window_steepness[0][1] / 2) + offset_correction : (window_end_x_2)
@@ -91,13 +85,9 @@ def get_2d_window_from_function(
         mask[end_x_1:start_x_2, i] = 1
 
     for i in range(start_x_1, end_x_2):
-        mask[i, start_y_1:end_y_1] *= window_values_y_1[
-            window_start_y_1 : int(window_steepness[1][0] / 2)
-        ]
+        mask[i, start_y_1:end_y_1] *= window_values_y_1[window_start_y_1 : int(window_steepness[1][0] / 2)]
 
-        offset_correction = (window_end_y_2 - int(window_steepness[1][1] / 2)) - (
-            end_y_2 - start_y_2
-        )
+        offset_correction = (window_end_y_2 - int(window_steepness[1][1] / 2)) - (end_y_2 - start_y_2)
 
         mask[i, start_y_2:end_y_2] *= window_values_y_2[
             int(window_steepness[1][1] / 2) + offset_correction : window_end_y_2
@@ -106,28 +96,18 @@ def get_2d_window_from_function(
     return mask
 
 
-def get_2d_window(
-    data_shape, support, window_steepness, window_func_name, torch_device
-):
+def get_2d_window(data_shape, support, window_steepness, window_func_name, torch_device):
     if window_func_name == "hanning":
         logging.debug("Select Hanning mask")
-        return get_2d_window_from_function(
-            data_shape, support, window_steepness, hanning, torch_device
-        )
+        return get_2d_window_from_function(data_shape, support, window_steepness, hanning, torch_device)
     elif window_func_name == "hamming":
         logging.debug("Select Hamming mask")
-        return get_2d_window_from_function(
-            data_shape, support, window_steepness, hamming, torch_device
-        )
+        return get_2d_window_from_function(data_shape, support, window_steepness, hamming, torch_device)
     elif window_func_name == "blackman":
         logging.debug("Select Blackman mask")
-        return get_2d_window_from_function(
-            data_shape, support, window_steepness, blackman, torch_device
-        )
+        return get_2d_window_from_function(data_shape, support, window_steepness, blackman, torch_device)
     else:
         logging.debug("Select Rectangle mask, window name: " + window_func_name)
         mask = torch.zeros(data_shape, device=torch_device)
-        mask[
-            slice(support[0][0], support[0][1]), slice(support[1][0], support[1][1])
-        ] = 1
+        mask[slice(support[0][0], support[0][1]), slice(support[1][0], support[1][1])] = 1
         return mask

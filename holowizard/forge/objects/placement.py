@@ -15,7 +15,12 @@ __all__ = [
 
 
 class ObjectPlacement:  # TODO: naming does not make any sense if it only returns the center pos
-    def __init__(self, positioning: str, detector_size: int | None = None, probe_size: int | None = None) -> None:
+    def __init__(
+        self,
+        positioning: str,
+        detector_size: int | None = None,
+        probe_size: int | None = None,
+    ) -> None:
         self.detector_size = detector_size
         self.probe_size = probe_size
         self._set_placer(positioning)

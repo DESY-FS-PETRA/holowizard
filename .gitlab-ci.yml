@@ -21,6 +21,17 @@ build:
     paths:
       - dist/
 
+formatting:
+  stage: test
+  image: python:3.11
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /ci!/ || $CI_MERGE_REQUEST_ID'
+    - if: '$CI_COMMIT_BRANCH =~ /versions\/[0-9]+\.[0-9]+\.[0-9]+$/'
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - pip install ruff
+    - ruff format --check .
+
 run-gpu-tests:
   stage: test
   image: ubuntu:22.04

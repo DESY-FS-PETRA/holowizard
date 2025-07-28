@@ -15,9 +15,7 @@ from holowizard.core.reconstruction.constraints.window_2d import get_2d_window
 from .boundaries import Boundaries
 
 
-def flip_and_pad(
-    image, data_dimensions: DataDimensions, padding_options: Padding, shift_phases=False
-):
+def flip_and_pad(image, data_dimensions: DataDimensions, padding_options: Padding, shift_phases=False):
     orig_size = data_dimensions.fov_size
 
     fov = crop_center(image, orig_size).clone()
@@ -41,9 +39,7 @@ def flip_and_pad(
     fov = fov[None, None, :, :]
     mirrored_image = m(fov)[0, 0, :, :]
 
-    mirrored_image = pad_to_size(
-        mirrored_image, image.shape, padMode="constant", padval=padding_options.a0
-    )
+    mirrored_image = pad_to_size(mirrored_image, image.shape, padMode="constant", padval=padding_options.a0)
 
     if padding_options.padding_mode.value == Padding.PaddingMode.MIRROR_LEFT.value:
         mirrored_image = torch.roll(mirrored_image, -int(orig_size[0] / 2), 1)
@@ -52,7 +48,11 @@ def flip_and_pad(
 
 
 def process_image(
-    image, padding_options: Padding, data_dimensions: DataDimensions, index, padding_val = 1.0
+    image,
+    padding_options: Padding,
+    data_dimensions: DataDimensions,
+    index,
+    padding_val=1.0,
 ):
     if image == None:
         return None
@@ -72,12 +72,10 @@ def process_image(
     ]
 
     if padding_options.down_sampling_factor > 1:
-        down_sampled_size = tuple(
-            [math.ceil(x / padding_options.down_sampling_factor) for x in image.shape]
-        )
-        image = ttf.Resize(
-            down_sampled_size, interpolation=InterpolationMode.BILINEAR, antialias=True
-        )(image[None, None, :, :])[0, 0, :, :]
+        down_sampled_size = tuple([math.ceil(x / padding_options.down_sampling_factor) for x in image.shape])
+        image = ttf.Resize(down_sampled_size, interpolation=InterpolationMode.BILINEAR, antialias=True)(
+            image[None, None, :, :]
+        )[0, 0, :, :]
 
     logging.image_debug("image_resized_" + str(index), image.cpu().numpy())
     cropped_size = image.shape
@@ -168,7 +166,6 @@ def process_image(
 
     return image
 
-def process_measurement(
-    image, padding_options: Padding, data_dimensions: DataDimensions, index
-):
-    return process_image(image/padding_options.a0, padding_options, data_dimensions, index)
+
+def process_measurement(image, padding_options: Padding, data_dimensions: DataDimensions, index):
+    return process_image(image / padding_options.a0, padding_options, data_dimensions, index)

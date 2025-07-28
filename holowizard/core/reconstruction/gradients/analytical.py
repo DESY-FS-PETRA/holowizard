@@ -26,23 +26,17 @@ def get_gradient(
     all_gradients = torch.zeros_like(oref_predicted)
     for distance in range(num_measurements):
         measured_hologram = measurements[distance].data
-        detector_plane_diff = object_propagated[distance] - object_propagated[
-            distance
-        ] * torch.sqrt(measured_hologram / predicted_holograms[distance])
-
-        single_gradient = (
-            -1j
-            * object_conj
-            * probe_conj
-            * model.propagate_back(detector_plane_diff, distance)
+        detector_plane_diff = object_propagated[distance] - object_propagated[distance] * torch.sqrt(
+            measured_hologram / predicted_holograms[distance]
         )
+
+        single_gradient = -1j * object_conj * probe_conj * model.propagate_back(detector_plane_diff, distance)
 
         all_gradients.add_(single_gradient)
 
         loss = (
             torch.abs(
-                predicted_holograms[distance][data_dimensions.fov_range]
-                - measured_hologram[data_dimensions.fov_range]
+                predicted_holograms[distance][data_dimensions.fov_range] - measured_hologram[data_dimensions.fov_range]
             )
             .pow(2)
             .sum()

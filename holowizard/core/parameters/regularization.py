@@ -61,10 +61,7 @@ class Regularization:
         ):
             return None
 
-        if (
-            data["gaussian_filter_fwhm"] == "None"
-            or data["gaussian_filter_fwhm"] is None
-        ):
+        if data["gaussian_filter_fwhm"] == "None" or data["gaussian_filter_fwhm"] is None:
             gaussian_filter_fwhm = None
         else:
             gaussian_filter_fwhm = complex(data["gaussian_filter_fwhm"])

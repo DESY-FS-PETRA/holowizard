@@ -5,7 +5,6 @@ import holowizard.core.phantoms.options as options
 
 
 def triangle(N):
-
     amp = np.zeros((N, N))
 
     for i in range(N):

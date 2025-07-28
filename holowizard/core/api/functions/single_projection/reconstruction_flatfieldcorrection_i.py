@@ -6,13 +6,8 @@ from holowizard.core.parameters.reco_params import RecoParams
 from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
 from holowizard.core.preprocessing.correct_flatfield import correct_flatfield
 from holowizard.core.reconstruction.viewer import Viewer
-
-from holowizard.core.api.functions.single_projection.reconstruction import (
-    reconstruct as reconstruct_base,
-)
-from holowizard.core.api.functions.default_load_data_callback import (
-    default_load_data_callback,
-)
+from holowizard.core.api.functions.single_projection.reconstruction import reconstruct as reconstruct_base
+from holowizard.core.api.functions.default_load_data_callback import default_load_data_callback
 
 
 def reconstruct(
@@ -46,9 +41,7 @@ def reconstruct(
         logging.info("raw_" + str(i), reco_params.measurements[i].data.cpu().numpy())
 
         logging.info("Correct flatfield Nr." + str(i))
-        corrected_image = correct_flatfield(
-            reco_params.measurements[i].data.float(), components_model
-        )
+        corrected_image = correct_flatfield(reco_params.measurements[i].data.float(), components_model)
 
         logging.info("flatfield_corrected_" + str(i), corrected_image.cpu().numpy())
 

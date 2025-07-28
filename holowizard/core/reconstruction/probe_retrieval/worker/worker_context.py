@@ -31,21 +31,11 @@ class WorkerContext(object):
         options = Options.from_json(args_dict["options"])
 
         # Pickle file loads
-        measurements = [
-            ParamsSerializer.deserialize(
-                working_dir + "measurements_" + str(index) + ".pkl"
-            )
-        ]
+        measurements = [ParamsSerializer.deserialize(working_dir + "measurements_" + str(index) + ".pkl")]
         beam_setup = ParamsSerializer.deserialize(working_dir + "beam_setup.pkl")
-        oref_predicted = ParamsSerializer.deserialize(
-            working_dir + "oref_predicted_" + str(index) + ".pkl"
-        )
-        nesterov_vt = ParamsSerializer.deserialize(
-            working_dir + "nesterov_vt_" + str(index) + ".pkl"
-        )
-        data_dimensions = ParamsSerializer.deserialize(
-            working_dir + "data_dimensions.pkl"
-        )
+        oref_predicted = ParamsSerializer.deserialize(working_dir + "oref_predicted_" + str(index) + ".pkl")
+        nesterov_vt = ParamsSerializer.deserialize(working_dir + "nesterov_vt_" + str(index) + ".pkl")
+        data_dimensions = ParamsSerializer.deserialize(working_dir + "data_dimensions.pkl")
 
         context = WorkerContext(
             working_dir,
@@ -116,7 +106,7 @@ class WorkerContext(object):
             device=oref_predicted.device,
             dtype=torch.float,
         )
-        
+
         self.phaseshift_min = torch.tensor(
             self.regularization_set.values_min.real,
             device=oref_predicted.device,
@@ -181,9 +171,7 @@ class WorkerContext(object):
             self.se_loss_records,
             self.working_dir + "se_loss_records_" + str(self.index) + ".pkl",
         )
-        ParamsSerializer.serialize(
-            self.grad_probe, self.working_dir + "grad_probe_" + str(self.index) + ".pkl"
-        )
+        ParamsSerializer.serialize(self.grad_probe, self.working_dir + "grad_probe_" + str(self.index) + ".pkl")
 
         # Optional: Update only the probe and not the object
         if self.update_oref:

@@ -81,7 +81,6 @@ def old_filter(values, filter_kernel_real, filter_kernel_imag):
 
 
 def test_tiny_apply_filter():
-
     exp = torch.ones(TINY, dtype=torch.cfloat)
 
     assert exp.shape == TINY
@@ -96,7 +95,6 @@ def test_tiny_apply_filter():
 
 
 def test_tiny_apply_filter_cross():
-
     exp = torch.complex(torch.ones(TINY), torch.ones(TINY) * 2)
 
     assert exp.shape == TINY
@@ -117,7 +115,6 @@ def test_tiny_apply_filter_cross():
 
 
 def test_small_apply_filter():
-
     exp = torch.ones(SMALL, dtype=torch.cfloat)
 
     assert exp.shape == SMALL
@@ -130,7 +127,6 @@ def test_small_apply_filter():
 
 
 def test_small_old_apply_filter():
-
     exp = torch.ones(SMALL, dtype=torch.cfloat)
 
     assert exp.shape == SMALL
@@ -151,7 +147,6 @@ def test_small_old_apply_filter():
 @pytest.mark.gpu
 @pytest.mark.parametrize("shape", [SMALL, PRODUCTION])
 def test_mass_apply_filter(shape):
-
     exp = torch.ones(shape, dtype=torch.cfloat)
 
     assert exp.shape == shape
@@ -173,7 +168,6 @@ def test_mass_apply_filter(shape):
 @pytest.mark.gpu
 @pytest.mark.parametrize("shape", [SMALL, PRODUCTION])
 def test_mass_old_filter(shape):
-
     exp = torch.ones(shape, dtype=torch.cfloat)
 
     assert exp.shape == shape

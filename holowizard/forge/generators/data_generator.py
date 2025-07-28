@@ -52,7 +52,9 @@ class DataGenerator:
         self.cfg_data_generator = self.config["data_generator"]["args"]
 
         self.labeller = self._get_labeller(
-            num_samples=self.num_samples, dataset_name=self.config["name"], override=override
+            num_samples=self.num_samples,
+            dataset_name=self.config["name"],
+            override=override,
         )
         self.config.save(self.output / f"{config['name']}.json")
 

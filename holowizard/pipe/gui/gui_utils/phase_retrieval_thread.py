@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 
+
 class PhaseRetrievalThread(QThread):
     """
     A thread for running a phase retrieval process asynchronously. Emits a signal

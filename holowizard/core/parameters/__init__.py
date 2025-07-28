@@ -19,4 +19,3 @@ else:
     )
 
     member_value_adapter = MemberValueAdapterNumpy
-

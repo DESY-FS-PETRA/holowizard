@@ -39,9 +39,7 @@ class Measurement:
                 self.z01 = measurement.z01
                 self.z01_confidence = measurement.z01_confidence
                 self.data_path = measurement.data_path
-                self.data = JsonWritable.get_array(
-                    member_value_adapter.get_numpy_array_float(measurement.data)
-                )
+                self.data = JsonWritable.get_array(member_value_adapter.get_numpy_array_float(measurement.data))
 
         json_writable = JsonInput(self)
 
@@ -57,12 +55,7 @@ class Measurement:
         if not isinstance(data, dict):
             return None
 
-        if (
-            not "z01" in data
-            or not "z01_confidence" in data
-            or not "data_path" in data
-            or not "data" in data
-        ):
+        if not "z01" in data or not "z01_confidence" in data or not "data_path" in data or not "data" in data:
             return None
 
         hologram = JsonWritable.get_numpy_from_array(data["data"])

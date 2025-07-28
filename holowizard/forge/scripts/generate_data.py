@@ -5,7 +5,12 @@ from pathlib import Path
 # third party libraries
 
 # local libraries
-from holowizard.forge.generators import DataGenerator, HologramGenerator, ProbeGenerator, PhantomGenerator
+from holowizard.forge.generators import (
+    DataGenerator,
+    HologramGenerator,
+    ProbeGenerator,
+    PhantomGenerator,
+)
 import holowizard.forge.generators as module_generators
 from holowizard.forge.configs.parse_config import ConfigParser
 import holowizard.forge.utils.torch_settings as torch_settings

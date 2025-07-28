@@ -5,7 +5,6 @@ import holowizard.core.phantoms.options as options
 
 
 def edge(N):
-
     amp = np.zeros((N, N))
 
     amp[0:-1, 0 : int(N / 2)] = 1

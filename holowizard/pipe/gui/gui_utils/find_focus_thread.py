@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 
+
 class FindFocusThread(QThread):
     """
     A thread for running a find focus process asynchronously. Emits a signal

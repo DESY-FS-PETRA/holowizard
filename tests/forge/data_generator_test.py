@@ -2,8 +2,14 @@ import os
 from pathlib import Path
 
 from holowizard.forge.configs.parse_config import ConfigParser
-from holowizard.forge.generators import DataGenerator, HologramGenerator, ProbeGenerator, PhantomGenerator
+from holowizard.forge.generators import (
+    DataGenerator,
+    HologramGenerator,
+    ProbeGenerator,
+    PhantomGenerator,
+)
 import holowizard.forge.generators as module_generators
+
 
 def data_generator_test() -> None:
     # alternatively using the CLI
@@ -40,5 +46,6 @@ def data_generator_test() -> None:
     data_generator.generate_data()
     assert output_file.exists()
     os.remove(output_file)
+
 
 data_generator_test()

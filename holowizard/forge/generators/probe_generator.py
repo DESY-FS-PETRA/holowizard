@@ -41,5 +41,8 @@ class ProbeGenerator:
     def create_probe(self) -> Probe:
         beam_cfg = get_random_beam_config(self.constant, self.linear, self.square)
         return PolynomialProbe(
-            beam_cfg=beam_cfg, size=self.probe_size, center_beam=self.center_beam, noise=self.probe_noise
+            beam_cfg=beam_cfg,
+            size=self.probe_size,
+            center_beam=self.center_beam,
+            noise=self.probe_noise,
         )

@@ -1,6 +1,7 @@
 """
 minimial viewer only showing the absorption for the hologram demonstrator
 """
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +18,7 @@ class PyPlotHoloDemoViewer(Viewer):
         plt.close("all")
         plt.close()
         plt.pause(0.05)
-        self.fig = plt.figure(figsize=(18,13.5))
+        self.fig = plt.figure(figsize=(18, 13.5))
 
         if maximize:
             figManager = plt.get_current_fig_manager()

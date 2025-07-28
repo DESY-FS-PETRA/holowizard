@@ -22,13 +22,9 @@ def pad_to_size(img, outputSize, padMode="constant", padval=1):
     padsize = (np.floor((np.array(outputSize) - np.array(img.shape)) / 2)).astype(int)
     padsize2 = (np.array(outputSize) - (np.array(img.shape) + 2 * padsize)).astype(int)
 
-    result = pad(
-        img, (padsize[1], padsize[1], padsize[0], padsize[0]), padMode, value=padval
-    )
+    result = pad(img, (padsize[1], padsize[1], padsize[0], padsize[0]), padMode, value=padval)
 
     if any(padsize2 > 0):
-        result = pad(
-            result, (padsize2[1], 0, padsize2[0], 0), mode=padMode, value=padval
-        )
+        result = pad(result, (padsize2[1], 0, padsize2[0], 0), mode=padMode, value=padval)
 
     return result

@@ -97,7 +97,13 @@ class Phantom:
         self._create_figure(phaseshift, absorption, suptitle)
         plt.show()
 
-    def savefig(self, path: Pathlike, phaseshift: bool = True, absorption: bool = True, suptitle: str = "") -> None:
+    def savefig(
+        self,
+        path: Pathlike,
+        phaseshift: bool = True,
+        absorption: bool = True,
+        suptitle: str = "",
+    ) -> None:
         self._create_figure(phaseshift, absorption, suptitle)
         plt.savefig(path)
 

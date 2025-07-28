@@ -1,21 +1,23 @@
 from abc import ABC, abstractmethod
 import datetime
 import os
-import uuid 
+import uuid
 import numpy as np
 from skimage.io import imread
 import yaml
 from omegaconf import OmegaConf
-from holowizard.pipe.utils.clean_yaml import remove_keys,to_clean_yaml
+from holowizard.pipe.utils.clean_yaml import remove_keys, to_clean_yaml
 from holowizard.core.models.cone_beam import ConeBeam
 from holowizard.core.api.parameters.beam_setup import BeamSetup
 from holowizard.core.api.parameters.measurement import Measurement
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
+
 citations_path = Path(__file__).parent.parent / "citations.yaml"
 with open(citations_path, "r") as f:
     citations = yaml.load(f, Loader=yaml.FullLoader)
     citations = citations["citations"]
+
 
 def calculate_image_statistics(image_path: str) -> dict:
     """
@@ -32,12 +34,28 @@ def calculate_image_statistics(image_path: str) -> dict:
         "mean": float(np.mean(image)),
         "std": float(np.std(image)),
         "min": float(np.min(image)),
-        "max": float(np.max(image))
+        "max": float(np.max(image)),
     }
 
 
 class Scan(ABC):
-    def __init__(self, name, energy, path_to_holograms, path_to_refs, path_processed, path_to_metadata, path_log, holo_name, ref_name, z01, z02, cfg, a0, rotation_angles):
+    def __init__(
+        self,
+        name,
+        energy,
+        path_to_holograms,
+        path_to_refs,
+        path_processed,
+        path_to_metadata,
+        path_log,
+        holo_name,
+        ref_name,
+        z01,
+        z02,
+        cfg,
+        a0,
+        rotation_angles,
+    ):
         """
         Initialize the Scan object.
 
@@ -54,7 +72,9 @@ class Scan(ABC):
         self.path_log = path_log
         self.hologram_key = holo_name
         self.reference_key = ref_name
-        self.hologram_path = sorted([os.path.join(path_to_holograms, f) for f in os.listdir(path_to_holograms) if holo_name in f])
+        self.hologram_path = sorted(
+            [os.path.join(path_to_holograms, f) for f in os.listdir(path_to_holograms) if holo_name in f]
+        )
         self.reference_path = sorted([os.path.join(path_to_refs, f) for f in os.listdir(path_to_refs) if ref_name in f])
         stat = Path(self.hologram_path[0]).stat()
         dt = datetime.datetime.fromtimestamp(stat.st_ctime)
@@ -65,13 +85,13 @@ class Scan(ABC):
         self.reconstruction = cfg.reconstruction
         self.find_focus = cfg.find_focus
         self.meta_dict = self._load_metadata(path_to_metadata)
-        self.a0 = a0 
+        self.a0 = a0
         self.rotation_angles = rotation_angles
         self.done = []
         beam_setup = BeamSetup(
             energy=self.energy,
             z02=self.z02,
-            px_size=cfg.scan.px_size*cfg.reconstruction.stages[-1].padding.down_sampling_factor
+            px_size=cfg.scan.px_size * cfg.reconstruction.stages[-1].padding.down_sampling_factor,
         )
         measurement = Measurement(self.z01)
 
@@ -80,7 +100,6 @@ class Scan(ABC):
         self.key = str(uuid.uuid4())  # Unique identifier for the scan
         self.cancelled = False
 
-    
     def __str__(self):
         """
         String representation of the Scan object.
@@ -93,13 +112,13 @@ class Scan(ABC):
         """
         data = {
             "name": self.name,
-            **remove_keys(OmegaConf.to_container(self.config.beamtime,resolve=True)),
+            **remove_keys(OmegaConf.to_container(self.config.beamtime, resolve=True)),
             "energy": self.energy,
             "a0": self.a0,
             "z01": float(self.z01),
             "z02": float(self.z02),
             **self.meta_dict,
-            "tasks": remove_keys(OmegaConf.to_container(self.config.scan.tasks,resolve=True)),
+            "tasks": remove_keys(OmegaConf.to_container(self.config.scan.tasks, resolve=True)),
             "path_processed": str(self.path_processed),
             "path_holograms": str(os.path.dirname(self.hologram_path[0])),
             "path_references": str(os.path.dirname(self.reference_path[0])),
@@ -109,12 +128,10 @@ class Scan(ABC):
             "flatfield": OmegaConf.to_container(self.config.flatfield),
             "config": {
                 "reconstruction": remove_keys(OmegaConf.to_container(self.reconstruction, resolve=True)),
-                "find_focus": remove_keys(OmegaConf.to_container(self.find_focus, resolve=True))
-            }
+                "find_focus": remove_keys(OmegaConf.to_container(self.find_focus, resolve=True)),
+            },
         }
         return yaml.dump(data, sort_keys=False)
-        
-
 
     @abstractmethod
     def _load_metadata(self, path) -> dict:
@@ -149,7 +166,7 @@ class Scan(ABC):
             raise ValueError("Reference image mean is zero, cannot compute a0.")
 
         return np.sqrt(img_mean / ref_mean)
-    
+
     def length(self, key: str) -> int:
         """
         Get the number of images for a given key.
@@ -171,10 +188,8 @@ class Scan(ABC):
         Returns:
             np.ndarray: The image at the specified index.
         """
-        pass # This method should be implemented in subclasses to retrieve the image based on the key and item index.
+        pass  # This method should be implemented in subclasses to retrieve the image based on the key and item index.
 
-
-    
     def get_number_of_holograms(self) -> int:
         """
         Get the number of images in the scan.
@@ -182,7 +197,7 @@ class Scan(ABC):
         Returns:
             int: Number of images.
         """
-        if not hasattr(self, 'image_files'):
+        if not hasattr(self, "image_files"):
             raise AttributeError("image_files attribute is not set.")
         return len(self.holograms_paths)
 
@@ -193,10 +208,10 @@ class Scan(ABC):
         Returns:
             int: Number of reference images.
         """
-        if not hasattr(self, 'reference_files'):
+        if not hasattr(self, "reference_files"):
             raise AttributeError("reference_files attribute is not set.")
         return len(self.reference_paths)
-    
+
     def write_html(self):
         """
         Write the scan details to an HTML file using the provided template.
@@ -204,14 +219,10 @@ class Scan(ABC):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         template_dir = base_dir + "/../templates"
         templates = Jinja2Templates(directory=template_dir)
-        templates.env.filters['to_yaml'] = lambda x: to_clean_yaml(x)
+        templates.env.filters["to_yaml"] = lambda x: to_clean_yaml(x)
         scan_html_template = templates.get_template("scan.html")
 
-        html_str = scan_html_template.render(
-            scan=self,
-            scan_string=str(self),
-            citations=citations
-        )
+        html_str = scan_html_template.render(scan=self, scan_string=str(self), citations=citations)
         output_path = f"{self.path_processed}/{self.config.paths.base_dir}/README.html"
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_str)
@@ -222,4 +233,3 @@ class Scan(ABC):
         """
         self.cancelled = True
         print(f"Scan {self.name} has been cancelled.")
-

@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QMetaObject, Qt, Q_ARG
 
+
 class QTextEditLogger:
     """
     A logger that directs text output to a QTextEdit widget, allowing messages
@@ -28,12 +29,7 @@ class QTextEditLogger:
             message (str): The message to be displayed. Empty messages are skipped.
         """
         if message.strip():  # Skip empty lines
-            QMetaObject.invokeMethod(
-                self.widget,
-                "append",
-                Qt.QueuedConnection,
-                Q_ARG(str, message)
-            )
+            QMetaObject.invokeMethod(self.widget, "append", Qt.QueuedConnection, Q_ARG(str, message))
 
     def flush(self):
         """

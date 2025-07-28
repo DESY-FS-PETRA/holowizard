@@ -12,11 +12,7 @@ from .process_image import process_image, process_measurement
 
 
 def blackman(x, width):
-    return (
-        0.42
-        - 0.5 * np.cos(x * 2 * np.pi / (width - 1))
-        + 0.08 * np.cos(x * 4 * np.pi / (width - 1))
-    )
+    return 0.42 - 0.5 * np.cos(x * 2 * np.pi / (width - 1)) + 0.08 * np.cos(x * 4 * np.pi / (width - 1))
 
 
 def process_padding_options(
@@ -35,21 +31,13 @@ def process_padding_options(
     beam_setup = process_beam_setup(beam_setup, padding_options, data_dimensions)
 
     for i in range(len(measurements)):
-        measurements[i].data = process_measurement(
-            measurements[i].data, padding_options, data_dimensions, i
-        )
+        measurements[i].data = process_measurement(measurements[i].data, padding_options, data_dimensions, i)
 
     return measurements, beam_setup, data_dimensions
 
 
-def process_beam_setup(
-    beam_setup: BeamSetup, padding_options: Padding, data_dimensions: DataDimensions
-):
+def process_beam_setup(beam_setup: BeamSetup, padding_options: Padding, data_dimensions: DataDimensions):
     beam_setup.px_size = beam_setup.px_size * padding_options.down_sampling_factor
-    beam_setup.flat_field = process_image(
-        beam_setup.flat_field, padding_options, data_dimensions, 0
-    )
-    beam_setup.probe = process_image(
-        beam_setup.probe, padding_options, data_dimensions, 0
-    )
+    beam_setup.flat_field = process_image(beam_setup.flat_field, padding_options, data_dimensions, 0)
+    beam_setup.probe = process_image(beam_setup.probe, padding_options, data_dimensions, 0)
     return beam_setup

@@ -12,9 +12,7 @@ def send(function_name, **kwargs):
         if not isinstance(v, str) and not isinstance(v, np.ndarray):
             dictionary[k] = v.to_json()
         elif isinstance(v, np.ndarray):
-            dictionary[k] = json.dumps(
-                JsonWritable.get_array(v), default=lambda o: o.__dict__
-            )
+            dictionary[k] = json.dumps(JsonWritable.get_array(v), default=lambda o: o.__dict__)
         else:
             dictionary[k] = v
 

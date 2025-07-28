@@ -41,29 +41,21 @@ class Logger:
 
         Logger.add_log_level("DEBUG", logging.DEBUG, Logger.debug_level_callback)
         Logger.add_log_level("INFO", logging.INFO, Logger.info_level_callback)
-        Logger.add_log_level(
-            "HEADER", Logger.level_num_header, Logger.header_level_callback
-        )
-        Logger.add_log_level(
-            "COMMENT", Logger.level_num_comment, Logger.comment_level_callback
-        )
+        Logger.add_log_level("HEADER", Logger.level_num_header, Logger.header_level_callback)
+        Logger.add_log_level("COMMENT", Logger.level_num_comment, Logger.comment_level_callback)
         Logger.add_log_level("LOSS", Logger.level_num_loss, Logger.loss_level_callback)
         Logger.add_log_level(
             "IMAGE_DEBUG",
             Logger.level_num_image_debug,
             Logger.image_debug_level_callback,
         )
-        Logger.add_log_level(
-            "IMAGE_INFO", Logger.level_num_image_info, Logger.image_info_level_callback
-        )
+        Logger.add_log_level("IMAGE_INFO", Logger.level_num_image_info, Logger.image_info_level_callback)
         Logger.add_log_level(
             "IMAGE_FINAL",
             Logger.level_num_image_final,
             Logger.image_final_level_callback,
         )
-        Logger.add_log_level(
-            "PARAMS", Logger.level_num_params, Logger.params_level_callback
-        )
+        Logger.add_log_level("PARAMS", Logger.level_num_params, Logger.params_level_callback)
 
         Logger.current_logger = logging.getLogger("root")
 
@@ -100,11 +92,7 @@ class Logger:
 
                 file_handler = logging.FileHandler(log_file)
                 file_handler.setLevel(Logger.current_log_level)
-                file_handler.setFormatter(
-                    logging.Formatter(
-                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-                    )
-                )
+                file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
                 logger.addHandler(file_handler)
             except OSError:
                 print("Error creating log file " + output_path)
@@ -157,12 +145,8 @@ class Logger:
             return
         comment_space = "    "
         message = comment_space + str(message).strip() + comment_space
-        block_border = "{s:{c}^{n}}".format(
-            s="", n=comment_block_length, c=comment_character
-        )
-        message_to_log = "{s:{c}^{n}}".format(
-            s=message, n=comment_block_length, c=comment_character
-        )
+        block_border = "{s:{c}^{n}}".format(s="", n=comment_block_length, c=comment_character)
+        message_to_log = "{s:{c}^{n}}".format(s=message, n=comment_block_length, c=comment_character)
         Logger.current_logger.log(Logger.level_num_comment, block_border)
         Logger.current_logger.log(Logger.level_num_comment, message_to_log)
         Logger.current_logger.log(Logger.level_num_comment, block_border)
@@ -191,15 +175,7 @@ class Logger:
 
     @staticmethod
     def image_level_callback(data_name, data, level):
-        data_path = (
-            Logger.working_dir
-            + "/"
-            + Logger.session_name
-            + "/"
-            + Logger.get_timestamp()
-            + "_"
-            + data_name
-        )
+        data_path = Logger.working_dir + "/" + Logger.session_name + "/" + Logger.get_timestamp() + "_" + data_name
 
         data_path_tiff = data_path + ".tiff"
         Logger.current_logger.log(level, data_path_tiff)
@@ -211,14 +187,7 @@ class Logger:
             return
 
         data_path = (
-            Logger.working_dir
-            + "/"
-            + Logger.session_name
-            + "/"
-            + Logger.get_timestamp()
-            + "_"
-            + data_name
-            + ".pkl"
+            Logger.working_dir + "/" + Logger.session_name + "/" + Logger.get_timestamp() + "_" + data_name + ".pkl"
         )
 
         Logger.current_logger.log(Logger.level_num_params, data_path)
@@ -232,14 +201,7 @@ class Logger:
     @staticmethod
     def custom_string_file(keyword, string_list):
         file_name = (
-            Logger.working_dir
-            + "/"
-            + Logger.session_name
-            + "/"
-            + Logger.get_timestamp()
-            + "_"
-            + keyword
-            + ".txt"
+            Logger.working_dir + "/" + Logger.session_name + "/" + Logger.get_timestamp() + "_" + keyword + ".txt"
         )
         with open(file_name, "w") as f:
             for string in string_list:

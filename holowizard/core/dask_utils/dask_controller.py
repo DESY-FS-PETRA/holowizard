@@ -52,17 +52,13 @@ class DaskController:
                 time.sleep(60)
                 try:
                     # Get the number of active workers
-                    active_workers = len(
-                        dask_controller.client.scheduler_info()["workers"]
-                    )
+                    active_workers = len(dask_controller.client.scheduler_info()["workers"])
                     logging.info(f"Current active workers: {active_workers}")
                     if active_workers < dask_controller.dask_options.num_worker:
                         logging.info(
                             f"Scaling up to {dask_controller.dask_options.num_worker} workers. Current: {active_workers}"
                         )
-                        dask_controller.cluster.scale(
-                            jobs=dask_controller.dask_options.num_worker
-                        )
+                        dask_controller.cluster.scale(jobs=dask_controller.dask_options.num_worker)
                 except Exception as e:
                     logging.error(f"Error while maintaining workers: {e}")
                 if dask_controller.running is False:
@@ -89,11 +85,7 @@ class DaskController:
             if not os.path.isdir(self.dask_options.working_dir):
                 os.mkdir(self.dask_options.working_dir)
 
-            logging.info(
-                "Starting pool of "
-                + str(self.dask_options.num_worker)
-                + " dask worker."
-            )
+            logging.info("Starting pool of " + str(self.dask_options.num_worker) + " dask worker.")
             self.cluster.scale(jobs=self.dask_options.num_worker)
             self.client = Client(self.cluster)
 
@@ -101,9 +93,7 @@ class DaskController:
             self.running = True
             self.stopped = False
 
-            self.worker_maintenance_thread = threading.Thread(
-                target=maintain_workers, daemon=True, args=(self,)
-            )
+            self.worker_maintenance_thread = threading.Thread(target=maintain_workers, daemon=True, args=(self,))
             self.worker_maintenance_thread.start()
 
     def stop(self):

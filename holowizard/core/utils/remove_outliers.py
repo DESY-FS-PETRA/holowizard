@@ -11,9 +11,7 @@ def remove_outliers(input_image, threshold=1, filter_size=5):
         input_image = torch.tensor(input_image)
     image = input_image.clone()
 
-    median_pool = MedianPool2d(
-        kernel_size=filter_size, padding=int(math.floor(filter_size / 2))
-    )
+    median_pool = MedianPool2d(kernel_size=filter_size, padding=int(math.floor(filter_size / 2)))
 
     filtered_image = median_pool.forward(image[None, None, :, :])[0, 0, :, :]
     diff_image = image - filtered_image

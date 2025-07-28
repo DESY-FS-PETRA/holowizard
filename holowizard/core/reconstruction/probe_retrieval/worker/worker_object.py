@@ -18,9 +18,7 @@ def reconstruct(args_dict):
         print(worker_context.absorption_min)
 
         with torch.no_grad():
-            for iteration in range(
-                worker_context.options.regularization_object.iterations
-            ):
+            for iteration in range(worker_context.options.regularization_object.iterations):
                 print("Iteration ", iteration)
 
                 worker_context.oref_predicted = regularization.apply_padding_refractive(
@@ -44,9 +42,7 @@ def reconstruct(args_dict):
                     worker_context.filter_kernel_obj_absorption,
                 )
 
-                worker_context.oref_predicted_old = (
-                    worker_context.oref_predicted.detach()
-                )
+                worker_context.oref_predicted_old = worker_context.oref_predicted.detach()
                 torch.add(
                     input=worker_context.oref_predicted,
                     other=worker_context.nesterov_vt,
@@ -63,34 +59,25 @@ def reconstruct(args_dict):
                 )
 
                 worker_context.nesterov_vt = (
-                    worker_context.options.nesterov_object.update_rate
-                    * worker_context.nesterov_vt
+                    worker_context.options.nesterov_object.update_rate * worker_context.nesterov_vt
                     + worker_context.options.regularization_object.update_rate * grad
                 )
 
                 if worker_context.options.regularization_object.l2_weight.real != 0.0:
-                    worker_context.nesterov_vt.real = (
-                        worker_context.nesterov_vt.real
-                        + (
-                            worker_context.options.regularization_object.l2_weight.real
-                            * worker_context.oref_predicted.real
-                            / (worker_context.oref_predicted.real.norm(p=2) + 0.000001)
-                        )
+                    worker_context.nesterov_vt.real = worker_context.nesterov_vt.real + (
+                        worker_context.options.regularization_object.l2_weight.real
+                        * worker_context.oref_predicted.real
+                        / (worker_context.oref_predicted.real.norm(p=2) + 0.000001)
                     )
 
                 if worker_context.options.regularization_object.l2_weight.imag != 0.0:
-                    worker_context.nesterov_vt.imag = (
-                        worker_context.nesterov_vt.imag
-                        + (
-                            worker_context.options.regularization_object.l2_weight.imag
-                            * worker_context.oref_predicted.imag
-                            / (worker_context.oref_predicted.imag.norm(p=2) + 0.000001)
-                        )
+                    worker_context.nesterov_vt.imag = worker_context.nesterov_vt.imag + (
+                        worker_context.options.regularization_object.l2_weight.imag
+                        * worker_context.oref_predicted.imag
+                        / (worker_context.oref_predicted.imag.norm(p=2) + 0.000001)
                     )
 
-                worker_context.oref_predicted = (
-                    worker_context.oref_predicted_old - worker_context.nesterov_vt
-                )
+                worker_context.oref_predicted = worker_context.oref_predicted_old - worker_context.nesterov_vt
 
                 worker_context.oref_predicted = regularization.apply_domain_constraint(
                     worker_context.oref_predicted,

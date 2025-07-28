@@ -6,11 +6,14 @@ from holowizard.pipe.scan.scan import Scan
 from holowizard.core.api.parameters.measurement import Measurement
 from holowizard.core.api.parameters.beam_setup import BeamSetup
 import pandas as pd
+
+
 class P05Scan(Scan):
     """
     P05Scan class for handling P05 beamline scans.
     Inherits from the base Scan class.
     """
+
     def __init__(self, name, energy, holder, path_raw, path_processed, log_path, cfg, z01_new, a0):
         """
         Initialize the P05Scan object.
@@ -20,17 +23,31 @@ class P05Scan(Scan):
             energy (float): Energy used in the scan.
             holder (float): Holder length in mm.
         """
-        self.path_raw= Path(path_raw) / Path(name)
+        self.path_raw = Path(path_raw) / Path(name)
         self.path_processed = Path(path_processed) / Path(name)
         self.path_log = Path(log_path) / Path(name)
         p05geo = P05Geometry(scan_path=self.path_raw, energy=energy, holder=holder, qp=True)
-        
-        
+
         z01, z02 = p05geo.compute_z_params()
         if z01_new:
             z01 = z01_new
-        
-        super().__init__(name, energy, self.path_raw, self.path_raw, self.path_processed, self.path_raw, self.path_log, 'img', 'ref', z01, z02, cfg=cfg, a0=a0, rotation_angles=p05geo.rotation_angle)        
+
+        super().__init__(
+            name,
+            energy,
+            self.path_raw,
+            self.path_raw,
+            self.path_processed,
+            self.path_raw,
+            self.path_log,
+            "img",
+            "ref",
+            z01,
+            z02,
+            cfg=cfg,
+            a0=a0,
+            rotation_angles=p05geo.rotation_angle,
+        )
 
     def _load_metadata(self, path):
         """
@@ -39,14 +56,14 @@ class P05Scan(Scan):
         Returns:
             dict: Metadata dictionary with scan parameters.
         """
-        logfile = os.path.join(self.path_raw, f'{self.name}__ScanParam.txt')
+        logfile = os.path.join(self.path_raw, f"{self.name}__ScanParam.txt")
         metadata = {}
 
         try:
             with open(logfile) as file:
                 for line in file:
-                    if ': ' in line:
-                        key, value = line.strip().split(': ', 1)
+                    if ": " in line:
+                        key, value = line.strip().split(": ", 1)
                         metadata[key] = value
         except FileNotFoundError:
             metadata[self.name] = "Metadata file not found."
@@ -54,7 +71,7 @@ class P05Scan(Scan):
             metadata[self.name] = f"Metadata read error: {e}"
 
         return metadata
-    
+
     def length(self, key):
         """
         Get the number of images for a given key.
@@ -71,7 +88,7 @@ class P05Scan(Scan):
             return len(self.reference_path)
         else:
             raise KeyError(f"Invalid key: {key}. Use 'hologram' or 'reference'.")
-    
+
     def __getitem__(self, key):
         """
         Get either hologram or reference image by key and item.
@@ -88,7 +105,7 @@ class P05Scan(Scan):
         elif key == "reference":
             path = self.reference_path[item]
         else:
-            raise KeyError(f"Invalid key: {key}. Use 'hologram' or 'reference'.")   
+            raise KeyError(f"Invalid key: {key}. Use 'hologram' or 'reference'.")
         if not Path(path).exists():
             raise FileNotFoundError(f"File not found: {path}")
         return skio.imread(path)
@@ -124,17 +141,14 @@ def load_motor_log(scan_path):
         values_line = 55
         name_map = {
             "GraniteSlider_1": "GraniteSlab_1",
-            "GraniteSlider_2": "GraniteSlab_2"
+            "GraniteSlider_2": "GraniteSlab_2",
         }
     elif "GraniteSlab_1" in granite_keys:
         param_end = 53
         values_line = 58
         name_map = {}  # no renaming needed
     else:
-        raise ValueError(
-            f"Unknown motor name pattern in: {filename}\n"
-            f"Please provide z01 and z02 manually."
-        )
+        raise ValueError(f"Unknown motor name pattern in: {filename}\nPlease provide z01 and z02 manually.")
 
     try:
         param_names = lines[:param_end]
@@ -146,8 +160,6 @@ def load_motor_log(scan_path):
             key = name_map.get(key, key)
             motor_pos[key] = motor_values[i]
 
-   
-
     except Exception as e:
         raise ValueError(f"Failed to parse motor log from {filename}.\n{e}")
 
@@ -155,14 +167,22 @@ def load_motor_log(scan_path):
     if not filename.exists():
         raise FileNotFoundError(f"Scan log file not found: {filename}")
     columns = [
-        "Image Identifier", "InfoStr", "Image Number I", "Image Number II", "Current Number",
-        "Timestamp", "PETRA Beam Current", "Rotation Stage Position"
+        "Image Identifier",
+        "InfoStr",
+        "Image Number I",
+        "Image Number II",
+        "Current Number",
+        "Timestamp",
+        "PETRA Beam Current",
+        "Rotation Stage Position",
     ]
     df = pd.read_csv(filename, comment="#", delim_whitespace=True, names=columns)
     df = df[df["Image Identifier"] == "img"]
     df["Rotation Stage Position"] = df["Rotation Stage Position"].astype(float)
-    return motor_pos, df["Rotation Stage Position"].to_numpy()*np.pi/180
-## TODO @marinhoa 
+    return motor_pos, df["Rotation Stage Position"].to_numpy() * np.pi / 180
+
+
+## TODO @marinhoa
 class P05Geometry:
     """
     Handles P05-specific geometry calculation from scan motor logs.
@@ -179,7 +199,6 @@ class P05Geometry:
         self.wl = 1.2398 / self.energy  # wavelength in nm
 
         self.motor_pos, self.rotation_angle = load_motor_log(self.scan_path)
-        
 
     @property
     def fzp_f(self):
@@ -210,4 +229,4 @@ class P05Geometry:
         z02 = (detDistInit - offset) * 1e6
         z01 = (posInit + slider2 - offset) * 1e6
 
-        return z01/Measurement.unit_z01()[1], z02/BeamSetup.unit_z02()[1] 
+        return z01 / Measurement.unit_z01()[1], z02 / BeamSetup.unit_z02()[1]

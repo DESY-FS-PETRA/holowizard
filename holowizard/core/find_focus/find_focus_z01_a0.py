@@ -47,9 +47,7 @@ def get_loss_reconstruction(
     found, loss_local = check_history(values)
 
     if not found:
-        current_result, loss_se_all, fov_size = reconstruct(
-            [measurement], beam_setup, options, data_dimensions, viewer
-        )
+        current_result, loss_se_all, fov_size = reconstruct([measurement], beam_setup, options, data_dimensions, viewer)
         loss_local = loss_se_all[-1]
         values_history.append(values)
         loss_values_history.append(loss_local.cpu().numpy())
@@ -58,9 +56,7 @@ def get_loss_reconstruction(
         # Fix for buggy nelder-mead implementation when bounds are used and nelder-mead reflects to outside of bound interval. Punish this out-of-bound case
         loss = sys.float_info.max
 
-    logging.loss(
-        f"{'Find Focus - '}{'Loss: '}{loss_local: < 25}{'z01: '}{values[0]}{' a0: '}{values[1]/z01_order}"
-    )
+    logging.loss(f"{'Find Focus - '}{'Loss: '}{loss_local: < 25}{'z01: '}{values[0]}{' a0: '}{values[1] / z01_order}")
 
     return float(loss)
 

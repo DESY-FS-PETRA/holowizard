@@ -25,13 +25,11 @@ if "torch" in sys.modules:
             elif type(data) is torch.Tensor:
                 return data.to(torch.complex64)
             elif type(data) is np.ndarray:
-                return torch.from_numpy(data.astype(np.complex64)).to(
-                    holowizard.core.torch_running_device
-                )
+                return torch.from_numpy(data.astype(np.complex64)).to(holowizard.core.torch_running_device)
             else:
-                raise TypeError(
-                    "Expected torch tensor or numpy array but got ", type(data)
-                ).with_traceback(sys.exc_info()[2])
+                raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
+                    sys.exc_info()[2]
+                )
 
         @staticmethod
         def get_array_float(data):
@@ -40,13 +38,11 @@ if "torch" in sys.modules:
             elif type(data) is torch.Tensor:
                 return data.to(torch.float)
             elif type(data) is np.ndarray:
-                return torch.from_numpy(data.astype(np.single)).to(
-                    holowizard.core.torch_running_device
-                )
+                return torch.from_numpy(data.astype(np.single)).to(holowizard.core.torch_running_device)
             else:
-                raise TypeError(
-                    "Expected torch tensor or numpy array but got ", type(data)
-                ).with_traceback(sys.exc_info()[2])
+                raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
+                    sys.exc_info()[2]
+                )
 
         @staticmethod
         def get_array_ushort(data):
@@ -55,13 +51,11 @@ if "torch" in sys.modules:
             elif type(data) is torch.Tensor:
                 return data.to(torch.uint16)
             elif type(data) is np.ndarray:
-                return torch.from_numpy(data.astype(np.uint16)).to(
-                    holowizard.core.torch_running_device
-                )
+                return torch.from_numpy(data.astype(np.uint16)).to(holowizard.core.torch_running_device)
             else:
-                raise TypeError(
-                    "Expected torch tensor or numpy array but got ", type(data)
-                ).with_traceback(sys.exc_info()[2])
+                raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
+                    sys.exc_info()[2]
+                )
 
         @staticmethod
         def get_numpy_array(data):
@@ -76,9 +70,9 @@ if "torch" in sys.modules:
             elif type(data) is np.ndarray:
                 return data.astype(np.complex64)
             else:
-                raise TypeError(
-                    "Expected torch tensor or numpy array but got ", type(data)
-                ).with_traceback(sys.exc_info()[2])
+                raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
+                    sys.exc_info()[2]
+                )
 
         @staticmethod
         def get_numpy_array_float(data):
@@ -89,9 +83,9 @@ if "torch" in sys.modules:
             elif type(data) is np.ndarray:
                 return data.astype(np.single)
             else:
-                raise TypeError(
-                    "Expected torch tensor or numpy array but got ", type(data)
-                ).with_traceback(sys.exc_info()[2])
+                raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
+                    sys.exc_info()[2]
+                )
 
         @staticmethod
         def get_numpy_array_ushort(data):
@@ -102,9 +96,9 @@ if "torch" in sys.modules:
             elif type(data) is np.ndarray:
                 return data.astype(np.uint16)
             else:
-                raise TypeError(
-                    "Expected torch tensor or numpy array but got ", type(data)
-                ).with_traceback(sys.exc_info()[2])
+                raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
+                    sys.exc_info()[2]
+                )
 
         @staticmethod
         def get_array_wavefield_from_refractive(data):

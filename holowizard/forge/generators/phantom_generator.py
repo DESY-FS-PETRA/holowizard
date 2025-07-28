@@ -83,7 +83,12 @@ class PhantomGenerator:
     def create_phantom(self) -> Phantom:
         phantom_size = self.size
         composed_phantom = Phantom(
-            torch.zeros((phantom_size, phantom_size), dtype=torch.cfloat, device=get_torch_device()), phantom_size
+            torch.zeros(
+                (phantom_size, phantom_size),
+                dtype=torch.cfloat,
+                device=get_torch_device(),
+            ),
+            phantom_size,
         )
         num_objects = randint_from_range((self.num_shapes_min, self.num_shapes_max))
         for _ in range(num_objects):
@@ -109,7 +114,9 @@ class PhantomGenerator:
 
         if material not in self.material_dict:
             self.material_dict[material] = xraylib.Refractive_Index(
-                material, energy, xraylib.ElementDensity(xraylib.SymbolToAtomicNumber(material))
+                material,
+                energy,
+                xraylib.ElementDensity(xraylib.SymbolToAtomicNumber(material)),
             )
 
         ref_index = self.material_dict[material]

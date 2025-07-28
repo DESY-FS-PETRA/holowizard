@@ -32,13 +32,9 @@ class Options:
         class JsonWritable:
             def __init__(self, options: Options):
                 self.update_blocks = options.update_blocks
-                self.regularization_object = json.loads(
-                    options.regularization_object.to_json()
-                )
+                self.regularization_object = json.loads(options.regularization_object.to_json())
                 self.nesterov_object = json.loads(options.nesterov_object.to_json())
-                self.regularization_probe = json.loads(
-                    options.regularization_probe.to_json()
-                )
+                self.regularization_probe = json.loads(options.regularization_probe.to_json())
                 self.z01_tol = options.z01_tol
                 self.padding = json.loads(options.padding.to_json())
                 self.verbose_interval = options.verbose_interval
@@ -162,27 +158,25 @@ class Options:
         if type(z01_tol) is float or type(z01_tol) is int:
             self._z01_tol = z01_tol
         else:
-            raise TypeError(
-                "Expected float or int for z01_tol but got ", type(z01_tol)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected float or int for z01_tol but got ", type(z01_tol)).with_traceback(
+                sys.exc_info()[2]
+            )
 
     @padding.setter
     def padding(self, padding):
         if isinstance(padding, Padding):
             self._padding = padding
         else:
-            raise TypeError(
-                "Expected Padding instance but got ", type(padding)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected Padding instance but got ", type(padding)).with_traceback(sys.exc_info()[2])
 
     @verbose_interval.setter
     def verbose_interval(self, verbose_interval):
         if isinstance(verbose_interval, int) or verbose_interval is None:
             self._verbose_interval = verbose_interval
         else:
-            raise TypeError(
-                "Expected integer for verbose_interval but got ", type(verbose_interval)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected integer for verbose_interval but got ", type(verbose_interval)).with_traceback(
+                sys.exc_info()[2]
+            )
 
     @prototype_field.setter
     def prototype_field(self, prototype_field):

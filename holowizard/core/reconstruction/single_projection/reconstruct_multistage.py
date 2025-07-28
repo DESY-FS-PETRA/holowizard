@@ -41,15 +41,12 @@ def reconstruct(
     for options_index in range(len(options)):
         context.set_stage(options_index)
 
-        logging.info(
-            f"{'Downsampling':<17}{str(context.current_options.padding.down_sampling_factor)}"
-        )
+        logging.info(f"{'Downsampling':<17}{str(context.current_options.padding.down_sampling_factor)}")
 
         reconstruct_stage(context)
 
         context.current_iter_offset = (
-            context.current_iter_offset
-            + context.current_options.regularization_object.iterations
+            context.current_iter_offset + context.current_options.regularization_object.iterations
         )
 
         if "cuda" in holowizard.core.torch_running_device_name:

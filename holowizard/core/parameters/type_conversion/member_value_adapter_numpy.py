@@ -18,9 +18,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         elif type(data) is np.ndarray:
             return data.astype(np.complex64)
         else:
-            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(sys.exc_info()[2])
 
     @staticmethod
     def get_array_float(data):
@@ -29,9 +27,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         elif type(data) is np.ndarray:
             return data.astype(np.single)
         else:
-            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(sys.exc_info()[2])
 
     @staticmethod
     def get_array_ushort(data):
@@ -40,9 +36,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         elif type(data) is np.ndarray:
             return data.astype(np.uint16)
         else:
-            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(sys.exc_info()[2])
 
     @staticmethod
     def get_numpy_array(data):
@@ -67,9 +61,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         elif type(data) is int:
             return float(data)
         else:
-            raise TypeError(
-                "Expected float or int but got ", type(data)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected float or int but got ", type(data)).with_traceback(sys.exc_info()[2])
 
     @staticmethod
     def get_complex(data):
@@ -91,9 +83,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         if type(data) is list:
             return tuple(data)
         else:
-            raise TypeError(
-                "Expected tuple or list but got", type(data)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected tuple or list but got", type(data)).with_traceback(sys.exc_info()[2])
 
     @staticmethod
     def get_array_wavefield_from_refractive(data):
@@ -102,9 +92,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         elif type(data) is np.ndarray:
             return np.exp(1j * data.astype(np.single))
         else:
-            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected numpy array but got ", type(data)).with_traceback(sys.exc_info()[2])
 
     @staticmethod
     def get_array_refractive_from_wavefield(data):
@@ -149,6 +137,4 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
         if type(data) is str:
             return data
         else:
-            raise TypeError("Expected string but got ", type(data)).with_traceback(
-                sys.exc_info()[2]
-            )
+            raise TypeError("Expected string but got ", type(data)).with_traceback(sys.exc_info()[2])

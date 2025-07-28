@@ -14,7 +14,6 @@ Example:
 
 # local libraries
 
-
 __all__ = [
     "convert_energy",
     "convert_z01",
@@ -33,6 +32,7 @@ def convert_z01(z01: float) -> float:
 
 def convert_z02(z02: float) -> float:
     return round(z02, 3) * 1e6
+
 
 def convert_det_px_size(det_px_size: float) -> float:
     return det_px_size * 1e6

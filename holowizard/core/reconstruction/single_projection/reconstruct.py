@@ -26,10 +26,7 @@ def print_infos(iteration, context: Context, force_update):
 def reconstruct(context: Context):
     with torch.no_grad():
         iteration = None
-        for iteration in range(
-            context.current_options.regularization_object.iterations
-        ):
-
+        for iteration in range(context.current_options.regularization_object.iterations):
             context.oref_predicted = regularization.apply_padding_refractive(
                 context.oref_predicted,
                 context.data_dimensions,
@@ -65,8 +62,7 @@ def reconstruct(context: Context):
             )
 
             context.nesterov_vt = (
-                context.current_options.nesterov_object.update_rate
-                * context.nesterov_vt
+                context.current_options.nesterov_object.update_rate * context.nesterov_vt
                 + context.current_options.regularization_object.update_rate * grad
             )
 
@@ -87,9 +83,7 @@ def reconstruct(context: Context):
             )
 
             context.se_losses_all[context.current_iter_offset + iteration] = loss
-            print_infos(
-                context.current_iter_offset + iteration, context, force_update=False
-            )
+            print_infos(context.current_iter_offset + iteration, context, force_update=False)
 
         if iteration is not None:
             print_infos(context.current_iter_offset + iteration, context, force_update=True)

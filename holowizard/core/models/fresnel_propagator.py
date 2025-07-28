@@ -60,9 +60,7 @@ extern "C" __global__ void FresnelCallback(
 
         self.num_distances = len(fresnel_numbers)
         self.fresnel_numbers = fresnel_numbers
-        self.fresnel_kernel = cp.RawKernel(
-            self.fft_callback, "FresnelCallback", translate_cucomplex=True
-        )
+        self.fresnel_kernel = cp.RawKernel(self.fft_callback, "FresnelCallback", translate_cucomplex=True)
 
     def propagate_forward(self, x, distance):
         # with torch.cuda.nvtx.range("forward propagator"):
@@ -91,10 +89,7 @@ extern "C" __global__ void FresnelCallback(
         return x
 
     def propagate_forward_all(self, x):
-        return [
-            self.propagate_forward(x, distance)
-            for distance in range(self.num_distances)
-        ]
+        return [self.propagate_forward(x, distance) for distance in range(self.num_distances)]
 
     def propagate_back(self, x, distance):
         # with torch.cuda.nvtx.range("backward propagator"):
@@ -127,9 +122,7 @@ extern "C" __global__ void FresnelCallback(
         return x
 
     def propagate_back_all(self, x, distance):
-        propagated = [
-            self.propagate_back(x, distance) for distance in range(self.num_distances)
-        ]
+        propagated = [self.propagate_back(x, distance) for distance in range(self.num_distances)]
         return propagated
 
     def get_measurements(self, x, distance):
@@ -139,6 +132,4 @@ extern "C" __global__ void FresnelCallback(
         return [torch.abs(x[distance]) for distance in range(self.num_distances)]
 
     def get_measurements_all(self, x):
-        return [
-            self.get_measurements(x, distance) for distance in range(self.num_distances)
-        ]
+        return [self.get_measurements(x, distance) for distance in range(self.num_distances)]

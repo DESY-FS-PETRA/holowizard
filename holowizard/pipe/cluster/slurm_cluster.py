@@ -64,11 +64,11 @@ class SlurmCluster(Cluster):
             walltime=self.dask_cfg.get("walltime", "2-00:00:00"),
             job_script_prologue=[
                 'export LD_PRELOAD=""',
-                'source /etc/profile.d/modules.sh',
-                'module load maxwell mamba',
-                'source activate base',
-                '. mamba-init',
-                f'mamba activate {self.env}',
+                "source /etc/profile.d/modules.sh",
+                "module load maxwell mamba",
+                "source activate base",
+                ". mamba-init",
+                f"mamba activate {self.env}",
                 f"""
                 if ! command -v nvidia-smi &> /dev/null; then
                     echo "nvidia-smi not found. Exiting."
@@ -81,16 +81,16 @@ class SlurmCluster(Cluster):
                 CUDA_VISIBLE_DEVICES=$gpu_index \
                     python -m distributed.cli.dask_worker {self.scheduler_address} --nthreads 1 --memory-limit 256GB &
                 done
-                """                                                                                      
+                """,
             ],
             job_extra_directives=[
-                f'--partition={partition_string}',
-                f'--output={self.slurm_output_path}/slurm-%j.out',
-                '--ntasks=1',
-                '--nodes=1',
+                f"--partition={partition_string}",
+                f"--output={self.slurm_output_path}/slurm-%j.out",
+                "--ntasks=1",
+                "--nodes=1",
                 '--constraint="A100|V100|P100"',
             ],
-            worker_extra_args=['--no-nanny']
+            worker_extra_args=["--no-nanny"],
         )
 
         logging.info(f"Dask Cluster created. Dashboard: {self.cluster.dashboard_link}")
@@ -149,7 +149,7 @@ class SlurmCluster(Cluster):
         if self.worker_thread and self.worker_thread.is_alive():
             self.worker_thread.join()
         logging.info("Cleanup complete.")
-    
+
     def queue_info(self):
         """
         Retrieve info about tasks currently in the scheduler's task queue.
@@ -158,6 +158,7 @@ class SlurmCluster(Cluster):
         """
         if not self.client_scheduler:
             return {"error": "Client not connected to scheduler."}
+
         def inspect(dask_scheduler):
             return [
                 {
@@ -167,7 +168,7 @@ class SlurmCluster(Cluster):
                 }
                 for task in dask_scheduler.tasks.values()
             ]
-      
+
         try:
             return self.client_scheduler.run_on_scheduler(inspect)
         except Exception as e:

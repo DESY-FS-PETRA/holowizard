@@ -5,6 +5,7 @@ Created on Fri Sep  3 13:35:22 2021
 
 @author: joh
 """
+
 import zmq
 import traceback
 import holowizard.livereco_server
@@ -64,17 +65,13 @@ def main():
                 continue
 
             if function == "reconstruct":
-                rec.reconstruct_x(
-                    message["flatfield_correction_params"], message["reco_params"]
-                )
+                rec.reconstruct_x(message["flatfield_correction_params"], message["reco_params"])
                 continue
 
             if function == "find_focus":
                 current_log_level = Logger.current_log_level
                 Logger.current_log_level = Logger.level_num_image_final
-                found_z01 = findfoc.find_focus(
-                    message["flatfield_correction_params"], message["reco_params"]
-                )
+                found_z01 = findfoc.find_focus(message["flatfield_correction_params"], message["reco_params"])
                 Logger.current_log_level = current_log_level
                 send(function, found_z01=found_z01)
 

@@ -65,9 +65,7 @@ def plot_loss_chart(root, support, title, csv_output=False):
 
         x_values_images.append(x)
 
-        image = torch.tensor(
-            io.imread(file), device=holowizard.core.torch_running_device
-        )[support]
+        image = torch.tensor(io.imread(file), device=holowizard.core.torch_running_device)[support]
 
         """
 		sample_grid = torch.meshgrid(torch.fft.fftfreq(image.shape[0], device=torch.device("cuda")),
@@ -81,9 +79,7 @@ def plot_loss_chart(root, support, title, csv_output=False):
 		"""
 
         filter_kernel = torch.tensor(
-            fourier_gaussian(np.ones(image.shape), sigma=4 / 2.35)[
-                :, 0 : int(image.shape[1] / 2) + 1
-            ],
+            fourier_gaussian(np.ones(image.shape), sigma=4 / 2.35)[:, 0 : int(image.shape[1] / 2) + 1],
             device=holowizard.core.torch_running_device,
         )
 
@@ -131,39 +127,25 @@ def plot_loss_chart(root, support, title, csv_output=False):
             None
 
         print_loss_csv(csv_root + "se_losses.csv", x_values_se, se_values)
-        print_loss_csv_normalized(
-            csv_root + "se_losses_normalised.csv", x_values_se, se_values
-        )
+        print_loss_csv_normalized(csv_root + "se_losses_normalised.csv", x_values_se, se_values)
 
         print_loss_csv(csv_root + "gog_losses.csv", x_values_se, gog_values)
-        print_loss_csv_normalized(
-            csv_root + "gog_losses_normalised.csv", x_values_se, gog_values
-        )
+        print_loss_csv_normalized(csv_root + "gog_losses_normalised.csv", x_values_se, gog_values)
 
         print_loss_csv(csv_root + "tog_losses.csv", x_values_se, tog_values)
-        print_loss_csv_normalized(
-            csv_root + "tog_losses_normalised.csv", x_values_se, tog_values
-        )
+        print_loss_csv_normalized(csv_root + "tog_losses_normalised.csv", x_values_se, tog_values)
 
         print_loss_csv(csv_root + "var_losses.csv", x_values_se, var_values)
-        print_loss_csv_normalized(
-            csv_root + "var_losses_normalised.csv", x_values_se, var_values
-        )
+        print_loss_csv_normalized(csv_root + "var_losses_normalised.csv", x_values_se, var_values)
 
         print_loss_csv(csv_root + "spec_losses.csv", x_values_se, spec_values)
-        print_loss_csv_normalized(
-            csv_root + "spec_losses_normalised.csv", x_values_se, spec_values
-        )
+        print_loss_csv_normalized(csv_root + "spec_losses_normalised.csv", x_values_se, spec_values)
 
         print_loss_csv(csv_root + "lp_losses.csv", x_values_se, lp_values)
-        print_loss_csv_normalized(
-            csv_root + "lp_losses_normalised.csv", x_values_se, lp_values
-        )
+        print_loss_csv_normalized(csv_root + "lp_losses_normalised.csv", x_values_se, lp_values)
 
         print_loss_csv(csv_root + "gc_losses.csv", x_values_se, gc_values)
-        print_loss_csv_normalized(
-            csv_root + "gc_losses_normalised.csv", x_values_se, gc_values
-        )
+        print_loss_csv_normalized(csv_root + "gc_losses_normalised.csv", x_values_se, gc_values)
 
     axs[0, 1].plot(x_values_se, se_values)
     axs[0, 1].set_title("SE")
@@ -187,9 +169,7 @@ def plot_loss_chart(root, support, title, csv_output=False):
     axs[1, 3].set_title("LAP")
 
 
-def plot_loss_chart_multidim(
-    root, support, title, csv_output=False, xmin=None, xmax=None, ymin=None, ymax=None
-):
+def plot_loss_chart_multidim(root, support, title, csv_output=False, xmin=None, xmax=None, ymin=None, ymax=None):
     axs = []
     fig = plt.figure()
     axs.append(fig.add_subplot(1, 1, 1, projection="3d"))
@@ -225,9 +205,7 @@ def plot_loss_chart_multidim(
             y_values_se.append(float(y))
             se_values.append(float(z))
 
-    x_values_se, y_values_se, se_values = zip(
-        *sorted(zip(x_values_se, y_values_se, se_values))
-    )
+    x_values_se, y_values_se, se_values = zip(*sorted(zip(x_values_se, y_values_se, se_values)))
 
     index_min = min(range(len(se_values)), key=se_values.__getitem__)
 

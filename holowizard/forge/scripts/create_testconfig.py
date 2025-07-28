@@ -12,8 +12,18 @@ from holowizard.forge.configs import TEST_CONFIG_PATH
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("name", help="Name of the config file without file name extension.", type=str)
-    parser.add_argument("-o", "--output_dir", help="Output folder where to store the config file.", type=str, default=".")
-    parser.add_argument("--override", help="Override existing custom config file, if it exists.", action="store_true")
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        help="Output folder where to store the config file.",
+        type=str,
+        default=".",
+    )
+    parser.add_argument(
+        "--override",
+        help="Override existing custom config file, if it exists.",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     output_path = Path(args.output_dir)

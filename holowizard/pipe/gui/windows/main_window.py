@@ -10,9 +10,22 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QDoubleValidator
-from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QHBoxLayout, QVBoxLayout, \
-    QTableWidget, QSlider, QLineEdit, QPushButton, QLabel, QTabWidget, QHeaderView, QWidget, \
-    QTextEdit, QFormLayout
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QTableWidgetItem,
+    QHBoxLayout,
+    QVBoxLayout,
+    QTableWidget,
+    QSlider,
+    QLineEdit,
+    QPushButton,
+    QLabel,
+    QTabWidget,
+    QHeaderView,
+    QWidget,
+    QTextEdit,
+    QFormLayout,
+)
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal
 
 from holowizard.beamtime import bt_utils as bt
@@ -26,7 +39,17 @@ from gui.windows.popup_windows.scan_config_dialog import ScanConfigDialog
 from silx.gui.plot import Plot2D
 
 
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QHBoxLayout, QPushButton, QComboBox, QCheckBox, QFormLayout
+from PyQt5.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QLabel,
+    QLineEdit,
+    QHBoxLayout,
+    QPushButton,
+    QComboBox,
+    QCheckBox,
+    QFormLayout,
+)
 from PyQt5.QtGui import QDoubleValidator
 
 
@@ -58,7 +81,7 @@ class MainWindow(QMainWindow):
 
         # Path to the default.ini file
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        self.config_path = os.path.join(root_dir, 'default.ini')
+        self.config_path = os.path.join(root_dir, "default.ini")
 
         # Initialize configparser and load the .ini file
         self.config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -217,7 +240,7 @@ class MainWindow(QMainWindow):
 
         button_layout = QHBoxLayout()
         self.button_open = QPushButton("Open Beamtime Folder", self)
-        self.button_add_scan_to_processing= QPushButton("Select scan for processing", self)
+        self.button_add_scan_to_processing = QPushButton("Select scan for processing", self)
         button_layout.addWidget(self.button_add_scan_to_processing)
         button_layout.addWidget(self.button_open)
         left_beamtime_layout.addLayout(button_layout)
@@ -311,7 +334,7 @@ class MainWindow(QMainWindow):
         left_phase_layout.addWidget(self.button_start_reconstruction)
         left_phase_layout.addWidget(self.button_find_focus)
         left_phase_layout.addWidget(self.button_stop_reconstruction)
-        self.button_stop_reconstruction.setEnabled(False) # Disable the stop button initially
+        self.button_stop_reconstruction.setEnabled(False)  # Disable the stop button initially
 
         # Right side for reconstruction viewer and log display
         right_phase_layout = QVBoxLayout()
@@ -325,8 +348,7 @@ class MainWindow(QMainWindow):
         self.clear_canvas_button = QPushButton("Clear viewer")
         self.clear_canvas_button.setFixedWidth(150)
         clear_canvas_button_layout = QHBoxLayout()
-        spacer = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-                                       QtWidgets.QSizePolicy.Minimum)
+        spacer = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         clear_canvas_button_layout.addItem(spacer)
         clear_canvas_button_layout.addWidget(self.clear_canvas_button)
         right_phase_layout.addWidget(self.iteration_label)
@@ -344,8 +366,7 @@ class MainWindow(QMainWindow):
         self.clear_log_button = QPushButton("Clear log")
         self.clear_log_button.setFixedWidth(150)
         clear_log_button_layout = QHBoxLayout()
-        spacer = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-                                       QtWidgets.QSizePolicy.Minimum)
+        spacer = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         clear_log_button_layout.addItem(spacer)
         clear_log_button_layout.addWidget(self.clear_log_button)
         right_phase_layout.addWidget(self.log_label)
@@ -429,7 +450,6 @@ class MainWindow(QMainWindow):
         self.tomo_reco_tab.setLayout(tomo_layout)
         self.tabs.addTab(self.tomo_reco_tab, "Tomographic Reconstruction")
 
-
     # Popup for rotation center search
     def open_rotation_center_search(self):
         """
@@ -459,8 +479,7 @@ class MainWindow(QMainWindow):
         self.rotation_center_popup.show()
 
         # Connect reconstruct button
-        self.button_reconstruct_with_center.clicked.connect(
-            self.reconstruct_with_selected_center)
+        self.button_reconstruct_with_center.clicked.connect(self.reconstruct_with_selected_center)
 
     # Functions for reconstruction
     def reconstruct_stack(self):
@@ -537,7 +556,7 @@ class MainWindow(QMainWindow):
         for row, beamtime in enumerate(self.bt_list):
             for col, key in enumerate(display_keys):
                 item = beamtime.meta_dict.get(key, "")
-                items = item['lastname'] if isinstance(item, dict) else str(item)
+                items = item["lastname"] if isinstance(item, dict) else str(item)
                 self.tableWidget.setHorizontalHeaderItem(col, QTableWidgetItem(key))
                 self.tableWidget.setItem(row, col, QTableWidgetItem(items))
 
@@ -549,7 +568,7 @@ class MainWindow(QMainWindow):
         self.scanlist = self.current_bt.scans_tab
         self.tableWidget_scans.setRowCount(len(self.scanlist))
         self.tableWidget_scans.setColumnCount(1)
-        self.tableWidget_scans.setHorizontalHeaderItem(0, QTableWidgetItem('scan'))
+        self.tableWidget_scans.setHorizontalHeaderItem(0, QTableWidgetItem("scan"))
 
         for row, scan in enumerate(self.scanlist):
             self.tableWidget_scans.setItem(row, 0, QTableWidgetItem(scan.name))
@@ -561,26 +580,20 @@ class MainWindow(QMainWindow):
         Search for a specific scan across all beamtimes and display the results.
         """
         # Check if beamtime list exists and is non-empty
-        if not hasattr(self, 'bt_list') or not self.bt_list:
+        if not hasattr(self, "bt_list") or not self.bt_list:
             QtWidgets.QMessageBox.warning(
-                self, "No Beamtime Loaded",
-                "Please select a year and load beamtimes before searching for scans."
+                self,
+                "No Beamtime Loaded",
+                "Please select a year and load beamtimes before searching for scans.",
             )
             return
 
         self.search_item = self.edit_search.text().strip()
         if not self.search_item:
-            QtWidgets.QMessageBox.information(
-                self, "Empty Search",
-                "Please enter a scan name to search for."
-            )
+            QtWidgets.QMessageBox.information(self, "Empty Search", "Please enter a scan name to search for.")
             return
 
-        self.scanlist = [
-            result
-            for bt in self.bt_list
-            for result in bt.search_in_bt(self.search_item)
-        ]
+        self.scanlist = [result for bt in self.bt_list for result in bt.search_in_bt(self.search_item)]
 
         self.tableWidget_scans.setRowCount(len(self.scanlist))
         self.tableWidget_scans.setColumnCount(1)
@@ -590,10 +603,7 @@ class MainWindow(QMainWindow):
             self.tableWidget_scans.setItem(row, 0, QTableWidgetItem(scan.name))
 
         if not self.scanlist:
-            QtWidgets.QMessageBox.information(
-                self, "No Results",
-                f"No scans found for: {self.search_item}"
-            )
+            QtWidgets.QMessageBox.information(self, "No Results", f"No scans found for: {self.search_item}")
 
     def select_scan(self, row):
         """
@@ -635,7 +645,7 @@ class MainWindow(QMainWindow):
         """
 
         if index == 0:
-                return
+            return
         self.current_year = self.comboBox_year.currentText()
 
     def slider_image_num(self):
@@ -652,7 +662,9 @@ class MainWindow(QMainWindow):
         Update the label displaying the current image number.
         """
         if self.current_scan:
-            self.image_info.setText(f"Scan: {self.current_scan.name} | Image {self.img_num} of {self.current_scan.num_img}")
+            self.image_info.setText(
+                f"Scan: {self.current_scan.name} | Image {self.img_num} of {self.current_scan.num_img}"
+            )
             self.image_num_input.setText(str(self.img_num))
 
     def prev_image(self):
@@ -692,11 +704,10 @@ class MainWindow(QMainWindow):
         Open the current beamtime directory in the file explorer.
         """
         if self.current_bt is not None:
-            path = f'/asap3/petra3/gpfs/p05/{self.year}/data/{self.current_bt.beamtime}'
-            subprocess.Popen(['xdg-open', path])
+            path = f"/asap3/petra3/gpfs/p05/{self.year}/data/{self.current_bt.beamtime}"
+            subprocess.Popen(["xdg-open", path])
         else:
-            QtWidgets.QMessageBox.warning(self, "Warning!",
-                                          "Please select a beamtime!")
+            QtWidgets.QMessageBox.warning(self, "Warning!", "Please select a beamtime!")
 
     def add_scan_to_processing(self):
         """
@@ -704,8 +715,7 @@ class MainWindow(QMainWindow):
         """
 
         if not self.current_bt or not self.current_scan:
-            QtWidgets.QMessageBox.warning(self, "Warning",
-                                          "Please select a beamtime and a scan first.")
+            QtWidgets.QMessageBox.warning(self, "Warning", "Please select a beamtime and a scan first.")
             return
 
         dialog = ScanConfigDialog(scan_name=self.current_scan.name, parent=self)
@@ -714,12 +724,14 @@ class MainWindow(QMainWindow):
 
             try:
                 from holowizard.beamtime.P05 import P05Scan
-                from holowizard.builders.project_config_builder import ProjectConfigBuilder
+                from holowizard.builders.project_config_builder import (
+                    ProjectConfigBuilder,
+                )
 
                 # Holder parser
                 def parse_holder(holder_text: str) -> float:
                     try:
-                        return float(holder_text.split('(')[1].split(' ')[0])
+                        return float(holder_text.split("(")[1].split(" ")[0])
                     except Exception:
                         return 220.0  # default fallback
 
@@ -728,7 +740,7 @@ class MainWindow(QMainWindow):
                     "Mg Wire": "wire",
                     "Cactus Needle": "cactus",
                     "Tooth": "tooth",
-                    "Spyder Hair": "spider"
+                    "Spyder Hair": "spider",
                 }
 
                 # Create a P05Scan object using selected scan
@@ -752,8 +764,7 @@ class MainWindow(QMainWindow):
 
                 path = builder.save_config()
 
-                QtWidgets.QMessageBox.information(self, "Success",
-                                                  f"Configuration saved to:\n{path}")
+                QtWidgets.QMessageBox.information(self, "Success", f"Configuration saved to:\n{path}")
 
             except Exception as e:
                 QtWidgets.QMessageBox.critical(self, "Error", f"Failed to create config:\n{e}")
@@ -768,7 +779,7 @@ class MainWindow(QMainWindow):
             self.config.set(section, key, value)
 
         # Write the updated configuration to the ini file
-        with open(self.config_path, 'w') as configfile:
+        with open(self.config_path, "w") as configfile:
             self.config.write(configfile)
 
         # Notify the user that the save was successful
@@ -789,7 +800,7 @@ class MainWindow(QMainWindow):
 
         # Ensure plot is centered within canvas
         ax.axis("off")
-        ax.set_aspect('auto')  # Automatically adjust aspect ratio
+        ax.set_aspect("auto")  # Automatically adjust aspect ratio
         self.fig_plot.tight_layout(pad=0)  # Remove extra padding around the plot
 
         # Update metadata labels
@@ -811,14 +822,14 @@ class MainWindow(QMainWindow):
 
         # Initialize the SinglePhaseRetrievalInitializer
         self.config.read(self.config_path)
-        init_object_path = self.config['paths']['params_dir'] + "/init_object.pkl"
+        init_object_path = self.config["paths"]["params_dir"] + "/init_object.pkl"
         self.phase_retrieval_initializer = SinglePhaseRetrievalInitializer(init_object_path)
 
         # Create a new thread for phase retrieval
         self.phase_retrieval_thread = PhaseRetrievalThread(
             initializer=self.phase_retrieval_initializer,
             img_index=self.img_num,
-            canvas=self.canvas
+            canvas=self.canvas,
         )
 
         # Check if already redirected
@@ -852,9 +863,9 @@ class MainWindow(QMainWindow):
         self.refresh_timer.stop()
 
         # Restore stdout and stderr
-        if hasattr(self, 'original_stdout') and sys.stdout != self.original_stdout:
+        if hasattr(self, "original_stdout") and sys.stdout != self.original_stdout:
             sys.stdout = self.original_stdout
-        if hasattr(self, 'original_stderr') and sys.stderr != self.original_stderr:
+        if hasattr(self, "original_stderr") and sys.stderr != self.original_stderr:
             sys.stderr = self.original_stderr
 
         # Re-enable the start button and update status
@@ -869,8 +880,13 @@ class MainWindow(QMainWindow):
         Open the Advanced Settings window.
         """
         from gui.windows.popup_windows.advanced_json_editor import AdvancedJsonEditor
-        config_path = os.path.join(self.current_scan.path_processed, "holopipe", "config",
-                                   "holopipe_config.json")
+
+        config_path = os.path.join(
+            self.current_scan.path_processed,
+            "holopipe",
+            "config",
+            "holopipe_config.json",
+        )
         print(config_path)
         print(self.current_scan)
         if not os.path.exists(config_path):
@@ -889,7 +905,7 @@ class MainWindow(QMainWindow):
         img_rotated = np.rot90(img, k=-1)
 
         # Display the rotated image
-        colormap = {'name': 'gray', 'autoscaleMode': 'stddev3'}
+        colormap = {"name": "gray", "autoscaleMode": "stddev3"}
         self.imv.setDefaultColormap(colormap)
         self.imv.addImage(img_rotated)
 
@@ -905,14 +921,14 @@ class MainWindow(QMainWindow):
 
         # Initialize the FindFocusInitializer
         self.config.read(self.config_path)
-        init_object_path = self.config['paths']['params_dir'] + "/init_object.pkl"
+        init_object_path = self.config["paths"]["params_dir"] + "/init_object.pkl"
         self.find_focus_initializer = FindFocusInitializer(init_object_path)
 
         # Create a new thread for find focus
         self.find_focus_thread = FindFocusThread(
             initializer=self.find_focus_initializer,
             img_index=self.img_num,
-            canvas=self.canvas
+            canvas=self.canvas,
         )
 
         # Check if already redirected
@@ -932,7 +948,6 @@ class MainWindow(QMainWindow):
 
         # Start the timer to periodically refresh the canvas
         self.refresh_timer.start()
-
 
     def stop_reconstruction(self):
         """
@@ -967,11 +982,13 @@ class MainWindow(QMainWindow):
                 self.update_image_info()
                 self.update_placeholder_image(self.current_scan.load_image(self.img_num - 1))
             else:
-                QtWidgets.QMessageBox.warning(self, "Invalid Image Number",
-                                              "Image number is out of range.")
+                QtWidgets.QMessageBox.warning(self, "Invalid Image Number", "Image number is out of range.")
         except ValueError:
-            QtWidgets.QMessageBox.warning(self, "Invalid Input",
-                                          "Please enter a valid integer for the image number.")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Invalid Input",
+                "Please enter a valid integer for the image number.",
+            )
 
     def clear_logging(self):
         """Clear the contents of the log display."""
@@ -1061,16 +1078,15 @@ class MainWindow(QMainWindow):
         current_slice = self.slider_tomo_slice.value() - 1  # Convert slider value to 0-based index
 
         if current_tab == self.slice_viewer_tab:
-            if hasattr(self, 'slice_stack') and self.slice_stack is not None:
+            if hasattr(self, "slice_stack") and self.slice_stack is not None:
                 self.slice_image_viewer.clear()
                 self.slice_image_viewer.addImage(self.slice_stack[current_slice])
         elif current_tab == self.phase_retrieved_tab:
-            if hasattr(self,
-                       'phase_retrieved_stack') and self.phase_retrieved_stack is not None:
+            if hasattr(self, "phase_retrieved_stack") and self.phase_retrieved_stack is not None:
                 self.phase_image_viewer.clear()
                 self.phase_image_viewer.addImage(self.phase_retrieved_stack[current_slice])
         elif current_tab == self.stack_viewer_tab:
-            if hasattr(self, 'tomographic_stack') and self.tomographic_stack is not None:
+            if hasattr(self, "tomographic_stack") and self.tomographic_stack is not None:
                 self.stack_image_viewer.clear()
                 self.stack_image_viewer.addImage(self.tomographic_stack[current_slice])
 
@@ -1081,13 +1097,11 @@ class MainWindow(QMainWindow):
         current_tab = self.viewer_tabs.currentWidget()
 
         if current_tab == self.slice_viewer_tab:
-            stack_size = self.slice_stack.shape[0] if hasattr(self, 'slice_stack') else 1
+            stack_size = self.slice_stack.shape[0] if hasattr(self, "slice_stack") else 1
         elif current_tab == self.phase_retrieved_tab:
-            stack_size = self.phase_retrieved_stack.shape[0] if hasattr(self,
-                                                                        'phase_retrieved_stack') else 1
+            stack_size = self.phase_retrieved_stack.shape[0] if hasattr(self, "phase_retrieved_stack") else 1
         elif current_tab == self.stack_viewer_tab:
-            stack_size = self.tomographic_stack.shape[0] if hasattr(self,
-                                                                    'tomographic_stack') else 1
+            stack_size = self.tomographic_stack.shape[0] if hasattr(self, "tomographic_stack") else 1
         else:
             stack_size = 1  # Fallback if no stack is loaded
 
@@ -1134,18 +1148,20 @@ class MainWindow(QMainWindow):
     #             f"An error occurred while updating default.ini: {e}"
     #         )
 
-
     def open_phase_viewer_popup(self):
         """
         Open a popup viewer for scrolling through phase retrieved images.
         """
         # Get the path from the .ini file
         self.config.read(self.config_path)
-        phase_images_path = self.config['paths']['reco_output']
+        phase_images_path = self.config["paths"]["reco_output"]
 
         if not os.path.exists(phase_images_path) or not os.listdir(phase_images_path):
-            QtWidgets.QMessageBox.warning(self, "No Images Found",
-                                          f"No phase retrieved images found in {phase_images_path}.")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "No Images Found",
+                f"No phase retrieved images found in {phase_images_path}.",
+            )
             return
 
         # Create the pop-up window
@@ -1167,8 +1183,7 @@ class MainWindow(QMainWindow):
 
         # Load images from the directory
         self.phase_images = sorted(
-            [os.path.join(phase_images_path, f) for f in os.listdir(phase_images_path) if
-             f.endswith('.tif')]
+            [os.path.join(phase_images_path, f) for f in os.listdir(phase_images_path) if f.endswith(".tif")]
         )
         self.phase_slider.setRange(1, len(self.phase_images))
         self.phase_slider.setValue(1)
@@ -1185,7 +1200,7 @@ class MainWindow(QMainWindow):
         """
         Update the image displayed in the phase viewer based on the slider position.
         """
-        if hasattr(self, 'phase_images') and self.phase_images:
+        if hasattr(self, "phase_images") and self.phase_images:
             image_index = self.phase_slider.value() - 1  # Slider is 1-based
             image_path = self.phase_images[image_index]
 
@@ -1201,10 +1216,9 @@ class MainWindow(QMainWindow):
         Load an image from the specified path and return it as a NumPy array.
         """
         import tifffile
+
         try:
             return tifffile.imread(image_path)
         except Exception as e:
             QtWidgets.QMessageBox.warning(self, "Error", f"Failed to load image: {e}")
             return None
-
-

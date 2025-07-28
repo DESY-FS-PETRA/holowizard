@@ -191,7 +191,8 @@ class AdjustBrightness(FlexTransform):
         # scale by 2*16-1 (UInt15 max value), since adjust brightness handles int-values weirdly and sets the maximum value to one
         brightness_factor = np.random.uniform(self.lower, self.upper)
         return self.transform(
-            lambda a: F.adjust_brightness(a / 65535, brightness_factor=brightness_factor) * 65535, *imgs
+            lambda a: F.adjust_brightness(a / 65535, brightness_factor=brightness_factor) * 65535,
+            *imgs,
         )
 
 
@@ -214,7 +215,10 @@ class AdjustContrast(FlexTransform):
             Tuple[Tensor, ...]: Images with adjusted contrast.
         """
         contrast_factor = np.random.uniform(self.lower, self.upper)
-        return self.transform(lambda a: F.adjust_contrast(a / 65535, contrast_factor=contrast_factor) * 65535, *imgs)
+        return self.transform(
+            lambda a: F.adjust_contrast(a / 65535, contrast_factor=contrast_factor) * 65535,
+            *imgs,
+        )
 
 
 class VerticalFlip(FlexTransform):
