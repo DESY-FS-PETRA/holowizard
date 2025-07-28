@@ -38,6 +38,7 @@ authors = [
   {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
   {name = "Cem Cinar", email = "cem.cinar@tuhh.de"}
 ]
+
 classifiers = [
   "Programming Language :: Python"
 ]
@@ -64,4 +65,9 @@ holowizard_core_create_examples = "holowizard.core.scripts.create_examples:main"
 holowizard_pipe_start = "holowizard.pipe.scripts.holopipe:main"
 holowizard_pipe_reconstruct_scan = "holowizard.pipe.script.reco:main"
 
-
+[project.optional-dependencies]
+dev = [
+"ruff",
+"pre-commit",
+"pytest",
+]

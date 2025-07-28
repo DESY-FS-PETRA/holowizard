@@ -18,7 +18,6 @@ scikit-image
 GitPython
 dask
 dask_jobqueue
-pytest
 bokeh
 scipy
 astra-toolbox
