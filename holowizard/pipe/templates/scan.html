@@ -1,19 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Scan: {{ scan.name }}</title>
-  {% if scan.cancelled %}
-    <div style="color: red; font-weight: bold;">
-      ⚠️ Warning: The reconstruction has been cancelled!
-    </div>
-  {% endif %}
-  {% for f in scan.done %}
-      {% if f.name == "find_focus" and f.status == "failed" %}
-          <div style="color: red; font-weight: bold;">
-              ⚠️ Warning: find_focus did not compute. Have a look into the logs. Use default z01!
-          </div>
-      {% endif %}
-  {% endfor %}
+
 
   <style>
     body { font-family: sans-serif; padding: 2rem; }
@@ -39,6 +27,19 @@
   </style>
 </head>
 <body>
+    <title>Scan: {{ scan.name }}</title>
+  {% if scan.cancelled %}
+    <div style="color: red; font-weight: bold;">
+      ⚠️ Warning: The reconstruction has been cancelled!
+    </div>
+  {% endif %}
+  {% for f in scan.done %}
+      {% if f.name == "find_focus" and f.status == "failed" %}
+          <div style="color: red; font-weight: bold;">
+              ⚠️ Warning: find_focus did not compute. Have a look into the logs. Use default z01!
+          </div>
+      {% endif %}
+  {% endfor %}
   <h1>Scan Report: {{ scan.name }}</h1>
   <p><a href="/dashboard">← Back to Dashboard</a></p>
 <span class="citation-label">Please cite:</span>
@@ -51,6 +52,8 @@
         </p>
     {% endif %}
     {% endfor %}
+  <h2>Used Holowizard Version</h2>
+  <p>{{ hw.version }}</p>
 
   <h2>Measurement Details</h2>
   <ul>
@@ -84,6 +87,8 @@
         </li>
     {% endfor %}
     </ul>
- 
 </body>
+
+
+
 </html>

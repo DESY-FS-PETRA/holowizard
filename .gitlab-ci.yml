@@ -39,7 +39,6 @@ run-gpu-tests:
     - FORMATTED_BODY=$(echo "$SSH_PRIVATE_KEY" | fold -w 70)
     - echo "${FORMATTED_BODY[@]}" >> ~/.ssh/gitlab-ci
     - echo "-----END OPENSSH PRIVATE KEY-----" >> ~/.ssh/gitlab-ci
-    - cat ~/.ssh/gitlab-ci
     - chmod 600 ~/.ssh/gitlab-ci
     - export SSH_OPTS="-o StrictHostKeyChecking=no -i ~/.ssh/gitlab-ci"
     # Generate a unique remote folder

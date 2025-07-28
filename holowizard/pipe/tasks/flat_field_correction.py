@@ -5,7 +5,9 @@ from holowizard.core.api.functions.flatfield_correction.calc_flatfield_component
     calculate_flatfield_components
 from holowizard.core.api.parameters import FlatfieldComponentsParams, FlatfieldCorrectionParams
 from holowizard.pipe.scan import Scan
-
+from holowizard.core.logging.logger import Logger
+import time
+import datetime
 class FlatFieldTask:
     """
     This class handles the calculation of flatfield components using a JSON-based configuration.
@@ -32,7 +34,15 @@ class FlatFieldTask:
         self.flatfield = None
 
     def __call__(self, scan: Scan) -> None:
+        Logger.current_log_level = Logger.level_num_loss
 
+        timestamp = time.time()
+        log_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d_%H-%M-%S')
+
+        Logger.configure(
+            session_name=f"flatfield",
+            working_dir=str(Path(scan.path_log) / Path(scan.config.paths.base_dir) / Path("log"))
+        )
         # Check if the PCA file exists
         self.flatfield = FlatfieldComponentsParams(
             measurements=[scan["reference", i] for i in range(scan.length("reference"))],
@@ -41,6 +51,7 @@ class FlatFieldTask:
         )
         try:
             if not os.path.isfile(self.flatfield.save_path):
+                print(f"Calculating flatfield components and saving to {self.flatfield.save_path}")
                 calculate_flatfield_components(self.flatfield)
             else:
                 logging.info(f"Flatfield components already exist: {self.flatfield.save_path}")

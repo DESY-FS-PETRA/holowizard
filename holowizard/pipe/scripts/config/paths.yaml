@@ -5,6 +5,3 @@ paths:
   tomo_dir: "tomo_reco"
   params_dir: "params"
   logs_dir: "logs"
-  checkpoints_dir: "logs/checkpoints"
-  config_path: "holowizard_config"
-  parameter_testing: "parameter_testing"

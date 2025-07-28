@@ -1,7 +1,7 @@
 import uuid
 def submit_and_handle(task_name, func, cluster, scan, *args, priority=100, key=None):
         try:
-            future = cluster.client_scheduler.submit(func, scan, *args, priority=priority, key=key or f"{task_name}-{uuid.uuid4()}-{scan.key}")
+            future = cluster.client_scheduler.submit(func, scan, *args, priority=priority, key=key or f"{task_name}-{uuid.uuid4()}-{scan.key}", pure=False)
             result = future.result()
             status = 'cancelled' if scan.cancelled else 'done'
             return result, status
