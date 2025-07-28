@@ -4,13 +4,20 @@ from abc import ABC, abstractmethod
 from dask.distributed import as_completed
 from holowizard.pipe.scan import Scan
 from holowizard.pipe.cluster import Cluster
-from holowizard.pipe.tasks import FlatFieldTask, PhaseRetrievalTask, FindFocusTask, TomographyTask
+from holowizard.pipe.tasks import (
+    FlatFieldTask,
+    PhaseRetrievalTask,
+    FindFocusTask,
+    TomographyTask,
+)
 from pathlib import Path
 from holowizard.pipe.utils.submit_and_handle import submit_and_handle
 from holowizard.pipe.server.websocket_viewer import WebsocketViewer
 import uuid
 import random
 import socket
+
+
 class Beamtime(ABC):
     """
     Abstract base for beamtime-related objects.
@@ -27,7 +34,7 @@ class Beamtime(ABC):
         self.path_raw = path_raw
         self.path_processed = path_processed
         self.log_path = log_path
-        #self.meta_dict = self._load_metadata("")
+        # self.meta_dict = self._load_metadata("")
         self.scans = []
         self.current_scan = None
         self.cluster = cluster
@@ -53,7 +60,7 @@ class Beamtime(ABC):
         self.scans.append(scan)
         self.run_scan(scan)
         scan.write_html()  # Write HTML after running the scan
-      
+
     def get_scan(self, scan_name: str) -> Scan:
         """
         Retrieve a scan by its name.
@@ -68,25 +75,25 @@ class Beamtime(ABC):
             if scan.key == scan_name:
                 return scan
         return None
-    
+
     def run_scan(self, scan: Scan):
         """
         Run the scan pipeline: flatfield → find_focus → reconstruction → tomography.
         """
         # --- FLATFIELD ---
         flatfield_task = FlatFieldTask(scan)
-        _, status = submit_and_handle('flatfield', flatfield_task, self.cluster, scan)
-        scan.done.append(dict(name='flatfield', status=status))
+        _, status = submit_and_handle("flatfield", flatfield_task, self.cluster, scan)
+        scan.done.append(dict(name="flatfield", status=status))
         if scan.cancelled:
             return
 
         # --- FIND FOCUS ---
         if "find_focus" in scan.config.scan.tasks:
             find_focus_task = FindFocusTask(scan, flatfield_task.save_path)
-            result, status = submit_and_handle('find_focus', find_focus_task,self.cluster,  scan)
-            if result and status == 'done':
-                scan.z01 = result.get('z01')
-            scan.done.append(dict(name='find_focus', status=status))
+            result, status = submit_and_handle("find_focus", find_focus_task, self.cluster, scan)
+            if result and status == "done":
+                scan.z01 = result.get("z01")
+            scan.done.append(dict(name="find_focus", status=status))
             if scan.cancelled:
                 return
 
@@ -96,7 +103,13 @@ class Beamtime(ABC):
             random.shuffle(indices)
             task = PhaseRetrievalTask(scan, flatfield_task.save_path)
             futures = [
-                self.cluster.client_scheduler.submit(task, scan, i, key=f"reconstruction-{uuid.uuid4()}-{scan.key}", priority=20)
+                self.cluster.client_scheduler.submit(
+                    task,
+                    scan,
+                    i,
+                    key=f"reconstruction-{uuid.uuid4()}-{scan.key}",
+                    priority=20,
+                )
                 for i in indices
             ]
             for f in as_completed(futures):
@@ -106,18 +119,17 @@ class Beamtime(ABC):
                     print(f"Reconstruction task failed for scan {scan.key}: {e}")
                 finally:
                     f.release()
-            status = 'cancelled' if scan.cancelled else 'done'
-            scan.done.append(dict(name='reconstruction', status=status))
+            status = "cancelled" if scan.cancelled else "done"
+            scan.done.append(dict(name="reconstruction", status=status))
             if scan.cancelled:
                 return
 
         # --- TOMOGRAPHY ---
         if "tomography" in scan.config.scan.tasks:
             task = TomographyTask(scan)
-            _, status = submit_and_handle('tomography', task, self.cluster, scan)
-            scan.done.append(dict(name='tomography', status=status))
+            _, status = submit_and_handle("tomography", task, self.cluster, scan)
+            scan.done.append(dict(name="tomography", status=status))
 
-    
     def cancel_task(self, scan_id):
         """
         Cancel a task by its scan ID. First remove all further tasks and then cancel running scan.
@@ -129,7 +141,7 @@ class Beamtime(ABC):
             if scan.key == scan_id:
                 scan.cancel()
         queue = self.cluster.queue_info()
-            # Cancel tasks in both 'waiting' and 'processing' state
+        # Cancel tasks in both 'waiting' and 'processing' state
         for task in queue:
             if scan_id in task["key"]:
                 future = self.cluster.client_scheduler.futures.get(task["key"])
@@ -147,18 +159,16 @@ class Beamtime(ABC):
             img_index (int): Index of the image to be optimized.
         """
         flatfield_task = FlatFieldTask(scan)
-        _, status = submit_and_handle('flatfield', flatfield_task, self.cluster, scan)
-        viewer=[WebsocketViewer(session_id)]
+        _, status = submit_and_handle("flatfield", flatfield_task, self.cluster, scan)
+        viewer = [WebsocketViewer(session_id)]
         img_index = [i for i, path in enumerate(scan.hologram_path) if img_name in path][0] if img_name else img_name
         if find_focus:
             find_focus_task = FindFocusTask(scan, flatfield_task.save_path, viewer=viewer)
-            result, status = submit_and_handle('find_focus', find_focus_task,self.cluster,  scan, img_index)
-            if result and status == 'done':
-                scan.z01 = result.get('z01')
-                return result 
+            result, status = submit_and_handle("find_focus", find_focus_task, self.cluster, scan, img_index)
+            if result and status == "done":
+                scan.z01 = result.get("z01")
+                return result
         else:
             task = PhaseRetrievalTask(scan, flatfield_task.save_path, viewer=viewer, save_scratch=True)
-            _, status = submit_and_handle('reconstuction', task,  self.cluster, scan, img_index)
+            _, status = submit_and_handle("reconstuction", task, self.cluster, scan, img_index)
         return None
-
-    

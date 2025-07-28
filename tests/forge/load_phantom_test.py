@@ -13,7 +13,8 @@ __all__ = [
 
 
 def load_phantom_test(
-    path: str = "holowizard.forge/tests/output/data/7000/train/phantoms/phantom_000001.pkl", output: str = None
+    path: str = "holowizard.forge/tests/output/data/7000/train/phantoms/phantom_000001.pkl",
+    output: str = None,
 ) -> None:
     phantom = fileIO.load_phantom(path)
 

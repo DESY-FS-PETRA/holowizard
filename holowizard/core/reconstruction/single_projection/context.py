@@ -34,7 +34,6 @@ class Context:
         oref_predicted=None,
         nesterov_vt=None,
     ):
-
         self.torch_device = holowizard.core.torch_running_device
 
         self.measurements_original = measurements
@@ -73,10 +72,11 @@ class Context:
         string_list = []
 
         string_list.append(
-            f"{'z02':<17}{round(self.beam_setup_original.z02,int(np.log10(BeamSetup.unit_z02()[1])))} " + BeamSetup.unit_z02()[0]
+            f"{'z02':<17}{round(self.beam_setup_original.z02, int(np.log10(BeamSetup.unit_z02()[1])))} "
+            + BeamSetup.unit_z02()[0]
         )
         string_list.append(
-            f"{'Energy':<17}{round(self.beam_setup_original.energy,int(np.log10(BeamSetup.unit_energy()[1])))} "
+            f"{'Energy':<17}{round(self.beam_setup_original.energy, int(np.log10(BeamSetup.unit_energy()[1])))} "
             + BeamSetup.unit_energy()[0]
         )
         for i in range(len(self.measurements_original)):
@@ -85,15 +85,17 @@ class Context:
             )
             string_list.append("Distance " + str(i) + ":")
             string_list.append(
-                f"{'z01':<17}{round(self.measurements_original[i].z01,int(np.log10(Measurement.unit_z01()[1])))} "
+                f"{'z01':<17}{round(self.measurements_original[i].z01, int(np.log10(Measurement.unit_z01()[1])))} "
                 + Measurement.unit_z01()[0]
             )
             string_list.append(f"{'Magnification':<17}{round(M, 3)}")
             string_list.append(
-                f"{'Effective dx':<17}{round(dx_eff,int(np.log10(BeamSetup.unit_px_size()[1])))} " + BeamSetup.unit_px_size()[0]
+                f"{'Effective dx':<17}{round(dx_eff, int(np.log10(BeamSetup.unit_px_size()[1])))} "
+                + BeamSetup.unit_px_size()[0]
             )
             string_list.append(
-                f"{'Effective z12':<17}{round(z_eff,int(np.log10(Measurement.unit_z01()[1])))} " + Measurement.unit_z01()[0]
+                f"{'Effective z12':<17}{round(z_eff, int(np.log10(Measurement.unit_z01()[1])))} "
+                + Measurement.unit_z01()[0]
             )
             string_list.append(f"{'Fresnel Number':<17}{fr_eff}")
 
@@ -182,9 +184,7 @@ class Context:
         if self.current_stage > 0:
             current_probe_refractive = deepcopy(self.beam_setup.probe_refractive)
         else:
-            current_probe_refractive = deepcopy(
-                self.beam_setup_original.probe_refractive
-            )
+            current_probe_refractive = deepcopy(self.beam_setup_original.probe_refractive)
 
         (
             self.measurements,
@@ -232,9 +232,7 @@ class Context:
             return
 
         self.current_stage = stage_index
-        logging.comment(
-            "Stage " + str(self.current_stage + 1) + "/" + str(len(self.options))
-        )
+        logging.comment("Stage " + str(self.current_stage + 1) + "/" + str(len(self.options)))
 
         if self.current_stage == 0:
             self.create_effective_geometry_file()

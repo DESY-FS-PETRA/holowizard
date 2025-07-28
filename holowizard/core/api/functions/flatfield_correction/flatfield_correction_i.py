@@ -3,11 +3,8 @@ import pickle
 import torch
 
 import holowizard.core
-from holowizard.core.preprocessing.correct_flatfield import (
-    correct_flatfield as correct_flatfield_internal,
-)
+from holowizard.core.preprocessing.correct_flatfield import correct_flatfield as correct_flatfield_internal
 from holowizard.core.utils.fileio import load_img_data
-
 from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
 
 

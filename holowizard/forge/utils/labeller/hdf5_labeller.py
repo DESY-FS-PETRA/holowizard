@@ -101,7 +101,8 @@ class HDF5Labeller(Labeller):
         self.hdf5_metadata = None  # only create if needed
         if self.store_hologram:
             self._cached_holograms = torch.zeros(
-                (self.cache_size, self.detector_size, self.detector_size), dtype=torch.float32
+                (self.cache_size, self.detector_size, self.detector_size),
+                dtype=torch.float32,
             )
             self.hdf5_ds_holograms = self.hdf5_images.create_dataset(
                 "hologram",
@@ -111,7 +112,8 @@ class HDF5Labeller(Labeller):
 
         if self.store_gt_hologram:
             self._cached_gt_holograms = torch.zeros(
-                (self.cache_size, self.detector_size, self.detector_size), dtype=torch.float32
+                (self.cache_size, self.detector_size, self.detector_size),
+                dtype=torch.float32,
             )
             self.hdf5_ds_gt_holograms = self.hdf5_images.create_dataset(
                 "gt_hologram",
@@ -126,7 +128,8 @@ class HDF5Labeller(Labeller):
                 dtype=np.complex64,
             )
             self._cached_phantoms = torch.zeros(
-                (self.cache_size, self.detector_size, self.detector_size), dtype=torch.complex64
+                (self.cache_size, self.detector_size, self.detector_size),
+                dtype=torch.complex64,
             )
 
         if self.store_probe:

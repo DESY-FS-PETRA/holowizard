@@ -2,13 +2,15 @@ from PIL import Image
 import logging
 import io
 from holowizard.core.reconstruction.viewer.viewer import Viewer
-import zmq       
+import zmq
 import numpy as np
 import matplotlib
+
 matplotlib.use("Agg")
 import socket
 import dotenv
 import os
+
 # 1) Ask dotenv where it *would* look first:
 dotenv_path = dotenv.find_dotenv()
 print("dotenv will load from:", dotenv_path or "<none found>")
@@ -20,6 +22,7 @@ print(f"load_dotenv(verbose=True) returned: {loaded}")
 from distributed import get_worker
 import matplotlib.pyplot as plt
 from holowizard.core.utils.transform import crop_center
+
 # 1) create a single global ZMQ context + PUB socket
 zmq_ctx = zmq.Context.instance()
 pub_sock = zmq_ctx.socket(zmq.PUB)
@@ -37,7 +40,7 @@ class WebsocketViewer(Viewer):
         plt.close()
         plt.pause(0.05)
         self.fig = plt.figure(figsize=(12.8, 8.8))
-        
+
     def update(self, iteration, object, probe, data_dimensions, loss):
         self.fig.clear()
 
@@ -70,11 +73,10 @@ class WebsocketViewer(Viewer):
 
         self.fig.suptitle(f"{'Iteration '}{iteration}")
         buf = io.BytesIO()
-        self.fig.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+        self.fig.savefig(buf, format="png", bbox_inches="tight", pad_inches=0)
         buf.seek(0)
         png_bytes = buf.getvalue()
         try:
             pub_sock.send_multipart([self.topic, png_bytes], flags=zmq.DONTWAIT)
         except zmq.Again:
             pass
-

@@ -5,9 +5,7 @@ from multiprocessing import Pool
 from holowizard.core.utils.remove_outliers import remove_outliers_multiprocess_wrapper
 
 
-def calculate_flatfield_components(
-    ref_data, num_components, model=FastICA, log_mode=True
-):
+def calculate_flatfield_components(ref_data, num_components, model=FastICA, log_mode=True):
     if log_mode:
         filtered_ref_data = np.array([remove_outliers_multiprocess_wrapper(x) for x in np.log(ref_data)])
     else:

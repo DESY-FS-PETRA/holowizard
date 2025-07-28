@@ -17,9 +17,7 @@ class FlatfieldCorrectionParams:
             def __init__(self, flatfield_correction_params: FlatfieldCorrectionParams):
                 self.components_path = flatfield_correction_params.components_path
                 self.image = JsonWritable.get_array(
-                    member_value_adapter.get_numpy_array_ushort(
-                        flatfield_correction_params.image
-                    )
+                    member_value_adapter.get_numpy_array_ushort(flatfield_correction_params.image)
                 )
 
         json_writable = JsonInput(self)
@@ -41,9 +39,7 @@ class FlatfieldCorrectionParams:
 
         image = JsonWritable.get_numpy_from_array(data["image"])
 
-        return FlatfieldCorrectionParams(
-            image=image, components_path=data["components_path"]
-        )
+        return FlatfieldCorrectionParams(image=image, components_path=data["components_path"])
 
     @property
     def image(self):

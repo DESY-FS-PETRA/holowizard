@@ -9,16 +9,18 @@ import argparse
 """
 Created by claude.ai
 """
+
+
 def download_file(url, local_path, chunk_size=8192):
     """Download a file from URL with progress indication"""
     try:
         response = requests.get(url, stream=True)
         response.raise_for_status()
 
-        total_size = int(response.headers.get('content-length', 0))
+        total_size = int(response.headers.get("content-length", 0))
         downloaded = 0
 
-        with open(local_path, 'wb') as f:
+        with open(local_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=chunk_size):
                 if chunk:
                     f.write(chunk)
@@ -27,7 +29,7 @@ def download_file(url, local_path, chunk_size=8192):
                     # Simple progress indicator
                     if total_size > 0:
                         percent = (downloaded / total_size) * 100
-                        print(f"\rDownloading... {percent:.1f}%", end='', flush=True)
+                        print(f"\rDownloading... {percent:.1f}%", end="", flush=True)
 
         print(f"\nDownload complete: {local_path}")
         return True
@@ -39,13 +41,16 @@ def download_file(url, local_path, chunk_size=8192):
         print(f"Unexpected error during download: {e}")
         return False
 
+
 """
 Created by claude.ai
 """
+
+
 def extract_zip(zip_path, extract_to):
     """Extract ZIP file to specified directory"""
     try:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             print(f"Extracting to: {extract_to}")
             zip_ref.extractall(extract_to)
 
@@ -66,28 +71,34 @@ def extract_zip(zip_path, extract_to):
         print(f"Error extracting ZIP: {e}")
         return False
 
+
 """
 Created by claude.ai
 """
+
+
 def get_filename_from_url(url):
     """Extract filename from URL or generate one"""
     parsed = urlparse(url)
     filename = os.path.basename(parsed.path)
 
     # If no filename in URL, generate one
-    if not filename or not filename.endswith('.zip'):
+    if not filename or not filename.endswith(".zip"):
         filename = "zenodo_download.zip"
 
     return filename
 
+
 """
 Created by claude.ai
 """
+
+
 def copy_examples(dest_path):
     source_path = Path(__file__).parent.resolve() / "examples"
 
     # Walk through source directory
-    for item in source_path.rglob('*'):
+    for item in source_path.rglob("*"):
         # Calculate relative path from source
         relative_path = item.relative_to(source_path)
         dest_item = dest_path / relative_path
@@ -147,9 +158,7 @@ def download_test_data(extract_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Creates reconstruction examples and downloads test data from Zenodo"
-    )
+    parser = argparse.ArgumentParser(description="Creates reconstruction examples and downloads test data from Zenodo")
 
     parser.add_argument("directory", help="Directory to extract files to")
 

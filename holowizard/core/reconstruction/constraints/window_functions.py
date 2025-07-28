@@ -11,8 +11,4 @@ def hamming(x, width):
 
 
 def blackman(x, width):
-    return (
-        0.42
-        - 0.5 * torch.cos(x * 2 * np.pi / (width - 1))
-        + 0.08 * torch.cos(x * 4 * np.pi / (width - 1))
-    )
+    return 0.42 - 0.5 * torch.cos(x * 2 * np.pi / (width - 1)) + 0.08 * torch.cos(x * 4 * np.pi / (width - 1))

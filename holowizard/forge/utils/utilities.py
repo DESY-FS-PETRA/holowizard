@@ -43,7 +43,7 @@ def calc_Fr(energy: int, z01: float, z02: float, det_px_size: int) -> float:
     """
     lam = 1.2398 / convert_energy(energy)  # h*c / E[keV]
     M = convert_z02(z02) / convert_z01(z01)
-    Fr = convert_det_px_size(det_px_size)**2 / (lam * (convert_z02(z02) - convert_z01(z01)) * M)
+    Fr = convert_det_px_size(det_px_size) ** 2 / (lam * (convert_z02(z02) - convert_z01(z01)) * M)
     return Fr
 
 

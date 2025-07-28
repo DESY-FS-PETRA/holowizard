@@ -34,7 +34,6 @@ class HostContext:
         oref_predicted=None,
         nesterov_vt=None,
     ):
-
         self.current_iter_offset = None
         self.current_options_index = None
         self.current_options = None
@@ -100,18 +99,14 @@ class HostContext:
             )
 
         self.current_stage = stage_index
-        logging.comment(
-            "Stage " + str(self.current_stage + 1) + "/" + str(len(self.options))
-        )
+        logging.comment("Stage " + str(self.current_stage + 1) + "/" + str(len(self.options)))
 
         self.current_options = self.options[self.current_stage]
 
         if self.current_stage > 0:
             current_probe_refractive = deepcopy(self.beam_setup.probe_refractive)
         else:
-            current_probe_refractive = deepcopy(
-                self.beam_setup_original.probe_refractive
-            )
+            current_probe_refractive = deepcopy(self.beam_setup_original.probe_refractive)
 
         (
             self.measurements,
@@ -176,10 +171,7 @@ class HostContext:
         )
 
     def read_intermediate_results(self, results):
-
-        grad_probe = torch.zeros(
-            self.data_dimensions.total_size, device=self.torch_device
-        )
+        grad_probe = torch.zeros(self.data_dimensions.total_size, device=self.torch_device)
         se_losses = []
 
         for completed in as_completed(results):
@@ -193,10 +185,7 @@ class HostContext:
 
             se_losses.append(
                 ParamsSerializer.deserialize(
-                    self.dask_options.working_dir
-                    + "se_loss_records_"
-                    + str(index)
-                    + ".pkl"
+                    self.dask_options.working_dir + "se_loss_records_" + str(index) + ".pkl"
                 ).to(self.torch_device)
             )
 
@@ -207,9 +196,7 @@ class HostContext:
             self.oref_predicted[index] = ParamsSerializer.deserialize(
                 self.dask_options.working_dir + "oref_predicted_" + str(index) + ".pkl"
             )
-            self.oref_predicted[index] = self.oref_predicted[index].to(
-                self.torch_device
-            )
+            self.oref_predicted[index] = self.oref_predicted[index].to(self.torch_device)
             self.nesterov_vt[index] = ParamsSerializer.deserialize(
                 self.dask_options.working_dir + "nesterov_vt_" + str(index) + ".pkl"
             )
@@ -224,31 +211,24 @@ class HostContext:
         oref_predicted=None,
         nesterov_vt=None,
     ):
-
         if beam_setup is not None:
             try:
                 os.remove(dask_options.working_dir + "beam_setup.pkl")
             except Exception as e:
                 pass
-            ParamsSerializer.serialize(
-                beam_setup, dask_options.working_dir + "beam_setup.pkl"
-            )
+            ParamsSerializer.serialize(beam_setup, dask_options.working_dir + "beam_setup.pkl")
 
         if data_dimensions is not None:
             try:
                 os.remove(dask_options.working_dir + "data_dimensions.pkl")
             except Exception as e:
                 pass
-            ParamsSerializer.serialize(
-                data_dimensions, dask_options.working_dir + "data_dimensions.pkl"
-            )
+            ParamsSerializer.serialize(data_dimensions, dask_options.working_dir + "data_dimensions.pkl")
 
         if measurements is not None:
             for j in range(len(measurements)):
                 try:
-                    os.remove(
-                        dask_options.working_dir + +"measurements_" + str(j) + ".pkl"
-                    )
+                    os.remove(dask_options.working_dir + +"measurements_" + str(j) + ".pkl")
                 except Exception as e:
                     pass
                 ParamsSerializer.serialize(
@@ -259,9 +239,7 @@ class HostContext:
         if oref_predicted is not None:
             for j in range(len(oref_predicted)):
                 try:
-                    os.remove(
-                        dask_options.working_dir + "oref_predicted_" + str(j) + ".pkl"
-                    )
+                    os.remove(dask_options.working_dir + "oref_predicted_" + str(j) + ".pkl")
                     # pass
                 except Exception as e:
                     pass
@@ -273,9 +251,7 @@ class HostContext:
         if nesterov_vt is not None:
             for j in range(len(nesterov_vt)):
                 try:
-                    os.remove(
-                        dask_options.working_dir + "nesterov_vt_" + str(j) + ".pkl"
-                    )
+                    os.remove(dask_options.working_dir + "nesterov_vt_" + str(j) + ".pkl")
                 except Exception as e:
                     pass
                 ParamsSerializer.serialize(

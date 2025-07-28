@@ -17,7 +17,13 @@ __all__ = [
 class HDF5Dataset(Dataset):
     """Dataset for an HDF5 file."""
 
-    def __init__(self, filename: Pathlike, hdf5_dataset_name: str, hdf5_group_names: List[str] = [], transform=None):
+    def __init__(
+        self,
+        filename: Pathlike,
+        hdf5_dataset_name: str,
+        hdf5_group_names: List[str] = [],
+        transform=None,
+    ):
         """
         Args:
             filename (Pathlike): Path to the HDF5-file containing the realworld flat fields.

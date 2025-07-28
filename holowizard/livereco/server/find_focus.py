@@ -8,7 +8,9 @@ from holowizard.core.api.functions.find_focus.find_focus_flatfieldcorrection imp
 from holowizard.core.api.viewer.loss_viewer import LossViewer
 from holowizard.core.reconstruction.viewer import Viewer
 from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
+from holowizard.core.parameters.flatfield_correction_params import (
+    FlatfieldCorrectionParams,
+)
 
 
 class FindFocus:
@@ -18,17 +20,13 @@ class FindFocus:
         if viewer is not None:
             self.viewer = self.viewer + viewer
 
-    def find_focus(
-        self, flatfield_correction_params_serialized, reco_params_serialized
-    ):
+    def find_focus(self, flatfield_correction_params_serialized, reco_params_serialized):
         try:
             logging.info("reconstruct_z01 called")
 
             logging.debug("Deserialize data")
             reco_params = RecoParams.from_json(reco_params_serialized)
-            flatfield_correction_params = FlatfieldCorrectionParams.from_json(
-                flatfield_correction_params_serialized
-            )
+            flatfield_correction_params = FlatfieldCorrectionParams.from_json(flatfield_correction_params_serialized)
 
             logging.debug("Make focus step")
             z01_found, z01_history, loss_values_history = find_focus(

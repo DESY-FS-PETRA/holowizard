@@ -1,6 +1,17 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QCheckBox, QPushButton, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QCheckBox,
+    QPushButton,
+    QHBoxLayout,
+    QLabel,
+)
 from PyQt5.QtGui import QDoubleValidator
+
 
 class ScanConfigDialog(QDialog):
     """
@@ -10,6 +21,7 @@ class ScanConfigDialog(QDialog):
         scan_name (str): The name of the scan (displayed but not editable).
         parent (QWidget): The parent widget.
     """
+
     def __init__(self, scan_name, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Scan Processing Configuration")
@@ -33,7 +45,7 @@ class ScanConfigDialog(QDialog):
 
         # Phase config
         self.phase_config_input = QComboBox()
-        self.phase_config_input.addItems(["Mg Wire", "Tooth", "Spyder Hair", 'Cactus Needle'])
+        self.phase_config_input.addItems(["Mg Wire", "Tooth", "Spyder Hair", "Cactus Needle"])
         form_layout.addRow("Regularization:", self.phase_config_input)
 
         # Use P05 optics (checkbox)
@@ -43,7 +55,7 @@ class ScanConfigDialog(QDialog):
 
         # Holder input
         self.holder_input = QComboBox()
-        self.holder_input.addItems(["1 (80 mm)", "2 (195 mm)", "3 (220 mm)", '4 (250 mm)'])
+        self.holder_input.addItems(["1 (80 mm)", "2 (195 mm)", "3 (220 mm)", "4 (250 mm)"])
         form_layout.addRow("Holder:", self.holder_input)
 
         # z01/z02 inputs
@@ -51,8 +63,8 @@ class ScanConfigDialog(QDialog):
         self.z01_input.setValidator(QDoubleValidator())
         self.z02_input = QLineEdit()
         self.z02_input.setValidator(QDoubleValidator())
-        form_layout.addRow(u"Z01 (µm):", self.z01_input)
-        form_layout.addRow(u"Z02 (µm):", self.z02_input)
+        form_layout.addRow("Z01 (µm):", self.z01_input)
+        form_layout.addRow("Z02 (µm):", self.z02_input)
 
         layout.addLayout(form_layout)
 
@@ -89,8 +101,11 @@ class ScanConfigDialog(QDialog):
             "energy": float(self.energy_input.text()),
             "z01": float(self.z01_input.text()) if self.z01_input.isEnabled() else None,
             "z02": float(self.z02_input.text()) if self.z02_input.isEnabled() else None,
-            "holder": float(self.holder_input.currentText().split('(')[1].split(' ')[
-                                0]) if self.holder_input.isEnabled() else None,
+            "holder": (
+                float(self.holder_input.currentText().split("(")[1].split(" ")[0])
+                if self.holder_input.isEnabled()
+                else None
+            ),
             "use_p05": self.use_p05_checkbox.isChecked(),
-            "phase_config": self.phase_config_input.currentText()
+            "phase_config": self.phase_config_input.currentText(),
         }

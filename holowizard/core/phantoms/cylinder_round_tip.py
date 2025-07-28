@@ -17,9 +17,7 @@ def cylinder_round_tip(N):
             x = i - center[0]
             y = j - center[1]
 
-            max_radius_noisy = max_radius + int(
-                edge_noise * np.random.random_sample() - edge_noise / 2
-            )
+            max_radius_noisy = max_radius + int(edge_noise * np.random.random_sample() - edge_noise / 2)
 
             if j > center[1]:
                 current_radius = np.linalg.norm([x, y])
@@ -38,9 +36,7 @@ def cylinder_round_tip(N):
 
     pha = np.copy(amp)
 
-    phantom = model_wave_field(
-        pha, amp, options.phase_range, options.amp_range, [N, 2 * N]
-    )
+    phantom = model_wave_field(pha, amp, options.phase_range, options.amp_range, [N, 2 * N])
 
     # Beamstop/Aperture
     phantom[:, 0 : N - int(N / 5)] = 0.0

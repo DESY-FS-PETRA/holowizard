@@ -1,8 +1,15 @@
 import json
 import os
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QTextEdit, QPushButton, QMessageBox, QHBoxLayout
+    QDialog,
+    QVBoxLayout,
+    QLabel,
+    QTextEdit,
+    QPushButton,
+    QMessageBox,
+    QHBoxLayout,
 )
+
 
 class AdvancedJsonEditor(QDialog):
     """
@@ -63,7 +70,7 @@ class AdvancedJsonEditor(QDialog):
             return
 
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, "r") as f:
                 config_data = json.load(f)
             pretty_json = json.dumps(config_data, indent=4)
             self.editor.setPlainText(pretty_json)
@@ -80,7 +87,7 @@ class AdvancedJsonEditor(QDialog):
         try:
             new_json_text = self.editor.toPlainText()
             new_config = json.loads(new_json_text)  # Validate formatting
-            with open(self.config_path, 'w') as f:
+            with open(self.config_path, "w") as f:
                 json.dump(new_config, f, indent=4)
             QMessageBox.information(self, "Saved", "Configuration saved successfully.")
             self.accept()

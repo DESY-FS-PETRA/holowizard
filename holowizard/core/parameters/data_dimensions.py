@@ -46,9 +46,7 @@ class DataDimensions:
                 self.fov_size = data_dimensions.fov_size
                 self.window_type = data_dimensions.window_type
                 self.fading_width = data_dimensions.fading_width
-                self.window = JsonWritable.get_array(
-                    member_value_adapter.get_numpy_array(data_dimensions.window)
-                )
+                self.window = JsonWritable.get_array(member_value_adapter.get_numpy_array(data_dimensions.window))
 
         json_writable = JsonInput(self)
 
@@ -61,7 +59,6 @@ class DataDimensions:
 
     @staticmethod
     def from_dict(data):
-
         if not isinstance(data, dict):
             return None
 

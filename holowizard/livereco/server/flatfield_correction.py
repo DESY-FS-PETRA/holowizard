@@ -41,9 +41,7 @@ class FlatfieldCorrection:
         if measurement_serialized is None:
             return
 
-        numpy_array = JsonWritable.get_numpy_from_array(
-            json.loads(measurement_serialized)
-        )
+        numpy_array = JsonWritable.get_numpy_from_array(json.loads(measurement_serialized))
 
         if self.flatfield_list is None:
             self.flatfield_list = [numpy_array]
@@ -58,26 +56,20 @@ class FlatfieldCorrection:
         logging.info("calc_flatfield_components called")
 
         logging.debug("Deserialize")
-        flatfield_components_params = FlatfieldComponentsParams.from_json(
-            flatfield_components_params_serialized
-        )
+        flatfield_components_params = FlatfieldComponentsParams.from_json(flatfield_components_params_serialized)
 
         flatfield_components_params.measurements = self.flatfield_list
 
         log_empties(flatfield_components_params.measurements)
 
         logging.debug("Calculate components")
-        logging.info(
-            "Using " + str(flatfield_components_params.num_components) + " components"
-        )
+        logging.info("Using " + str(flatfield_components_params.num_components) + " components")
         components_model = calculate_flatfield_components(
             flatfield_components_params.measurements,
             flatfield_components_params.num_components,
         )
 
-        logging.debug(
-            "Write components to file system: " + flatfield_components_params.save_path
-        )
+        logging.debug("Write components to file system: " + flatfield_components_params.save_path)
 
         with open(flatfield_components_params.save_path, "wb") as file:
             pickle.dump(components_model, file, pickle.HIGHEST_PROTOCOL)
@@ -91,13 +83,9 @@ class FlatfieldCorrection:
         logging.info("correct_flatfield called")
 
         logging.debug("Deserialize")
-        flatfield_correction_params = FlatfieldCorrectionParams.from_json(
-            flatfield_correction_params_serialized
-        )
+        flatfield_correction_params = FlatfieldCorrectionParams.from_json(flatfield_correction_params_serialized)
 
-        logging.debug(
-            "Load components from " + flatfield_correction_params.components_path
-        )
+        logging.debug("Load components from " + flatfield_correction_params.components_path)
         with open(flatfield_correction_params.components_path, "rb") as file:
             components_model = pickle.load(file)
 

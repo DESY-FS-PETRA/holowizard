@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class Cluster(ABC):
     """
     Abstract base class for managing Dask clusters.
@@ -45,12 +46,12 @@ class Cluster(ABC):
         Should be implemented by subclasses to handle cleanup tasks.
         """
         pass
-    
+
     @abstractmethod
     def queue_info(self):
         """
         Retrieve information about the SLURM queue.
-        
+
         Returns:
             dict: Information about the SLURM queue.
         """

@@ -6,7 +6,15 @@ import pathlib
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
-from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.api.parameters import (
+    BeamSetup,
+    Measurement,
+    Padding,
+    Options,
+    Regularization,
+    DataDimensions,
+    RecoParams,
+)
 import holowizard.core.utils.fileio as fileio
 
 matplotlib.use("Qt5Agg")
@@ -23,11 +31,7 @@ Logger.configure(session_name=session_name, working_dir=working_dir)
 
 flatfield_offset_corr = 0.98
 setup = BeamSetup(energy=11.0, px_size=0.0065, z02=19_661.0)
-measurements = [
-    Measurement(
-        data_path=data_path, data=fileio.load_img_data(data_path), z01=79.45
-    )
-]
+measurements = [Measurement(data_path=data_path, data=fileio.load_img_data(data_path), z01=79.45)]
 padding_options = Padding(
     padding_mode=Padding.PaddingMode.MIRROR_ALL,
     padding_factor=7.0,
@@ -86,9 +90,7 @@ options_mainrun = Options(
     prototype_field=0.0,
 )
 
-data_dimensions = DataDimensions(
-    total_size=object_shape, fov_size=object_shape, window_type="blackman"
-)
+data_dimensions = DataDimensions(total_size=object_shape, fov_size=object_shape, window_type="blackman")
 
 options_upscale_4.padding.down_sampling_factor = 4
 options_upscale_2.padding.down_sampling_factor = 2

@@ -10,7 +10,15 @@ from holowizard.core.api.parameters.paths.focus_series_paths import FocusSeriesP
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
-from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.api.parameters import (
+    BeamSetup,
+    Measurement,
+    Padding,
+    Options,
+    Regularization,
+    DataDimensions,
+    RecoParams,
+)
 
 z01_guess = 480.51
 
@@ -18,9 +26,7 @@ z01_resolution = int(sys.argv[1])
 z01_slurm_job_id_int = int(sys.argv[2])
 z01_slurm_job_id = str(z01_slurm_job_id_int).zfill(4)
 z01_confidence = 30
-z01_confidence_interval = numpy.linspace(
-    -z01_confidence, z01_confidence, z01_resolution
-)
+z01_confidence_interval = numpy.linspace(-z01_confidence, z01_confidence, z01_resolution)
 z01_current_corr = z01_confidence_interval[int(z01_slurm_job_id_int % z01_resolution)]
 
 a0_resolution = int(sys.argv[3])
@@ -31,30 +37,21 @@ a0_confidence_interval = numpy.linspace(a0_range[0], a0_range[1], a0_resolution)
 a0_current = a0_confidence_interval[int(a0_slurm_job_id_int % a0_resolution)]
 
 focus_series_paths = FocusSeriesPaths(
-    root_dir="/gpfs/petra3/scratch/"
-    + os.environ.get("USER")
-    + "/focus_series_multidim/magnesium_wire"
+    root_dir="/gpfs/petra3/scratch/" + os.environ.get("USER") + "/focus_series_multidim/magnesium_wire"
 )
 
 project_paths = ProjectPaths(
-    output_dir="/gpfs/petra3/scratch/"
-    + os.environ.get("USER")
-    + "/focus_series_multidim/magnesium_wire/projections",
+    output_dir="/gpfs/petra3/scratch/" + os.environ.get("USER") + "/focus_series_multidim/magnesium_wire/projections",
     session_name="magnesium_wire_focus_series",
     session_id=z01_slurm_job_id + "_" + a0_slurm_job_id,
     other=focus_series_paths,
 )
 
-project_paths.data_path = (
-    os.path.dirname(os.path.realpath(__file__))
-    + "/../data/magnesium_wire.tiff"
-)
+project_paths.data_path = os.path.dirname(os.path.realpath(__file__)) + "/../data/magnesium_wire.tiff"
 project_paths.logs_dir = os.path.dirname(os.path.realpath(__file__)) + "/../logs"
 
 Logger.current_log_level = Logger.level_num_loss
-Logger.configure(
-    session_name=project_paths.session_logs_name, working_dir=project_paths.logs_dir
-)
+Logger.configure(session_name=project_paths.session_logs_name, working_dir=project_paths.logs_dir)
 project_paths.mkdirs()
 
 flatfield_offset_corr = a0_current
@@ -111,9 +108,7 @@ options_upscale_4_lowreg = Options(
     padding=deepcopy(padding_options),
 )
 
-data_dimensions = DataDimensions(
-    total_size=(2048, 2048), fov_size=(2048, 2048), window_type="blackman"
-)
+data_dimensions = DataDimensions(total_size=(2048, 2048), fov_size=(2048, 2048), window_type="blackman")
 
 options_upscale_4.padding.down_sampling_factor = 4
 options_upscale_4_lowreg.padding.down_sampling_factor = 4
@@ -134,23 +129,10 @@ loss_records = loss_records.cpu().numpy()
 reco_phaseshift = sktf.rotate(x_predicted.real, 90)
 
 with open(
-    focus_series_paths.se_losses
-    + "/loss_"
-    + str(z01_current_corr)
-    + "_"
-    + str(a0_current)
-    + ".txt",
+    focus_series_paths.se_losses + "/loss_" + str(z01_current_corr) + "_" + str(a0_current) + ".txt",
     "w",
 ) as f:
-    f.write(
-        "("
-        + str(z01_current_corr)
-        + ","
-        + str(a0_current)
-        + ","
-        + str(loss_records[-1])
-        + ")"
-    )
+    f.write("(" + str(z01_current_corr) + "," + str(a0_current) + "," + str(loss_records[-1]) + ")")
 
 io.imsave(
     focus_series_paths.projections_dir

@@ -29,12 +29,8 @@ class ProjectPaths(Paths):
         self.logs_dir = self.root_dir + "/logs/"
         self.session_logs_name = self.session_name + "_" + str(self.session_id)
         self.results_dir = self.temp_dir
-        self.result_phaseshift_file = (
-            self.results_dir + "image_phaseshift_" + str(self.session_id) + ".tiff"
-        )
-        self.result_absorption_file = (
-            self.results_dir + "image_absorption_" + str(self.session_id) + ".tiff"
-        )
+        self.result_phaseshift_file = self.results_dir + "image_phaseshift_" + str(self.session_id) + ".tiff"
+        self.result_absorption_file = self.results_dir + "image_absorption_" + str(self.session_id) + ".tiff"
         self.io_file = self.temp_dir + "image" + str(self.session_id) + ".tiff"
         self.se_loss_records_file = self.logs_dir + "se_losses.csv"
 

@@ -1,8 +1,9 @@
 from copy import deepcopy
 
+from holowizard.core.api.parameters import Padding, Options, Regularization
+
 
 def get_default_options(a0=0.98, phase_max=0.0, padding_options=None):
-
     if padding_options is None:
         padding_options = Padding(
             padding_mode=Padding.PaddingMode.MIRROR_ALL,
@@ -19,9 +20,7 @@ def get_default_options(a0=0.98, phase_max=0.0, padding_options=None):
             l2_weight=0.0 + 0.1 * 1j,
             gaussian_filter_fwhm=2.0 + 0.0j,
         ),
-        nesterov_object=Regularization(
-            update_rate=1.0, gaussian_filter_fwhm=4.0 + 4.0j
-        ),
+        nesterov_object=Regularization(update_rate=1.0, gaussian_filter_fwhm=4.0 + 4.0j),
         verbose_interval=100,
         padding=deepcopy(padding_options),
     )
@@ -33,9 +32,7 @@ def get_default_options(a0=0.98, phase_max=0.0, padding_options=None):
             l2_weight=0.0 + 0.01 * 1j,
             gaussian_filter_fwhm=2.0 + 8.0j,
         ),
-        nesterov_object=Regularization(
-            update_rate=1.0, gaussian_filter_fwhm=8.0 + 8.0j
-        ),
+        nesterov_object=Regularization(update_rate=1.0, gaussian_filter_fwhm=8.0 + 8.0j),
         verbose_interval=100,
         padding=deepcopy(padding_options),
     )
@@ -47,9 +44,7 @@ def get_default_options(a0=0.98, phase_max=0.0, padding_options=None):
             l2_weight=0.0 + 0.001 * 1j,
             gaussian_filter_fwhm=2.0 + 8.0j,
         ),
-        nesterov_object=Regularization(
-            update_rate=1.0, gaussian_filter_fwhm=32.0 + 32.0j
-        ),
+        nesterov_object=Regularization(update_rate=1.0, gaussian_filter_fwhm=32.0 + 32.0j),
         verbose_interval=100,
         padding=deepcopy(padding_options),
         prototype_field=0.0,

@@ -37,7 +37,6 @@ def reconstruct(
     object_update(host_context)
 
     for options_index in range(len(options)):
-
         host_context.set_stage(options_index)
 
         logging.image_debug(
@@ -48,20 +47,12 @@ def reconstruct(
             host_context.oref_predicted[0].real.cpu().numpy(),
         )
 
-        logging.info(
-            "Downsampling factor "
-            + str(host_context.current_options.padding.down_sampling_factor)
-        )
+        logging.info("Downsampling factor " + str(host_context.current_options.padding.down_sampling_factor))
 
         print_infos(host_context)
 
         for update_block in range(host_context.current_options.update_blocks):
-            logging.comment(
-                "Block "
-                + str(update_block + 1)
-                + " / "
-                + str(host_context.current_options.update_blocks)
-            )
+            logging.comment("Block " + str(update_block + 1) + " / " + str(host_context.current_options.update_blocks))
             probe_update(host_context)
             print_infos(host_context)
             object_update(host_context)
@@ -72,8 +63,7 @@ def reconstruct(
         host_context.read_final_results()
 
         options_index < (len(options) - 1) and log_results(
-            "snapshot_x"
-            + str(host_context.current_options.padding.down_sampling_factor),
+            "snapshot_x" + str(host_context.current_options.padding.down_sampling_factor),
             host_context.oref_predicted,
             host_context.data_dimensions,
         )

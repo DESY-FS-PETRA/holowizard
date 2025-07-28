@@ -18,9 +18,7 @@ class FlatfieldComponentsParams:
         class JsonInput:
             def __init__(self, flatfield_components_params: FlatfieldComponentsParams):
                 self.measurements = [
-                    JsonWritable.get_array(
-                        member_value_adapter.get_numpy_array_ushort(measurement)
-                    )
+                    JsonWritable.get_array(member_value_adapter.get_numpy_array_ushort(measurement))
                     for measurement in flatfield_components_params.measurements
                 ]
                 self.num_components = flatfield_components_params.num_components
@@ -40,11 +38,7 @@ class FlatfieldComponentsParams:
         if not isinstance(data, dict):
             return None
 
-        if (
-            not "measurements" in data
-            or not "num_components" in data
-            or not "save_path" in data
-        ):
+        if not "measurements" in data or not "num_components" in data or not "save_path" in data:
             return None
 
         measurements = []
@@ -76,9 +70,7 @@ class FlatfieldComponentsParams:
         if type(value) is list:
             self._measurements = value
         else:
-            raise TypeError(
-                "Expected list for measurements but got ", type(value)
-            ).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected list for measurements but got ", type(value)).with_traceback(sys.exc_info()[2])
 
     @num_components.setter
     def num_components(self, value):

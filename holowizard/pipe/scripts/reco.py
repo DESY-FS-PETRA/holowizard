@@ -7,6 +7,7 @@ import socket
 
 API_BASE = f"http://{socket.gethostname()}:8000/api"
 
+
 def get_test_options():
     """
     Calls your UI‐router endpoints:
@@ -31,7 +32,7 @@ def get_test_options():
 
     return {
         "reconstruction": recon_list.json(),
-        "find_focus":    focus_list.json(),
+        "find_focus": focus_list.json(),
     }
 
 
@@ -47,6 +48,7 @@ def parse_stage_options(opt_list):
         opts[stage] = choice
     return opts
 
+
 def main():
     # 1) fetch dynamic choices
     opts = get_test_options()
@@ -55,22 +57,26 @@ def main():
 
     # 2) build parser
     parser = ArgumentParser(description="Submit a scan to HoloServer")
-    parser.add_argument("--scan-name",  required=True, help="Unique scan identifier")
-    parser.add_argument("--holder",     required=True, type=float, help="Holder ID")
-    parser.add_argument("--z01",        type=float, help="z₀₁ (optional)")
-    parser.add_argument("--a0",         type=float, help="a₀ (optional)")
-    parser.add_argument("--energy",     type=float, help="Beam energy")
-    parser.add_argument("--stages",     nargs="+", help="Should be a subset of: flatfield, find_focus, reconstruction, tomography")
+    parser.add_argument("--scan-name", required=True, help="Unique scan identifier")
+    parser.add_argument("--holder", required=True, type=float, help="Holder ID")
+    parser.add_argument("--z01", type=float, help="z₀₁ (optional)")
+    parser.add_argument("--a0", type=float, help="a₀ (optional)")
+    parser.add_argument("--energy", type=float, help="Beam energy")
+    parser.add_argument(
+        "--stages",
+        nargs="+",
+        help="Should be a subset of: flatfield, find_focus, reconstruction, tomography",
+    )
     parser.add_argument(
         "--reconstruction",
         choices=recon_choices,
-        help="Preset for phase‐retrieval (Can be adapted in the holowizard config folder or under /parameter)"
+        help="Preset for phase‐retrieval (Can be adapted in the holowizard config folder or under /parameter)",
     )
     parser.add_argument(
         "--find-focus",
         dest="find_focus",
         choices=focus_choices,
-        help="Preset for find‐focus (Can be adapted in the holowizard config folder or under /parameter)"
+        help="Preset for find‐focus (Can be adapted in the holowizard config folder or under /parameter)",
     )
 
     args = parser.parse_args()
@@ -78,12 +84,12 @@ def main():
     # 3) assemble payload
     payload = {
         "scan_name": args.scan_name,
-        "holder":    args.holder,
-        "z01":       args.z01,
-        "a0":        args.a0,
-        "energy":    args.energy,
+        "holder": args.holder,
+        "z01": args.z01,
+        "a0": args.a0,
+        "energy": args.energy,
         "reconstruction": args.reconstruction,
-        "find_focus":    args.find_focus,
+        "find_focus": args.find_focus,
     }
     if args.stages:
         payload["stages"] = args.stages
@@ -92,6 +98,7 @@ def main():
     resp.raise_for_status()
     print("Server response:")
     pprint(resp.json())
+
 
 if __name__ == "__main__":
     main()

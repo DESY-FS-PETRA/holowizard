@@ -10,7 +10,15 @@ from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
-from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.api.parameters import (
+    BeamSetup,
+    Measurement,
+    Padding,
+    Options,
+    Regularization,
+    DataDimensions,
+    RecoParams,
+)
 
 if "cuda" in holowizard.core.torch_running_device_name:
     from holowizard.core.models.fresnel_propagator import FresnelPropagator
@@ -96,9 +104,7 @@ options_mainrun = Options(
     prototype_field=0.0,
 )
 
-data_dimensions = DataDimensions(
-    total_size=object_shape, fov_size=object_shape, window_type="blackman"
-)
+data_dimensions = DataDimensions(total_size=object_shape, fov_size=object_shape, window_type="blackman")
 
 options_upscale_4.padding.down_sampling_factor = 4
 options_upscale_2.padding.down_sampling_factor = 2
@@ -111,13 +117,11 @@ phantom = torch.tensor(
     dtype=torch.cfloat,
     device=holowizard.core.torch_running_device,
 )
-data_dimensions_processed = process_data_dimensions(
-    deepcopy(data_dimensions), deepcopy(options_mainrun.padding)
-)
+data_dimensions_processed = process_data_dimensions(deepcopy(data_dimensions), deepcopy(options_mainrun.padding))
 model = FresnelPropagator(
     [ConeBeam.get_fr(setup, measurement) for measurement in measurements],
     data_dimensions_processed.total_size,
-    holowizard.core.torch_running_device
+    holowizard.core.torch_running_device,
 )
 phantom = pad_to_size(phantom, data_dimensions_processed.total_size)
 

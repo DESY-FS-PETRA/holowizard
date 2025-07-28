@@ -19,7 +19,11 @@ class BaseDataset(Dataset):
     """Base dataset."""
 
     def __init__(
-        self, remove_outliers: bool, *, as_tuple: bool, augmentations: List[Dict[str, Any] | str] | None = None
+        self,
+        remove_outliers: bool,
+        *,
+        as_tuple: bool,
+        augmentations: List[Dict[str, Any] | str] | None = None,
     ) -> None:
         """Initialize class.
 
@@ -41,7 +45,12 @@ class BaseDataset(Dataset):
         super().__init__()
         self.transform = self._load_transform(remove_outliers, as_tuple=as_tuple, augmentations=augmentations)
 
-    def _load_transform(self, remove_outliers: bool, as_tuple: bool, augmentations: List[Dict[str, Any] | str] | None):
+    def _load_transform(
+        self,
+        remove_outliers: bool,
+        as_tuple: bool,
+        augmentations: List[Dict[str, Any] | str] | None,
+    ):
         if not remove_outliers and not augmentations:
             return None
 

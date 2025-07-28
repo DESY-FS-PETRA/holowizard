@@ -13,9 +13,7 @@ def log_input(measurements):
     i = 0
     for measurement in measurements:
         if Logger.current_log_level <= Logger.level_num_image_info:
-            logging.image_info(
-                "reconstruct_x_input_" + str(i), measurement.data.cpu().numpy()
-            )
+            logging.image_info("reconstruct_x_input_" + str(i), measurement.data.cpu().numpy())
         i = i + 1
 
 
@@ -36,16 +34,11 @@ def log_params(measurements, beam_setup, options, data_dimensions):
 def log_results(logging_prefix, data, data_dimensions):
     if Logger.current_log_level <= Logger.level_num_image_info:
         for i in range(len(data)):
-
             result_phaseshift = (data[i].real).cpu().numpy()
             result_absorption = (data[i].imag).cpu().numpy()
 
-            logging.image_debug(
-                logging_prefix + "_phaseshift_" + str(i).zfill(4), result_phaseshift
-            )
-            logging.image_debug(
-                logging_prefix + "_absorption_" + str(i).zfill(4), result_absorption
-            )
+            logging.image_debug(logging_prefix + "_phaseshift_" + str(i).zfill(4), result_phaseshift)
+            logging.image_debug(logging_prefix + "_absorption_" + str(i).zfill(4), result_absorption)
             # logging.image_debug(logging_prefix + "_intensities", torch.exp(-1 *
             #                                                           result_absorption))
 

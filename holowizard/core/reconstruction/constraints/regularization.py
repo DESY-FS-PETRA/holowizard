@@ -5,14 +5,10 @@ from holowizard.core.parameters.data_dimensions import DataDimensions
 from holowizard.core.preprocessing.process_image import flip_and_pad
 
 
-def apply_padding_refractive(
-    image, data_dimensions: DataDimensions, padding_options: Padding, a0_log
-):
+def apply_padding_refractive(image, data_dimensions: DataDimensions, padding_options: Padding, a0_log):
     image = flip_and_pad(image, data_dimensions, padding_options, True)
     image.imag = image.imag - a0_log
-    image = (
-        image.real * data_dimensions.window + 1j * image.imag * data_dimensions.window
-    )
+    image = image.real * data_dimensions.window + 1j * image.imag * data_dimensions.window
     image.imag = image.imag + a0_log
     return image
 

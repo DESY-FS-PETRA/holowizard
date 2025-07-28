@@ -41,9 +41,7 @@ class BeamSetup:
                 self.energy = beam_setup.energy
                 self.px_size = beam_setup.px_size
                 self.z02 = beam_setup.z02
-                self.flat_field = JsonWritable.get_array(
-                    member_value_adapter.get_numpy_array(beam_setup.flat_field)
-                )
+                self.flat_field = JsonWritable.get_array(member_value_adapter.get_numpy_array(beam_setup.flat_field))
                 self.probe = JsonWritable.get_array(beam_setup.probe)
 
         json_writable = JsonWriterInput(self)

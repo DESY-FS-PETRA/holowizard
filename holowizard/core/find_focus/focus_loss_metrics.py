@@ -53,10 +53,7 @@ def get_gog(x):
     diff_0 = torch.abs(x[1:, :] - x[:-1, :])
     diff_1 = torch.abs(x[:, 1:] - x[:, :-1])
 
-    diff = torch.sqrt(
-        diff_0[:, 0 : diff_0.shape[1] - 1] ** 2
-        + diff_1[0 : diff_1.shape[0] - 1, :] ** 2
-    )
+    diff = torch.sqrt(diff_0[:, 0 : diff_0.shape[1] - 1] ** 2 + diff_1[0 : diff_1.shape[0] - 1, :] ** 2)
 
     diff_sorted, diff_sorted_indices = torch.sort(torch.flatten(diff))
 
@@ -79,10 +76,7 @@ def get_tog(x):
     diff_0 = torch.abs(x[1:, :] - x[:-1, :])
     diff_1 = torch.abs(x[:, 1:] - x[:, :-1])
 
-    diff = torch.sqrt(
-        diff_0[:, 0 : diff_0.shape[1] - 1] ** 2
-        + diff_1[0 : diff_1.shape[0] - 1, :] ** 2
-    )
+    diff = torch.sqrt(diff_0[:, 0 : diff_0.shape[1] - 1] ** 2 + diff_1[0 : diff_1.shape[0] - 1, :] ** 2)
 
     tog = torch.sqrt(torch.var(diff) / torch.mean(diff))
 

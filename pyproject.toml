@@ -71,3 +71,6 @@ dev = [
 "pre-commit",
 "pytest",
 ]
+
+[tool.ruff]
+line-length = 120

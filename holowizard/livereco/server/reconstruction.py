@@ -12,7 +12,9 @@ from holowizard.core.api.functions.single_projection.reconstruction_flatfieldcor
 from holowizard.core.parameters.measurement import Measurement
 from holowizard.core.utils import fileio
 from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
+from holowizard.core.parameters.flatfield_correction_params import (
+    FlatfieldCorrectionParams,
+)
 
 from holowizard.core.reconstruction.viewer import Viewer
 from holowizard.core.api.viewer import LossViewer
@@ -39,25 +41,19 @@ class Reconstruction:
         if viewer is not None:
             self.viewer = self.viewer + viewer
 
-    def reconstruct_x(
-        self, flatfield_correction_params_serialized, reco_params_serialized
-    ):
+    def reconstruct_x(self, flatfield_correction_params_serialized, reco_params_serialized):
         try:
             logging.info("reconstruct_x called")
 
             logging.debug("Deserialize data")
             reco_params = RecoParams.from_json(reco_params_serialized)
-            flatfield_correction_params = FlatfieldCorrectionParams.from_json(
-                flatfield_correction_params_serialized
-            )
+            flatfield_correction_params = FlatfieldCorrectionParams.from_json(flatfield_correction_params_serialized)
 
             logging.info("Do reconstruction")
 
             logging.params("reco_params", reco_params)
 
-            x_predicted, se_losses_all = reconstruct(
-                flatfield_correction_params, reco_params, self.viewer
-            )
+            x_predicted, se_losses_all = reconstruct(flatfield_correction_params, reco_params, self.viewer)
             logging.debug("Write result to file system")
             result_phaseshift = np.float32(np.real(x_predicted.cpu().numpy()))
             result_absorption = np.float32(np.imag(x_predicted.cpu().numpy()))

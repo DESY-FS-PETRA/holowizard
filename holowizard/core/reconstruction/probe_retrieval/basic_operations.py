@@ -39,46 +39,31 @@ def basic_update(host_context: HostContext, function, update_oref=True):
             "update_oref": update_oref,
         }
 
-        future_results.append(
-            host_context.dask_controller.client.submit(function, args_dict)
-        )
+        future_results.append(host_context.dask_controller.client.submit(function, args_dict))
 
     return future_results
 
 
 def object_update(host_context: HostContext):
-    future_results = basic_update(
-        host_context=host_context, function=reconstruct, update_oref=True
-    )
+    future_results = basic_update(host_context=host_context, function=reconstruct, update_oref=True)
     se_losses, _ = host_context.read_intermediate_results(future_results)
-    host_context.se_losses_all = torch.cat(
-        (host_context.se_losses_all, se_losses.cpu())
-    )
+    host_context.se_losses_all = torch.cat((host_context.se_losses_all, se_losses.cpu()))
     host_context.current_iter_offset = (
-        host_context.current_iter_offset
-        + host_context.current_options.regularization_object.iterations
+        host_context.current_iter_offset + host_context.current_options.regularization_object.iterations
     )
 
 
 def probe_init(host_context: HostContext):
-    future_results = basic_update(
-        host_context=host_context, function=reconstruct, update_oref=False
-    )
-    host_context.beam_setup.probe_refractive, se_losses = probe_gradient_step(
-        host_context, future_results
-    )
+    future_results = basic_update(host_context=host_context, function=reconstruct, update_oref=False)
+    host_context.beam_setup.probe_refractive, se_losses = probe_gradient_step(host_context, future_results)
     host_context.current_iter_offset = host_context.current_iter_offset + 1
 
     if host_context.se_losses_all is None:
         host_context.se_losses_all = se_losses[-1].unsqueeze(0)
     else:
-        host_context.se_losses_all = torch.cat(
-            (host_context.se_losses_all, se_losses[-1].unsqueeze(0))
-        )
+        host_context.se_losses_all = torch.cat((host_context.se_losses_all, se_losses[-1].unsqueeze(0)))
 
-    HostContext.write_inputs(
-        dask_options=host_context.dask_options, beam_setup=host_context.beam_setup
-    )
+    HostContext.write_inputs(dask_options=host_context.dask_options, beam_setup=host_context.beam_setup)
 
 
 def probe_gradient_step(host_context: HostContext, results):
@@ -87,19 +72,13 @@ def probe_gradient_step(host_context: HostContext, results):
     probe_refractive = host_context.beam_setup.probe_refractive.to(torch.device("cpu"))
 
     probe_refractive.real = (
-        probe_refractive.real
-        - host_context.current_options.regularization_probe.update_rate
-        * grad_probe.real
+        probe_refractive.real - host_context.current_options.regularization_probe.update_rate * grad_probe.real
     )
     probe_refractive.imag = (
-        probe_refractive.imag
-        - host_context.current_options.regularization_probe.update_rate
-        * grad_probe.imag
+        probe_refractive.imag - host_context.current_options.regularization_probe.update_rate * grad_probe.imag
     )
 
-    probe_refractive.imag = torch.minimum(
-        probe_refractive.imag, 0 * torch.tensor(0, device=host_context.torch_device)
-    )
+    probe_refractive.imag = torch.minimum(probe_refractive.imag, 0 * torch.tensor(0, device=host_context.torch_device))
     # probe_refractive = apply_filter(
     #    probe_refractive, host_context.filter_kernel_probe_phase, host_context.filter_kernel_probe_absorption
     # )
@@ -109,20 +88,12 @@ def probe_gradient_step(host_context: HostContext, results):
 
 def probe_update(host_context: HostContext):
     for i in range(host_context.current_options.regularization_probe.iterations):
-        future_results = basic_update(
-            host_context, get_probe_gradient, update_oref=False
-        )
-        host_context.beam_setup.probe_refractive, se_losses = probe_gradient_step(
-            host_context, future_results
-        )
+        future_results = basic_update(host_context, get_probe_gradient, update_oref=False)
+        host_context.beam_setup.probe_refractive, se_losses = probe_gradient_step(host_context, future_results)
 
-        HostContext.write_inputs(
-            dask_options=host_context.dask_options, beam_setup=host_context.beam_setup
-        )
+        HostContext.write_inputs(dask_options=host_context.dask_options, beam_setup=host_context.beam_setup)
 
         host_context.current_iter_offset = host_context.current_iter_offset + 1
-        host_context.se_losses_all = torch.cat(
-            (host_context.se_losses_all, se_losses.cpu())
-        )
+        host_context.se_losses_all = torch.cat((host_context.se_losses_all, se_losses.cpu()))
 
         print_infos(host_context)

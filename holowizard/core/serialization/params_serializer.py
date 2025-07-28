@@ -27,9 +27,7 @@ class ParamsSerializer:
                 time.sleep(0.1)
                 tries += 1
             if tries == timeout:
-                raise RuntimeError(
-                    "Reached timeout while trying to deserialize " + data
-                )
+                raise RuntimeError("Reached timeout while trying to deserialize " + data)
             with open(data, "rb") as f:
                 params = pickle.load(f)
         else:

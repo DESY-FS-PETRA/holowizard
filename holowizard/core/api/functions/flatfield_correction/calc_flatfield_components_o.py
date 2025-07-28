@@ -1,11 +1,10 @@
 import logging
 import pickle
 
+from holowizard.core.parameters.flatfield_components_params import FlatfieldComponentsParams
 from holowizard.core.preprocessing.calculate_flatfield_components import (
     calculate_flatfield_components as calculate_flatfield_components_internal,
 )
-
-from holowizard.core.parameters.flatfield_components_params import FlatfieldComponentsParams
 
 
 def log_empties(empties):
@@ -22,16 +21,10 @@ def calculate_flatfield_components(
     log_empties(empties)
 
     logging.debug("Calculate components")
-    logging.info(
-        "Using " + str(flatfield_components_params.num_components) + " components"
-    )
-    components_model = calculate_flatfield_components_internal(
-        empties, flatfield_components_params.num_components
-    )
+    logging.info("Using " + str(flatfield_components_params.num_components) + " components")
+    components_model = calculate_flatfield_components_internal(empties, flatfield_components_params.num_components)
 
-    logging.debug(
-        "Write components to file system: " + flatfield_components_params.save_path
-    )
+    logging.debug("Write components to file system: " + flatfield_components_params.save_path)
 
     with open(flatfield_components_params.save_path, "wb") as file:
         pickle.dump(components_model, file, pickle.HIGHEST_PROTOCOL)

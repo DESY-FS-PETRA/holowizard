@@ -10,7 +10,15 @@ from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
-from holowizard.core.api.parameters import BeamSetup, Measurement, Padding, Options, Regularization, DataDimensions, RecoParams
+from holowizard.core.api.parameters import (
+    BeamSetup,
+    Measurement,
+    Padding,
+    Options,
+    Regularization,
+    DataDimensions,
+    RecoParams,
+)
 
 if "cuda" in holowizard.core.torch_running_device_name:
     from holowizard.core.models.fresnel_propagator import FresnelPropagator
@@ -46,9 +54,7 @@ padding_options = Padding(
 )
 
 options_mainrun = Options(
-    regularization_object=Regularization(
-        iterations=2000, update_rate=0.99, gaussian_filter_fwhm=2.0 + 8.0j
-    ),
+    regularization_object=Regularization(iterations=2000, update_rate=0.99, gaussian_filter_fwhm=2.0 + 8.0j),
     nesterov_object=Regularization(
         update_rate=0.9,
     ),
@@ -57,9 +63,7 @@ options_mainrun = Options(
     prototype_field=0.0,
 )
 
-data_dimensions = DataDimensions(
-    total_size=(2048, 2048), fov_size=(2048, 2048), window_type="blackman"
-)
+data_dimensions = DataDimensions(total_size=(2048, 2048), fov_size=(2048, 2048), window_type="blackman")
 
 ########################################################################################################################
 
@@ -68,13 +72,11 @@ phantom = torch.tensor(
     dtype=torch.cfloat,
     device=holowizard.core.torch_running_device,
 )
-data_dimensions_processed = process_data_dimensions(
-    deepcopy(data_dimensions), deepcopy(padding_options)
-)
+data_dimensions_processed = process_data_dimensions(deepcopy(data_dimensions), deepcopy(padding_options))
 model = FresnelPropagator(
     [ConeBeam.get_fr(setup, measurement) for measurement in measurements],
     data_dimensions_processed.total_size,
-    holowizard.core.torch_running_device
+    holowizard.core.torch_running_device,
 )
 phantom = pad_to_size(phantom, data_dimensions_processed.total_size)
 

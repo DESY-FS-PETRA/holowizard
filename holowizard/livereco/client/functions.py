@@ -3,14 +3,10 @@ from holowizard.livereco_server.client.send import send
 
 
 def reconfigure_logger(working_dir, session_name):
-    return send(
-        "reconfigure_logger", working_dir=working_dir, session_name=session_name
-    )
+    return send("reconfigure_logger", working_dir=working_dir, session_name=session_name)
 
 
-def reconstruct(
-    flatfield_correction_params: FlatfieldCorrectionParams, reco_params: RecoParams
-):
+def reconstruct(flatfield_correction_params: FlatfieldCorrectionParams, reco_params: RecoParams):
     return send(
         "reconstruct",
         flatfield_correction_params=flatfield_correction_params,
@@ -27,9 +23,7 @@ def reset_flatfield_list():
 
 
 def correct_flatfield(flatfield_correction_params: FlatfieldCorrectionParams):
-    return send(
-        "correct_flatfield", flatfield_correction_params=flatfield_correction_params
-    )
+    return send("correct_flatfield", flatfield_correction_params=flatfield_correction_params)
 
 
 def calculate_flatfield_components(
@@ -41,9 +35,7 @@ def calculate_flatfield_components(
     )
 
 
-def find_focus(
-    flatfield_correction_params: FlatfieldCorrectionParams, reco_params: RecoParams
-):
+def find_focus(flatfield_correction_params: FlatfieldCorrectionParams, reco_params: RecoParams):
     return send(
         "find_focus",
         flatfield_correction_params=flatfield_correction_params,

@@ -9,12 +9,14 @@ async def scheduler(q: Queue):
     q.put(sched.address)
     await sched.finished()
 
+
 def start_scheduler():
     """
     Launch the Dask scheduler in a background daemon thread.
     Returns the Thread object in case you want to join() later.
     """
     q = Queue()
+
     def _runner():
         asyncio.run(scheduler(q))
 

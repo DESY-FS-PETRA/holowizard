@@ -15,7 +15,6 @@ __all__ = [
 
 
 class NFHConstantDistSetup(NFHSetup):
-
     _instance = None  # implemented as singleton
 
     def __new__(cls, *args, **kwargs):
