@@ -43,10 +43,7 @@ def load_motor_log(scan_path):
 
 def load_scan_log(scan_path):
     # TODO: needed later for tomo reco
-    scanname = scan_path.split("/")[-1]
-    filename = scan_path + "/" + scanname + "__LogScan.log"
-    lines = [line.rstrip("\n") for line in open(filename)]
-    return
+    pass
 
 
 def load_scan_params(scan_path):

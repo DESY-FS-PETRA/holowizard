@@ -20,6 +20,6 @@ def connect(ip, port=holowizard.livereco.server_port):
 
         return True
 
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return False

@@ -156,11 +156,11 @@ class WorkerContext(object):
     def write_results(self):
         try:
             os.remove(self.working_dir + "se_loss_records_" + str(self.index) + ".pkl")
-        except Exception as e:
+        except Exception:
             pass
         try:
             os.remove(self.working_dir + "grad_probe_" + str(self.index) + ".pkl")
-        except Exception as e:
+        except Exception:
             pass
         if self.update_oref:
             os.remove(self.working_dir + "oref_predicted_" + str(self.index) + ".pkl")

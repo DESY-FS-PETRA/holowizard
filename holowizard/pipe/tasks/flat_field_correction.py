@@ -9,8 +9,6 @@ from holowizard.core.api.parameters import (
 )
 from holowizard.pipe.scan import Scan
 from holowizard.core.logging.logger import Logger
-import time
-import datetime
 
 
 class FlatFieldTask:
@@ -40,9 +38,6 @@ class FlatFieldTask:
 
     def __call__(self, scan: Scan) -> None:
         Logger.current_log_level = Logger.level_num_loss
-
-        timestamp = time.time()
-        log_time = datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d_%H-%M-%S")
 
         Logger.configure(
             session_name=f"flatfield",

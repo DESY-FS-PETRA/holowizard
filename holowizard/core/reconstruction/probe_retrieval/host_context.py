@@ -214,14 +214,14 @@ class HostContext:
         if beam_setup is not None:
             try:
                 os.remove(dask_options.working_dir + "beam_setup.pkl")
-            except Exception as e:
+            except Exception:
                 pass
             ParamsSerializer.serialize(beam_setup, dask_options.working_dir + "beam_setup.pkl")
 
         if data_dimensions is not None:
             try:
                 os.remove(dask_options.working_dir + "data_dimensions.pkl")
-            except Exception as e:
+            except Exception:
                 pass
             ParamsSerializer.serialize(data_dimensions, dask_options.working_dir + "data_dimensions.pkl")
 
@@ -229,7 +229,7 @@ class HostContext:
             for j in range(len(measurements)):
                 try:
                     os.remove(dask_options.working_dir + +"measurements_" + str(j) + ".pkl")
-                except Exception as e:
+                except Exception:
                     pass
                 ParamsSerializer.serialize(
                     measurements[j],
@@ -241,7 +241,7 @@ class HostContext:
                 try:
                     os.remove(dask_options.working_dir + "oref_predicted_" + str(j) + ".pkl")
                     # pass
-                except Exception as e:
+                except Exception:
                     pass
                 ParamsSerializer.serialize(
                     oref_predicted[j],
@@ -252,7 +252,7 @@ class HostContext:
             for j in range(len(nesterov_vt)):
                 try:
                     os.remove(dask_options.working_dir + "nesterov_vt_" + str(j) + ".pkl")
-                except Exception as e:
+                except Exception:
                     pass
                 ParamsSerializer.serialize(
                     nesterov_vt[j],

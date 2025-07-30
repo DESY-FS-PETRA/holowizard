@@ -296,7 +296,6 @@ def _register_routes(app: FastAPI):
 
     @ui.get("/dashboard")
     async def dashboard(request: Request):
-        data = await queue_info()
         return app.state.templates.TemplateResponse("dashboard.html", {"request": request, **await progress()})
 
     @ui.get("/scan/{name}", response_class=HTMLResponse)
