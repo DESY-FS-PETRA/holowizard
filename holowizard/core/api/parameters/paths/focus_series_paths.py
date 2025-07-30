@@ -1,4 +1,4 @@
-from .paths import Paths
+from holowizard.core.parameters.paths import Paths
 
 
 class FocusSeriesPaths(Paths):
