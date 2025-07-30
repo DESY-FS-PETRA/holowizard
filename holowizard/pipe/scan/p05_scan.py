@@ -132,10 +132,10 @@ def load_motor_log(scan_path):
 
     # Probe format by looking at the first parameter block
     probe_block = lines[:60]
-    first_param_block = [l for l in probe_block if ": " in l]
+    first_param_block = [x for x in probe_block if ": " in x]
 
     # Detect Granite* variant
-    granite_keys = [l.split(": ")[1] for l in first_param_block]
+    granite_keys = [x.split(": ")[1] for x in first_param_block]
     if "GraniteSlider_1" in granite_keys:
         param_end = 50
         values_line = 55
