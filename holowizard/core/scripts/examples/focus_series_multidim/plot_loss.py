@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
-from holowizard.core.utils.plot_loss_chart import *
+from holowizard.core.utils.plot_loss_chart import plot_loss_chart_multidim
 
 matplotlib.use("Qt5Agg")
 

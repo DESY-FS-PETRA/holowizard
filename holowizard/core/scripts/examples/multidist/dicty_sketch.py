@@ -3,12 +3,12 @@ import skimage.transform as sktf
 import matplotlib
 import matplotlib.pyplot as plt
 import pathlib
+import torch
 
 import holowizard.core
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
-from holowizard.core.parameters import *
 from holowizard.core.models.cone_beam import ConeBeam
 from holowizard.core.api.parameters import (
     BeamSetup,
@@ -29,7 +29,7 @@ from holowizard.core.phantoms import dicty_sketch
 from holowizard.core.preprocessing.process_data_dimensions import (
     process_data_dimensions,
 )
-from holowizard.core.utils.transform import *
+from holowizard.core.utils.transform import pad_to_size, crop_center
 
 matplotlib.use("Qt5Agg")
 
