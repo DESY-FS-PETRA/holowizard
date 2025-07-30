@@ -1,7 +1,5 @@
 import torch
 
-import holowizard.core
-
 
 def get_var(x):
     return torch.var(x).item()
