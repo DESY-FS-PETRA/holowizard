@@ -1,5 +1,5 @@
 import numpy as np
-from holowizard.livereco_server.client.send import send
+from holowizard.livereco.client.send import send
 
 
 def reconfigure_logger(working_dir, session_name):
