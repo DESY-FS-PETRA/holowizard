@@ -343,7 +343,7 @@ def _register_routes(app: FastAPI):
         out = CONFIG_DIR / stage / f"{name.split('.')[0]}.yaml"
         out.parent.mkdir(parents=True, exist_ok=True)
         yaml.safe_dump(data, out.open("w"), default_flow_style=False)
-        return RedirectResponse(url=f"/parameter", status_code=303)
+        return RedirectResponse(url="/parameter", status_code=303)
 
     @ui.get("/stage/{stage}")
     async def list_stage(stage: str):

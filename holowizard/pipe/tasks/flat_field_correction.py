@@ -40,7 +40,7 @@ class FlatFieldTask:
         Logger.current_log_level = Logger.level_num_loss
 
         Logger.configure(
-            session_name=f"flatfield",
+            session_name="flatfield",
             working_dir=str(Path(scan.path_log) / Path(scan.config.paths.base_dir) / Path("log")),
         )
         # Check if the PCA file exists
