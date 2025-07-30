@@ -3,9 +3,6 @@ import torch
 from holowizard.core.utils.remove_outliers import remove_outliers
 import holowizard.core
 
-import matplotlib
-import matplotlib.pyplot as plt
-
 
 def components_model_to_tensors(components_model):
     components_model.mean_ = torch.tensor(components_model.mean_, device=holowizard.core.torch_running_device)

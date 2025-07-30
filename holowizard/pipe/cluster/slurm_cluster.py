@@ -1,14 +1,12 @@
 import os
 import sys
-import json
 import time
 import threading
 import logging
 from dask_jobqueue import SLURMCluster
-from dask.distributed import Client, Scheduler
+from dask.distributed import Client
 from holowizard.pipe.cluster.scheduler import start_scheduler
 from holowizard.pipe.cluster.cluster import Cluster
-from dask.distributed import WorkerPlugin
 
 
 class SlurmCluster(Cluster):

@@ -1,7 +1,6 @@
 import numpy
 from copy import deepcopy
 import pathlib
-import os
 
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct

@@ -1,12 +1,10 @@
 import os
-import io
 import socket
 import uuid
 import threading
 import asyncio
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-from fastapi.staticfiles import StaticFiles
 from starlette.datastructures import UploadFile
 import yaml
 import markdown
@@ -16,7 +14,6 @@ import zmq
 import zmq.asyncio
 import tifffile
 import numpy as np
-from PIL import Image
 from pydantic import BaseModel, Field
 from fastapi import (
     FastAPI,
@@ -31,7 +28,6 @@ from fastapi import (
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
-    StreamingResponse,
     JSONResponse,
 )
 from fastapi.templating import Jinja2Templates

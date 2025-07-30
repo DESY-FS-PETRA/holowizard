@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn.decomposition import FastICA
-from multiprocessing import Pool
 
 from holowizard.core.utils.remove_outliers import remove_outliers_multiprocess_wrapper
 

@@ -1,9 +1,8 @@
 # standard libraries
 from typing import Callable
-from abc import ABC, abstractmethod
+from abc import ABC
 
 # third party libraries
-from torch.utils.data import Dataset
 
 # local libraries
 import holowizard.forge.datasets as module_data

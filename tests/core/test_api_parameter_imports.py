@@ -37,7 +37,6 @@ def test_parameters_convenience_import():
 
 def test_get_default_parameters():
     try:
-        from holowizard.core.api.parameters import Options
         from holowizard.core.api.parameters.default_parameters.example_magnesium_wire import (
             get_default_options as get_default_options_wire,
         )

@@ -1,4 +1,3 @@
-import glob
 import matplotlib
 import matplotlib.pyplot as plt
 

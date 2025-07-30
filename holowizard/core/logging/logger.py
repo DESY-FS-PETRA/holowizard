@@ -1,6 +1,5 @@
 import os
 import logging
-import numpy
 from skimage import io
 import datetime
 import time

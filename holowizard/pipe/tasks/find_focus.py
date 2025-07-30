@@ -1,12 +1,9 @@
-import os
 from holowizard.core.api.functions.find_focus.find_focus_flatfieldcorrection import (
     find_focus,
 )
 from holowizard.core.logging.logger import Logger
-from holowizard.core.utils import fileio
 from holowizard.core.api.parameters import (
     FlatfieldCorrectionParams,
-    FlatfieldComponentsParams,
 )
 from holowizard.pipe.scan import Scan
 from holowizard.pipe.utils.reco_params import build_reco_params

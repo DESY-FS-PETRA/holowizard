@@ -6,7 +6,6 @@ from holowizard.core.api.functions.flatfield_correction.calc_flatfield_component
 )
 from holowizard.core.api.parameters import (
     FlatfieldComponentsParams,
-    FlatfieldCorrectionParams,
 )
 from holowizard.pipe.scan import Scan
 from holowizard.core.logging.logger import Logger
