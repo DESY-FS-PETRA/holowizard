@@ -38,16 +38,6 @@ from gui.windows.popup_windows.scan_config_dialog import ScanConfigDialog
 from silx.gui.plot import Plot2D
 
 
-from PyQt5.QtWidgets import (
-    QVBoxLayout,
-    QLabel,
-    QLineEdit,
-    QHBoxLayout,
-    QPushButton,
-    QFormLayout,
-)
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         """
