@@ -4,4 +4,6 @@ from .project_paths import ProjectPaths
 
 __all__ = [
     "Paths",
+    "FocusSeriesPaths",
+    "ProjectPaths",
 ]

@@ -4,3 +4,12 @@ from .triangle import triangle
 from .edge import edge
 from .circle import circle
 from .ball import ball
+
+__all__ = [
+    "dicty_sketch",
+    "shepp_logan",
+    "triangle",
+    "edge",
+    "circle",
+    "ball",
+]
