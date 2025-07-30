@@ -74,4 +74,4 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-exclude = ["holowizard/forge"]
+exclude = ["holowizard/forge", "tests/forge"]
