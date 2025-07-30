@@ -3,6 +3,7 @@ numpy==1.26.4
 torch
 torchvision
 matplotlib
+PySide2
 pandas
 h5py
 hdf5plugin
