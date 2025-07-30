@@ -55,7 +55,7 @@ class Measurement:
         if not isinstance(data, dict):
             return None
 
-        if not "z01" in data or not "z01_confidence" in data or not "data_path" in data or not "data" in data:
+        if "z01" not in data or "z01_confidence" not in data or "data_path" not in data or "data" not in data:
             return None
 
         hologram = JsonWritable.get_numpy_from_array(data["data"])

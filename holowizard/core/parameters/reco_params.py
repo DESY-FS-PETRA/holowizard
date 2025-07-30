@@ -46,10 +46,10 @@ class RecoParams:
         if not isinstance(obj_dict, dict):
             return None
 
-        if not "beam_setup" in obj_dict or not "measurements" in obj_dict or not "reco_options" in obj_dict:
+        if "beam_setup" not in obj_dict or "measurements" not in obj_dict or "reco_options" not in obj_dict:
             return None
 
-        if not "data_dimensions" in obj_dict or not "output_path" in obj_dict:
+        if "data_dimensions" not in obj_dict or "output_path" not in obj_dict:
             return None
 
         measurements = []

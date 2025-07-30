@@ -51,13 +51,13 @@ class Regularization:
             return None
 
         if (
-            not "iterations" in data
-            or not "update_rate" in data
-            or not "gaussian_filter_fwhm" in data
-            or not "values_min" in data
-            or not "values_max" in data
-            or not "l2_weight" in data
-            or not "l1_weight" in data
+            "iterations" not in data
+            or "update_rate" not in data
+            or "gaussian_filter_fwhm" not in data
+            or "values_min" not in data
+            or "values_max" not in data
+            or "l2_weight" not in data
+            or "l1_weight" not in data
         ):
             return None
 
