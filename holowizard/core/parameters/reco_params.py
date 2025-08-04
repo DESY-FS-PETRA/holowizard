@@ -7,6 +7,8 @@ from holowizard.core.parameters.measurement import Measurement
 from holowizard.core.parameters.options import Options
 from holowizard.core.parameters.data_dimensions import DataDimensions
 from holowizard.core.parameters.paths import Paths
+from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.parameters import member_value_adapter
 
 
 class RecoParams:
@@ -18,6 +20,7 @@ class RecoParams:
         data_dimensions: DataDimensions,
         output_path: str,
         session_params: Paths = None,
+        initial_guess=None,
     ):
         self.beam_setup = beam_setup
         self.measurements = list(measurements)
@@ -25,17 +28,21 @@ class RecoParams:
         self.data_dimensions = data_dimensions
         self.output_path = output_path
         self.session_params = session_params
+        self.initial_guess = initial_guess
 
     def to_json(self):
-        class JsonWritable:
+        class JsonInput:
             def __init__(self, reco_params: RecoParams):
                 self.beam_setup = json.loads(reco_params.beam_setup.to_json())
                 self.measurements = [json.loads(measurement.to_json()) for measurement in reco_params.measurements]
                 self.reco_options = [json.loads(reco_option.to_json()) for reco_option in reco_params.reco_options]
                 self.data_dimensions = json.loads(reco_params.data_dimensions.to_json())
                 self.output_path = reco_params.output_path
+                self.initial_guess = JsonWritable.get_array(
+                    member_value_adapter.get_numpy_array_complex(reco_params.initial_guess)
+                )
 
-        json_writable = JsonWritable(self)
+        json_writable = JsonInput(self)
 
         return json.dumps(json_writable, default=lambda o: o.__dict__)
 
@@ -49,7 +56,7 @@ class RecoParams:
         if "beam_setup" not in obj_dict or "measurements" not in obj_dict or "reco_options" not in obj_dict:
             return None
 
-        if "data_dimensions" not in obj_dict or "output_path" not in obj_dict:
+        if not "data_dimensions" in obj_dict or not "output_path" in obj_dict or not "initial_guess" in obj_dict:
             return None
 
         measurements = []
@@ -64,6 +71,7 @@ class RecoParams:
         beam_setup = BeamSetup.from_dict(obj_dict["beam_setup"])
         data_dimensions = DataDimensions.from_dict(obj_dict["data_dimensions"])
         output_path = str(obj_dict["output_path"])
+        initial_guess = JsonWritable.get_numpy_from_array(obj_dict["initial_guess"])
 
         return RecoParams(
             beam_setup=beam_setup,
@@ -71,6 +79,7 @@ class RecoParams:
             reco_options=reco_options,
             data_dimensions=data_dimensions,
             output_path=output_path,
+            initial_guess=initial_guess,
         )
 
     @property
@@ -96,6 +105,10 @@ class RecoParams:
     @property
     def output_path(self) -> str:
         return self._output_path
+
+    @property
+    def initial_guess(self):  # skipping the type
+        return self._initial_guess
 
     @beam_setup.setter
     def beam_setup(self, beam_setup):
@@ -140,3 +153,8 @@ class RecoParams:
             self._session_params = session_params
         else:
             raise TypeError("Expected Paths object but got ", type(session_params)).with_traceback(sys.exc_info()[2])
+
+    @initial_guess.setter
+    def initial_guess(self, initial_guess):
+        # no checking for type here either..
+        self._initial_guess = member_value_adapter.get_array_complex(initial_guess)

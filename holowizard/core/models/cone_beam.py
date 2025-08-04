@@ -41,3 +41,16 @@ class ConeBeam(BeamSetup):
             logging.info(f"{'Fresnel Number':<17}{fr_eff}")
 
         return fr_eff
+
+    @staticmethod
+    def get_z01(setup: BeamSetup, fr_eff: float):
+        lam = 1.2398 * 1e-3 / setup.energy * BeamSetup.unit_energy()[1]
+
+        nominator = fr_eff * lam * (setup.z02 * BeamSetup.unit_z02()[1]) ** 2
+        denominator = (setup.px_size * BeamSetup.unit_px_size()[1]) ** 2 + nominator / (
+            setup.z02 * BeamSetup.unit_z02()[1]
+        )
+
+        z01 = round(nominator / denominator)  # round to nm
+
+        return z01 / Measurement.unit_z01()[1]
