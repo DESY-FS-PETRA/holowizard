@@ -1,9 +1,9 @@
-import torch
 from copy import deepcopy
 import skimage.transform as sktf
 import matplotlib
 import matplotlib.pyplot as plt
 import pathlib
+import torch
 
 import holowizard.core
 from holowizard.core.logging.logger import Logger
@@ -29,7 +29,7 @@ from holowizard.core.phantoms import dicty_sketch
 from holowizard.core.preprocessing.process_data_dimensions import (
     process_data_dimensions,
 )
-from holowizard.core.utils.transform import *
+from holowizard.core.utils.transform import crop_center, pad_to_size
 
 matplotlib.use("Qt5Agg")
 

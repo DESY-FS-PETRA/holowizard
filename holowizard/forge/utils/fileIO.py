@@ -12,7 +12,7 @@ from skimage import io
 from PIL import Image
 
 # local libraries
-from .datatypes import *
+from .datatypes import Pathlike, Hologram
 from holowizard.forge.objects.phantom import Phantom
 
 

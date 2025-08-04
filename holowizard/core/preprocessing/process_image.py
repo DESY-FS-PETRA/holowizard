@@ -54,7 +54,7 @@ def process_image(
     index,
     padding_val=1.0,
 ):
-    if image == None:
+    if image is None:
         return None
 
     image = torch.rot90(image)

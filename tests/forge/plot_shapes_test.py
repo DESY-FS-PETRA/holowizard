@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # local libraries
-from holowizard.forge.objects.shapes import *
+from holowizard.forge.objects.shapes import Shape, Ball, Polygon, Ellipse, Rectangle, Cylinder, CylinderRoundTip
 
 
 __all__ = [

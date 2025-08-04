@@ -1,13 +1,12 @@
 import os
 import logging
-import numpy
 from skimage import io
 import datetime
 import time
 import pickle
 import io as io_low_level
 from .header import Header
-from . import *
+from . import comment_block_length, comment_character
 
 
 class Logger:
@@ -36,7 +35,7 @@ class Logger:
 
     @staticmethod
     def init():
-        if Logger.initialized == True:
+        if Logger.initialized:
             return
 
         Logger.add_log_level("DEBUG", logging.DEBUG, Logger.debug_level_callback)
@@ -63,13 +62,13 @@ class Logger:
 
     @staticmethod
     def configure(working_dir=None, session_name=None):
-        if Logger.initialized == False:
+        if not Logger.initialized:
             Logger.init()
 
-        if working_dir != None:
+        if working_dir is not None:
             Logger.working_dir = working_dir
 
-        if session_name != None:
+        if session_name is not None:
             Logger.session_name = session_name
 
         logger = logging.getLogger(session_name)

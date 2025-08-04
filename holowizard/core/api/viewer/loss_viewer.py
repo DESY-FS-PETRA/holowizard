@@ -1,5 +1,4 @@
 import logging
-import torch
 
 from holowizard.core.reconstruction.viewer.viewer import Viewer
 

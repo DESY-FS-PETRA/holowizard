@@ -1,6 +1,7 @@
 from typing import List
 import logging
 import pickle
+import torch
 
 from holowizard.core.parameters.reco_params import RecoParams
 from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams

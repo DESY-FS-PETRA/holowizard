@@ -1,5 +1,5 @@
 import os
-
+import logging
 import torch
 from typing import List
 from dask.distributed import as_completed
@@ -17,8 +17,8 @@ from holowizard.core.parameters.data_dimensions import DataDimensions
 from holowizard.core.parameters.options import Options
 from holowizard.core.reconstruction.viewer.viewer import Viewer
 from holowizard.core.reconstruction.utils import get_filter_kernels
-from holowizard.core.reconstruction.logging import *
-from holowizard.core.reconstruction.transformation import *
+from holowizard.core.reconstruction.logging import log_params, log_preprocessed_params
+from holowizard.core.reconstruction.transformation import resize_guess
 
 
 class HostContext:
@@ -214,14 +214,14 @@ class HostContext:
         if beam_setup is not None:
             try:
                 os.remove(dask_options.working_dir + "beam_setup.pkl")
-            except Exception as e:
+            except Exception:
                 pass
             ParamsSerializer.serialize(beam_setup, dask_options.working_dir + "beam_setup.pkl")
 
         if data_dimensions is not None:
             try:
                 os.remove(dask_options.working_dir + "data_dimensions.pkl")
-            except Exception as e:
+            except Exception:
                 pass
             ParamsSerializer.serialize(data_dimensions, dask_options.working_dir + "data_dimensions.pkl")
 
@@ -229,7 +229,7 @@ class HostContext:
             for j in range(len(measurements)):
                 try:
                     os.remove(dask_options.working_dir + +"measurements_" + str(j) + ".pkl")
-                except Exception as e:
+                except Exception:
                     pass
                 ParamsSerializer.serialize(
                     measurements[j],
@@ -241,7 +241,7 @@ class HostContext:
                 try:
                     os.remove(dask_options.working_dir + "oref_predicted_" + str(j) + ".pkl")
                     # pass
-                except Exception as e:
+                except Exception:
                     pass
                 ParamsSerializer.serialize(
                     oref_predicted[j],
@@ -252,7 +252,7 @@ class HostContext:
             for j in range(len(nesterov_vt)):
                 try:
                     os.remove(dask_options.working_dir + "nesterov_vt_" + str(j) + ".pkl")
-                except Exception as e:
+                except Exception:
                     pass
                 ParamsSerializer.serialize(
                     nesterov_vt[j],

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import requests
-import json
 from argparse import ArgumentParser
 from pprint import pprint
 import socket

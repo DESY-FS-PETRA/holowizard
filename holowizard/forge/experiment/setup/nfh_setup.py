@@ -10,7 +10,7 @@ import torch.fft as fft
 # local packages
 from .setup import Setup
 import holowizard.forge.utils.torch_settings as torch_settings
-from holowizard.forge.utils.datatypes import TensorComplex64, TensorFloat32
+from holowizard.forge.utils.datatypes import TensorComplex64
 from holowizard.forge.utils import calc_Fr
 
 

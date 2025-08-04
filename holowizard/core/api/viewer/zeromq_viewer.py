@@ -1,5 +1,4 @@
 import zmq
-import skimage
 import json
 import numpy as np
 from holowizard.core.utils.transform import crop_center

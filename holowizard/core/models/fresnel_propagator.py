@@ -1,13 +1,7 @@
-import cupy
 import torch
 import numpy as np
-import logging
 from typing import List
 import cupy as cp
-import cupyx.scipy.fft as cufft
-import scipy.fft
-
-import holowizard.core
 
 
 class FresnelPropagator:

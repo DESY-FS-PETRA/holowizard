@@ -2,7 +2,6 @@
 from abc import ABC
 
 # third party libraries
-import numpy as np
 import torch
 import torchvision
 import matplotlib.pyplot as plt

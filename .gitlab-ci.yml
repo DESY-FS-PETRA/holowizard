@@ -21,7 +21,7 @@ build:
     paths:
       - dist/
 
-formatting:
+code-style:  # should pass if pre commit hooks are configured correctly
   stage: test
   image: python:3.11
   rules:
@@ -30,7 +30,8 @@ formatting:
     - if: $CI_COMMIT_BRANCH == "main"
   script:
     - pip install ruff
-    - ruff format --check .
+    - ruff format --check .  # formatting
+    - ruff check  # linting
 
 run-gpu-tests:
   stage: test
