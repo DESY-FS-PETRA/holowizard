@@ -23,7 +23,7 @@ def build_reco_params(scan: Scan, reco_params) -> RecoParams:
     cfg = scan.config
 
     beam_setup = BeamSetup(
-        energy=cfg.scan.energy,
+        energy=scan.energy,
         px_size=cfg.scan.px_size,
         z02=scan.z02,  # Use the z02 from the scan object
     )
