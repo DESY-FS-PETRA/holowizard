@@ -56,7 +56,7 @@ class RecoParams:
         if "beam_setup" not in obj_dict or "measurements" not in obj_dict or "reco_options" not in obj_dict:
             return None
 
-        if not "data_dimensions" in obj_dict or not "output_path" in obj_dict or not "initial_guess" in obj_dict:
+        if "data_dimensions" not in obj_dict or "output_path" not in obj_dict or "initial_guess" not in obj_dict:
             return None
 
         measurements = []
