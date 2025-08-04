@@ -1,5 +1,6 @@
 import numpy as np
 from holowizard.livereco.client.send import send
+from holowizard.core.api.parameters import FlatfieldComponentsParams, FlatfieldCorrectionParams, RecoParams
 
 
 def reconfigure_logger(working_dir, session_name):

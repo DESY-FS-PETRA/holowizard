@@ -78,7 +78,6 @@ exclude = [
   "holowizard/forge",
   "tests/forge",
   "holowizard/pipe/gui/windows/main_window.py", # temporary
-  "holowizard/livereco/client/functions.py",  # temporary
 ]
 
 [tool.ruff.lint]
