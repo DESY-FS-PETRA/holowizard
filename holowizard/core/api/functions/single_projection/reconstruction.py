@@ -12,14 +12,7 @@ def reconstruct(reco_params: RecoParams, viewer: List[Viewer] = []):
     for i in range(len(reco_params.measurements)):
         reco_params.measurements[i].data = torch.sqrt(reco_params.measurements[i].data)
 
-    x_predicted, se_losses_all, fov = reco_multistage(
-        measurements=reco_params.measurements,
-        beam_setup=reco_params.beam_setup,
-        options=reco_params.reco_options,
-        data_dimensions=reco_params.data_dimensions,
-        viewer=viewer,
-    )
-
+    x_predicted, se_losses_all, fov = reco_multistage(reco_params, viewer)
     x_predicted = crop_center(x_predicted, fov)
 
     logging.image_info(

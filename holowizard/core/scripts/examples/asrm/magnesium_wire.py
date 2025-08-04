@@ -2,7 +2,9 @@ from copy import deepcopy
 import matplotlib
 import matplotlib.pyplot as plt
 import pathlib
+import torch
 
+import holowizard.core
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
@@ -26,7 +28,7 @@ data_path = root + "../data/magnesium_wire.tiff"
 working_dir = root + "../logs/"
 session_name = "magnesium_wire_asrm"
 
-Logger.current_log_level = Logger.level_num_image_info
+Logger.current_log_level = Logger.level_num_image_debug
 Logger.configure(session_name=session_name, working_dir=working_dir)
 
 flatfield_offset_corr = 1.1
@@ -96,6 +98,9 @@ options_upscale_4.padding.down_sampling_factor = 4
 options_upscale_2.padding.down_sampling_factor = 2
 options_mainrun.padding.down_sampling_factor = 1
 
+
+initial_guess = torch.randn(object_shape, dtype=torch.complex64, device=holowizard.core.torch_running_device)
+
 ########################################################################################################################
 reco_params = RecoParams(
     beam_setup=setup,
@@ -108,6 +113,7 @@ reco_params = RecoParams(
         options_mainrun,
     ],
     data_dimensions=data_dimensions,
+    initial_guess=initial_guess,
 )
 result, loss_records = reconstruct(reco_params, viewer=[LossViewer(), PyPlotViewer()])
 loss_records = loss_records.cpu()
