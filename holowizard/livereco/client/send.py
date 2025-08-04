@@ -1,7 +1,7 @@
 import json
 import numpy as np
 
-from holowizard.livereco_server.client import module_context
+from holowizard.livereco.client import module_context
 from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
 
 
