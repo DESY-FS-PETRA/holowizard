@@ -10,8 +10,6 @@ from holowizard.core.preprocessing.process_padding_options import (
 )
 from holowizard.core.parameters.measurement import Measurement
 from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters.options import Options
 from holowizard.core.reconstruction.viewer.viewer import Viewer
 from holowizard.core.reconstruction.utils import get_filter_kernels
 from holowizard.core.reconstruction.logging import Logger, log_preprocessed_params
