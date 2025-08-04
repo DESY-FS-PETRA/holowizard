@@ -26,20 +26,12 @@ else:
 class Context:
     def __init__(
         self,
-        measurements: List[Measurement] = None,
-        beam_setup: BeamSetup = None,
-        options: List[Options] = None,
-        data_dimensions: DataDimensions = None,
+        reco_params,
         viewer: List[Viewer] = None,
-        oref_predicted=None,
-        nesterov_vt=None,
     ):
+        self.reco_params = reco_params
         self.torch_device = holowizard.core.torch_running_device
-
-        self.measurements_original = measurements
-        self.beam_setup_original = beam_setup
-        self.data_dimensions_original = data_dimensions
-        self.options = options
+        self.options = reco_params.reco_options
 
         self.current_options = None
         self.se_losses_all = torch.empty(0, device=self.torch_device)
@@ -60,8 +52,8 @@ class Context:
         self.current_options = None
 
         self.viewer = viewer
-        self.oref_predicted = oref_predicted
-        self.nesterov_vt = nesterov_vt
+        self.oref_predicted = None
+        self.nesterov_vt = None
 
         self.current_stage = -1
         self.current_iter_offset = 0
@@ -72,20 +64,20 @@ class Context:
         string_list = []
 
         string_list.append(
-            f"{'z02':<17}{round(self.beam_setup_original.z02, int(np.log10(BeamSetup.unit_z02()[1])))} "
+            f"{'z02':<17}{round(self.reco_params.beam_setup.z02, int(np.log10(BeamSetup.unit_z02()[1])))} "
             + BeamSetup.unit_z02()[0]
         )
         string_list.append(
-            f"{'Energy':<17}{round(self.beam_setup_original.energy, int(np.log10(BeamSetup.unit_energy()[1])))} "
+            f"{'Energy':<17}{round(self.reco_params.beam_setup.energy, int(np.log10(BeamSetup.unit_energy()[1])))} "
             + BeamSetup.unit_energy()[0]
         )
-        for i in range(len(self.measurements_original)):
+        for i in range(len(self.reco_params.measurements)):
             lam, M, dx_eff, z_eff, fr_eff = ConeBeam.get_effective_geometry(
-                self.beam_setup_original, self.measurements_original[i]
+                self.reco_params.beam_setup, self.reco_params.measurements[i]
             )
             string_list.append("Distance " + str(i) + ":")
             string_list.append(
-                f"{'z01':<17}{round(self.measurements_original[i].z01, int(np.log10(Measurement.unit_z01()[1])))} "
+                f"{'z01':<17}{round(self.reco_params.measurements[i].z01, int(np.log10(Measurement.unit_z01()[1])))} "
                 + Measurement.unit_z01()[0]
             )
             string_list.append(f"{'Magnification':<17}{round(M, 3)}")
@@ -103,10 +95,11 @@ class Context:
 
     def check_successfull_initialization(self):
         if None in [
-            self.measurements_original,
-            self.beam_setup_original,
+            self.reco_params,
+            self.reco_params.measurements,
+            self.reco_params.beam_setup,
             self.options,
-            self.data_dimensions_original,
+            self.reco_params.data_dimensions,
         ]:
             raise ValueError("Host context not complete.")
 
@@ -180,49 +173,54 @@ class Context:
             self.oref_predicted.device,
         )
 
+    def init_arrays(self):
+        if self.oref_predicted is None:
+            if self.reco_params.initial_guess is not None:
+                self.oref_predicted = self.reco_params.initial_guess
+            else:
+                self.oref_predicted = torch.zeros(
+                    self.reco_params.data_dimensions.total_size,
+                    device=self.torch_device,
+                    dtype=torch.cfloat,
+                )
+
+        if self.nesterov_vt is None:
+            self.nesterov_vt = torch.zeros(
+                self.reco_params.data_dimensions.total_size,
+                device=self.torch_device,
+                dtype=torch.cfloat,
+            )
+
+        if self.reco_params.beam_setup.probe_refractive is None:
+            self.reco_params.beam_setup.probe_refractive = torch.zeros_like(self.oref_predicted)
+
     def rescale_arrays(self):
         if self.current_stage > 0:
             current_probe_refractive = deepcopy(self.beam_setup.probe_refractive)
         else:
-            current_probe_refractive = deepcopy(self.beam_setup_original.probe_refractive)
+            current_probe_refractive = deepcopy(self.reco_params.beam_setup.probe_refractive)
 
         (
             self.measurements,
             self.beam_setup,
             self.data_dimensions,
         ) = process_padding_options(
-            self.measurements_original,
-            self.beam_setup_original,
-            self.data_dimensions_original,
+            self.reco_params.measurements,
+            self.reco_params.beam_setup,
+            self.reco_params.data_dimensions,
             self.current_options.padding,
         )
 
-        if self.oref_predicted is None:
-            self.oref_predicted = torch.zeros(
-                self.data_dimensions.total_size,
-                device=self.torch_device,
-                dtype=torch.cfloat,
-            )
-
-            self.nesterov_vt = torch.zeros(
-                self.data_dimensions.total_size,
-                device=self.torch_device,
-                dtype=torch.cfloat,
-            )
-
-            self.beam_setup.probe_refractive = torch.zeros_like(self.oref_predicted)
-
-        else:
-            (
-                self.oref_predicted,
-                self.nesterov_vt,
-                self.beam_setup.probe_refractive,
-            ) = resize_guess(
-                self.oref_predicted,
-                self.nesterov_vt,
-                self.data_dimensions.total_size,
-                current_probe_refractive,
-            )
+        (
+            self.oref_predicted,
+            self.nesterov_vt,
+            self.beam_setup.probe_refractive,
+        ) = resize_guess(
+            self.oref_predicted,
+            self.nesterov_vt,
+            self.data_dimensions.total_size,
+            current_probe_refractive,
+        )
 
     def set_stage(self, stage_index):
         self.check_successfull_initialization()
@@ -234,10 +232,11 @@ class Context:
         self.current_stage = stage_index
         logging.comment("Stage " + str(self.current_stage + 1) + "/" + str(len(self.options)))
 
+        self.update_current_options()
+
         if self.current_stage == 0:
             self.create_effective_geometry_file()
-
-        self.update_current_options()
+            self.init_arrays()
 
         self.update_global_loss_array()
 

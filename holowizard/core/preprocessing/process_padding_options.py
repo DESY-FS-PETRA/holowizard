@@ -39,5 +39,7 @@ def process_padding_options(
 def process_beam_setup(beam_setup: BeamSetup, padding_options: Padding, data_dimensions: DataDimensions):
     beam_setup.px_size = beam_setup.px_size * padding_options.down_sampling_factor
     beam_setup.flat_field = process_image(beam_setup.flat_field, padding_options, data_dimensions, 0)
-    beam_setup.probe = process_image(beam_setup.probe, padding_options, data_dimensions, 0)
+    probe_real = process_image(beam_setup.probe.real, padding_options, data_dimensions, 0)
+    probe_imag = process_image(beam_setup.probe.imag, padding_options, data_dimensions, 0)
+    beam_setup.probe = probe_real + 1j * probe_imag
     return beam_setup
