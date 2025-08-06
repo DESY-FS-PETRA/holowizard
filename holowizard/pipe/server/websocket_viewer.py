@@ -1,16 +1,14 @@
-from PIL import Image
-import logging
 import io
 from holowizard.core.reconstruction.viewer.viewer import Viewer
 import zmq
-import numpy as np
 import matplotlib
 
-matplotlib.use("Agg")
-import socket
+import matplotlib.pyplot as plt
+from holowizard.core.utils.transform import crop_center
 import dotenv
 import os
 
+matplotlib.use("Agg")
 # 1) Ask dotenv where it *would* look first:
 dotenv_path = dotenv.find_dotenv()
 print("dotenv will load from:", dotenv_path or "<none found>")
@@ -19,9 +17,6 @@ print("dotenv will load from:", dotenv_path or "<none found>")
 loaded = dotenv.load_dotenv(dotenv_path, verbose=True, override=True)
 print(f"load_dotenv(verbose=True) returned: {loaded}")
 
-from distributed import get_worker
-import matplotlib.pyplot as plt
-from holowizard.core.utils.transform import crop_center
 
 # 1) create a single global ZMQ context + PUB socket
 zmq_ctx = zmq.Context.instance()

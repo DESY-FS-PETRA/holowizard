@@ -1,5 +1,4 @@
 import os
-import numpy as np
 from holowizard.pipe.beamtime import Beamtime
 
 

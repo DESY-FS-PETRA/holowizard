@@ -6,12 +6,9 @@ from holowizard.core.api.functions.flatfield_correction.calc_flatfield_component
 )
 from holowizard.core.api.parameters import (
     FlatfieldComponentsParams,
-    FlatfieldCorrectionParams,
 )
 from holowizard.pipe.scan import Scan
 from holowizard.core.logging.logger import Logger
-import time
-import datetime
 
 
 class FlatFieldTask:
@@ -39,14 +36,11 @@ class FlatFieldTask:
         self.save_path = str(self.save_path)
         self.flatfield = None
 
-    def __call__(self, scan: Scan) -> None:
+    def __call__(self, scan: Scan):
         Logger.current_log_level = Logger.level_num_loss
 
-        timestamp = time.time()
-        log_time = datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d_%H-%M-%S")
-
         Logger.configure(
-            session_name=f"flatfield",
+            session_name="flatfield",
             working_dir=str(Path(scan.path_log) / Path(scan.config.paths.base_dir) / Path("log")),
         )
         # Check if the PCA file exists
