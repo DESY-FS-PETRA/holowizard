@@ -38,7 +38,7 @@ class FlatfieldComponentsParams:
         if not isinstance(data, dict):
             return None
 
-        if not "measurements" in data or not "num_components" in data or not "save_path" in data:
+        if "measurements" not in data or "num_components" not in data or "save_path" not in data:
             return None
 
         measurements = []

@@ -1,7 +1,7 @@
 import logging
 
 from holowizard.core.logging.logger import Logger
-from holowizard.core.utils.transform import *
+from holowizard.core.utils.transform import crop_center
 
 
 def log_preprocessed_params(beam_setup, data_dimensions):

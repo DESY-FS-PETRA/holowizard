@@ -58,7 +58,7 @@ class BeamSetup:
         if not isinstance(data, dict):
             return None
 
-        if not "energy" in data or not "px_size" in data or not "z02" in data:
+        if "energy" not in data or "px_size" not in data or "z02" not in data:
             return None
 
         flat_field = JsonWritable.get_numpy_from_array(data["flat_field"])

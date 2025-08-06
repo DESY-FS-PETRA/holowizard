@@ -3,15 +3,6 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import shutil
 
-# third party libraries
-
-# local libraries
-
-
-__all__ = [
-    "Labeller",
-]
-
 
 class Labeller(ABC):
     def __init__(

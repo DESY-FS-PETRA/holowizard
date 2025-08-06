@@ -20,7 +20,7 @@ class ParamsSerializer:
 
     @staticmethod
     def deserialize(data, timeout=100):
-        if type(data) == str:
+        if isinstance(data, str):
             path = Path(data)
             tries = 0
             while not path.exists() and tries < timeout:

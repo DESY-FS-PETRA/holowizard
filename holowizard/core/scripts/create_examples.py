@@ -140,7 +140,7 @@ def download_test_data(extract_dir):
     if not download_file(data_url, temp_zip_path):
         return 1
 
-    print(f"Unpacking test data")
+    print("Unpacking test data")
 
     # Extract the ZIP
     if not extract_zip(temp_zip_path, extract_dir):

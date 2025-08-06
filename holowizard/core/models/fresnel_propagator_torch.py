@@ -16,10 +16,11 @@ class FresnelPropagator:
         )
         xi, eta = sample_grid
 
-        kernel_func = lambda distance: torch.exp((-1j * np.pi) / self.fresnel_numbers[distance] * (xi * xi + eta * eta))
-        kernel_func_conj = lambda distance: torch.exp(
-            (-1j * np.pi) / (-self.fresnel_numbers[distance]) * (xi * xi + eta * eta)
-        )
+        def kernel_func(distance):
+            return torch.exp((-1j * np.pi) / self.fresnel_numbers[distance] * (xi * xi + eta * eta))
+
+        def kernel_func_conj(distance):
+            return torch.exp((-1j * np.pi) / (-self.fresnel_numbers[distance]) * (xi * xi + eta * eta))
 
         self.fresnel_kernels = [kernel_func(distance).to(running_device) for distance in range(self.num_distances)]
         self.fresnel_kernels_conj = [

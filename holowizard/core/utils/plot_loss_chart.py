@@ -24,7 +24,7 @@ def print_loss_csv(file_name, x_values, loss_values):
         f.write(str(x_values[i]) + "," + str(loss_values[i]) + "\n")
 
 
-def plot_loss_chart(root, support, title, csv_output=False):
+def plot_loss_chart(root, support, title, csv_output_flag=False):
     fig, axs = plt.subplots(2, 4)
     figManager = plt.get_current_fig_manager()
     figManager.window.showMaximized()
@@ -119,7 +119,7 @@ def plot_loss_chart(root, support, title, csv_output=False):
         x_values_se[index_min],
     )
 
-    if csv_output == True:
+    if csv_output_flag:
         csv_root = root + "/csv/"
         try:
             os.mkdir(csv_root)

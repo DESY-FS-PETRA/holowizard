@@ -74,3 +74,11 @@ dev = [
 
 [tool.ruff]
 line-length = 120
+exclude = [
+  "holowizard/forge",
+  "tests/forge",
+  "holowizard/pipe/gui/windows/main_window.py", # temporary
+]
+
+[tool.ruff.lint]
+ignore = ["E722"]

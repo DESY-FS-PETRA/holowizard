@@ -1,7 +1,6 @@
 import numpy
 from copy import deepcopy
 import pathlib
-import os
 
 from holowizard.core.logging.logger import Logger
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
@@ -92,5 +91,5 @@ def test_spider_hair():
     )
     # assert numpy.allclose(reco_phaseshift, reference_phaseshift, rtol=1e-8)
     # assert numpy.allclose(reco_absorption, reference_absorption, rtol=1e-8)
-    assert numpy.isnan(reco_phaseshift).any() == False
-    assert numpy.isnan(reco_absorption).any() == False
+    assert not numpy.isnan(reco_phaseshift).any()
+    assert not numpy.isnan(reco_absorption).any()

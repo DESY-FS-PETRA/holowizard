@@ -6,7 +6,7 @@ from .median_pool_2d import MedianPool2d
 
 
 def remove_outliers(input_image, threshold=1, filter_size=5):
-    if type(input_image) == np.ndarray:
+    if isinstance(input_image, np.ndarray):
         # convert to torch tensor
         input_image = torch.tensor(input_image)
     image = input_image.clone()

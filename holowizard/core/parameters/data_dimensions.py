@@ -63,11 +63,11 @@ class DataDimensions:
             return None
 
         if (
-            not "total_size" in data
-            or not "fov_size" in data
-            or not "window_type" in data
-            or not "fading_width" in data
-            or not "window" in data
+            "total_size" not in data
+            or "fov_size" not in data
+            or "window_type" not in data
+            or "fading_width" not in data
+            or "window" not in data
         ):
             return None
 

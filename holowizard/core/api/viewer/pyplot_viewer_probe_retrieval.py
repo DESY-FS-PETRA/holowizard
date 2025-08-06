@@ -1,7 +1,5 @@
 import matplotlib
 import matplotlib.pyplot as plt
-import skimage.transform
-import numpy as np
 from holowizard.core.utils.transform import crop_center
 
 from holowizard.core.reconstruction.viewer.viewer import Viewer

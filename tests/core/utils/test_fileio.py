@@ -5,7 +5,7 @@ REPOROOT = Path(__file__).parent.resolve()
 
 
 def test_load_img_data():
-    dp = REPOROOT / "data" / "spider_hair.tiff"
+    dp = REPOROOT / ".." / "data" / "spider_hair.tiff"
 
     assert dp.exists()
 

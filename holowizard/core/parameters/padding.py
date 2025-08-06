@@ -58,10 +58,10 @@ class Padding:
         if not isinstance(data, dict):
             return None
 
-        if not "padding_mode" in data or not "padding_factor" in data or not "down_sampling_factor" in data:
+        if "padding_mode" not in data or "padding_factor" not in data or "down_sampling_factor" not in data:
             return None
 
-        if not "cutting_band" in data or not "a0" in data or not "prototype_field" in data:
+        if "cutting_band" not in data or "a0" not in data or "prototype_field" not in data:
             return None
 
         padding_mode = Padding.PaddingMode[data["padding_mode"]]
