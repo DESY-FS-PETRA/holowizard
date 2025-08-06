@@ -36,7 +36,7 @@ class FlatFieldTask:
         self.save_path = str(self.save_path)
         self.flatfield = None
 
-    def __call__(self, scan: Scan) -> None:
+    def __call__(self, scan: Scan):
         Logger.current_log_level = Logger.level_num_loss
 
         Logger.configure(

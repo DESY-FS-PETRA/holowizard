@@ -176,7 +176,7 @@ def load_motor_log(scan_path):
         "PETRA Beam Current",
         "Rotation Stage Position",
     ]
-    df = pd.read_csv(filename, comment="#", delim_whitespace=True, names=columns)
+    df = pd.read_csv(filename, comment="#", sep="\s+", names=columns)
     df = df[df["Image Identifier"] == "img"]
     df["Rotation Stage Position"] = df["Rotation Stage Position"].astype(float)
     return motor_pos, df["Rotation Stage Position"].to_numpy() * np.pi / 180

@@ -2,14 +2,12 @@ import io
 from holowizard.core.reconstruction.viewer.viewer import Viewer
 import zmq
 import matplotlib
+import matplotlib.pyplot as plt
+from holowizard.core.utils.transform import crop_center
 import dotenv
 import os
-import matplotlib.pyplot as plt
-
-from holowizard.core.utils.transform import crop_center
 
 matplotlib.use("Agg")
-
 # 1) Ask dotenv where it *would* look first:
 dotenv_path = dotenv.find_dotenv()
 print("dotenv will load from:", dotenv_path or "<none found>")
