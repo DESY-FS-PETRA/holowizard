@@ -14,11 +14,6 @@ from holowizard.forge.experiment.probe import BeamConfig
 import holowizard.forge.experiment as experiment
 
 
-__all__ = [
-    "HDF5Labeller",
-]
-
-
 class HDF5Labeller(Labeller):
     def __init__(
         self,

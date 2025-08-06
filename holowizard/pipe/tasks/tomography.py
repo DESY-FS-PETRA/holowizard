@@ -3,7 +3,6 @@ import os
 import numpy as np
 from pathlib import Path
 from holowizard.pipe.scan import Scan
-from holowizard.core.logging.logger import Logger
 from skimage.io import imread
 from imageio import imwrite
 

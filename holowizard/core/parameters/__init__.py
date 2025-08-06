@@ -1,13 +1,8 @@
-import sys
+import importlib.util
 
 member_value_adapter = None
 
-try:
-    import torch
-except Exception:
-    pass
-
-if "torch" in sys.modules:
+if importlib.util.find_spec("torch") is not None:
     from holowizard.core.parameters.type_conversion.member_value_adapter_torch import (
         MemberValueAdapterTorch,
     )

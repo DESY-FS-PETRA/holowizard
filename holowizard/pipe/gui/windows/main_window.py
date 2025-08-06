@@ -9,7 +9,6 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import (
     QMainWindow,
     QTableWidgetItem,
@@ -26,31 +25,17 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QFormLayout,
 )
-from PyQt5.QtCore import QTimer, Qt, pyqtSignal
+from PyQt5.QtCore import QTimer, Qt
 
 from holowizard.beamtime import bt_utils as bt
 from gui.gui_utils.find_focus_thread import FindFocusThread
 from gui.gui_utils.logging_editor import QTextEditLogger
 from gui.gui_utils.phase_retrieval_thread import PhaseRetrievalThread
 from gui.gui_utils.widgets_utils import create_divider
-from holowizard.beamtime.bt_utils import get_user_accessible_years, list_beamtimes
+from holowizard.beamtime.bt_utils import get_user_accessible_years
 from gui.windows.popup_windows.scan_config_dialog import ScanConfigDialog
 
 from silx.gui.plot import Plot2D
-
-
-from PyQt5.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QLabel,
-    QLineEdit,
-    QHBoxLayout,
-    QPushButton,
-    QComboBox,
-    QCheckBox,
-    QFormLayout,
-)
-from PyQt5.QtGui import QDoubleValidator
 
 
 class MainWindow(QMainWindow):
@@ -723,7 +708,6 @@ class MainWindow(QMainWindow):
             config_data = dialog.get_values()
 
             try:
-                from holowizard.beamtime.P05 import P05Scan
                 from holowizard.builders.project_config_builder import (
                     ProjectConfigBuilder,
                 )

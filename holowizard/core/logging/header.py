@@ -5,7 +5,7 @@ import getpass
 import sys
 from enum import Enum
 
-from . import *
+from . import comment_block_length, comment_character, comment_alignment_length
 
 
 class Header:

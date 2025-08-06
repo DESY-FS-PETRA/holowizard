@@ -2,7 +2,6 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "HoloWizard: A Python framework for processing X-ray near-field holography data"
-version: v2.0.0
 date-released: 2025-07-21
 url: "https://github.com/DESY-FS-PETRA/holowizard"
 repository-code: "https://github.com/DESY-FS-PETRA/holowizard"

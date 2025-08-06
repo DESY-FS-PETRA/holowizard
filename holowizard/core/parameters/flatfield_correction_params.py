@@ -34,7 +34,7 @@ class FlatfieldCorrectionParams:
         if not isinstance(data, dict):
             return None
 
-        if not "image" in data or not "components_path" in data:
+        if "image" not in data or "components_path" not in data:
             return None
 
         image = JsonWritable.get_numpy_from_array(data["image"])

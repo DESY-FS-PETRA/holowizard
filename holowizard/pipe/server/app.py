@@ -27,7 +27,6 @@ import uuid
 import threading
 import asyncio
 from typing import Any, Dict, List, Optional, Union
-from fastapi.staticfiles import StaticFiles
 from starlette.datastructures import UploadFile
 import yaml
 import markdown
@@ -37,7 +36,6 @@ import zmq
 import zmq.asyncio
 import tifffile
 import numpy as np
-from PIL import Image
 from pydantic import BaseModel, Field
 from fastapi import (
     FastAPI,
@@ -52,7 +50,6 @@ from fastapi import (
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
-    StreamingResponse,
     JSONResponse,
 )
 from fastapi.templating import Jinja2Templates
@@ -302,7 +299,6 @@ def _register_routes(app: FastAPI):
 
     @ui.get("/dashboard")
     async def dashboard(request: Request):
-        data = await queue_info()
         return app.state.templates.TemplateResponse("dashboard.html", {"request": request, **await progress()})
 
     @ui.get("/scan/{name}", response_class=HTMLResponse)
@@ -350,7 +346,7 @@ def _register_routes(app: FastAPI):
         out = CONFIG_DIR / stage / f"{name.split('.')[0]}.yaml"
         out.parent.mkdir(parents=True, exist_ok=True)
         yaml.safe_dump(data, out.open("w"), default_flow_style=False)
-        return RedirectResponse(url=f"/parameter", status_code=303)
+        return RedirectResponse(url="/parameter", status_code=303)
 
     @ui.get("/stage/{stage}")
     async def list_stage(stage: str):

@@ -1,5 +1,3 @@
-import asyncio
-import os
 from abc import ABC, abstractmethod
 from dask.distributed import as_completed
 from holowizard.pipe.scan import Scan
@@ -10,12 +8,10 @@ from holowizard.pipe.tasks import (
     FindFocusTask,
     TomographyTask,
 )
-from pathlib import Path
 from holowizard.pipe.utils.submit_and_handle import submit_and_handle
 from holowizard.pipe.server.websocket_viewer import WebsocketViewer
 import uuid
 import random
-import socket
 
 
 class Beamtime(ABC):

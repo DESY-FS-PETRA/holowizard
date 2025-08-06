@@ -1,25 +1,11 @@
 import torch
 
-import holowizard.core
-
 
 def get_var(x):
     return torch.var(x).item()
 
 
 def get_spec(x):
-    sample_grid = torch.meshgrid(
-        torch.fft.fftfreq(x.shape[0], device=holowizard.core.torch_running_device),
-        torch.fft.fftfreq(x.shape[1], device=holowizard.core.torch_running_device),
-    )
-
-    xi, eta = sample_grid
-
-    # Butterworth bandpass
-    denom1 = xi * xi + eta * eta - 0.35**2
-    denom2 = 1 + (0.09 / denom1) ** 10
-    bandpass = 1 - 1 / denom2
-
     # x_fft_band = torch.fft.fft2(x) * bandpass
     x_fft_band = torch.fft.fft2(x)
     x[0, 0] = 0

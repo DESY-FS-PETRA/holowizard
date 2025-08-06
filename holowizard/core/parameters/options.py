@@ -55,13 +55,13 @@ class Options:
             return None
 
         if (
-            not "update_blocks" in data
-            or not "regularization_object" in data
-            or not "regularization_probe" in data
-            or not "z01_tol" in data
-            or not "padding" in data
-            or not "verbose_interval" in data
-            or not "prototype_field" in data
+            "update_blocks" not in data
+            or "regularization_object" not in data
+            or "regularization_probe" not in data
+            or "z01_tol" not in data
+            or "padding" not in data
+            or "verbose_interval" not in data
+            or "prototype_field" not in data
         ):
             return None
 

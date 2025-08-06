@@ -3,9 +3,9 @@ import os
 from copy import deepcopy
 from skimage import io
 import skimage.transform as sktf
+import sys
 
 from holowizard.core.logging.logger import Logger
-from holowizard.core.parameters import *
 from holowizard.core.api.parameters.paths.focus_series_paths import FocusSeriesPaths
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.utils.fileio import load_img_data
