@@ -6,6 +6,7 @@ import sys
 from typing import List
 
 from holowizard.core.logging.logger import Logger
+from holowizard.core.parameters.reco_params import RecoParams
 from holowizard.core.reconstruction.single_projection.reconstruct_multistage import (
     reconstruct,
 )
@@ -39,12 +40,18 @@ def get_loss_reconstruction(
     global z01_values_history
     global loss_values_history
 
-    measurement.z01 = z01[0]
+    reco_params = RecoParams(measurements=[measurement],
+                             beam_setup=beam_setup,
+                             reco_options=options,
+                             data_dimensions=data_dimensions,
+                             output_path="")
 
-    found, loss_local = check_history(measurement.z01)
+    reco_params.measurements[0].z01 = z01[0]
+
+    found, loss_local = check_history(reco_params.measurements[0].z01)
 
     if not found:
-        current_result, loss_se_all, fov_size = reconstruct([measurement], beam_setup, options, data_dimensions, viewer)
+        current_result, loss_se_all, fov_size = reconstruct(reco_params, viewer)
         loss_local = loss_se_all[-1]
         z01_values_history.append(measurement.z01)
         loss_values_history.append(loss_local.cpu().numpy())

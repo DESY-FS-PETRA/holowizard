@@ -3,8 +3,8 @@ from pathlib import Path
 import skimage.io as skio
 import numpy as np
 from holowizard.pipe.scan.scan import Scan
-from holowizard.core.api.parameters.measurement import Measurement
-from holowizard.core.api.parameters.beam_setup import BeamSetup
+from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.parameters.beam_setup import BeamSetup
 import pandas as pd
 
 
@@ -14,7 +14,7 @@ class P05Scan(Scan):
     Inherits from the base Scan class.
     """
 
-    def __init__(self, name, energy, holder, path_raw, path_processed, log_path, cfg, z01_new, a0):
+    def __init__(self, name, energy, holder, path_raw, path_processed, log_path, cfg, z01_new, z02_new, a0):
         """
         Initialize the P05Scan object.
 
@@ -31,6 +31,8 @@ class P05Scan(Scan):
         z01, z02 = p05geo.compute_z_params()
         if z01_new:
             z01 = z01_new
+        if z02_new:
+            z02 = z02_new
 
         super().__init__(
             name,

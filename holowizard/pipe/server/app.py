@@ -38,6 +38,7 @@ import holowizard
 from holowizard.pipe.cluster import SlurmCluster as Cluster
 from holowizard.pipe.scan import P05Scan as Scan
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
+from holowizard.pipe.scan.p05_scan import P05Geometry
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
 import plotly.express as px
 import json
@@ -54,8 +55,9 @@ citations = OmegaConf.to_container(OmegaConf.load(str(CITATIONS_FILE)), resolve=
 # --- Pydantic Model ---
 class ScanConfig(BaseModel):
     scan_name: str
-    holder: Union[str, float, int]
+    holder: Optional[Union[str, float, int]] = None
     z01: Optional[float] = None
+    z02: Optional[float] = None
     a0: Optional[float] = None
     energy: Optional[float] = None
     base_dir: Optional[Path] = None
@@ -63,6 +65,11 @@ class ScanConfig(BaseModel):
     options: Dict[str, Any] = Field(default_factory=dict)
     form_data: Optional[Dict[str, Any]] = None
 
+class GeometryRequest(BaseModel):
+    holder: int
+    qp: bool = False
+    energy: Optional[float] = None
+    scan_name: str
 
 # --- Utils ---
 def _parse_val(val: str) -> Union[int, float, str]:
@@ -96,7 +103,7 @@ def process_image(path: Path):
     fig = px.imshow(
         img=np.rot90(arr),
         color_continuous_scale="gray",
-        origin="lower",
+        origin="upper",
         zmin=low5,
         zmax=high95,
     )
@@ -225,12 +232,15 @@ def _register_routes(app: FastAPI):
         if cfg_in.base_dir is not None:
             cfg.paths.base_dir = cfg_in.base_dir
 
+        holder_val = float(cfg_in.holder) if cfg_in.holder is not None else 0
+
         scan = Scan(
             name=cfg_in.scan_name,
-            holder=cfg_in.holder,
+            holder=holder_val,
             path_raw=app.state.beamtime.path_raw,
             path_processed=app.state.beamtime.path_processed,
             z01_new=cfg_in.z01,
+            z02_new=cfg_in.z02,
             energy=energy,
             cfg=cfg,
             a0=cfg_in.a0,
@@ -238,6 +248,47 @@ def _register_routes(app: FastAPI):
         )
         bg.add_task(app.state.beamtime.new_scan, scan)
         return JSONResponse({"status": "submitted"})
+
+    @api.post("/compute_z_params")
+    def api_compute_z_params(req: GeometryRequest):
+        energy_cfg = OmegaConf.select(app.state.cfg, "scan.energy")
+        energy_val = req.energy if req.energy is not None else energy_cfg
+        if energy_val is None:
+            raise HTTPException(status_code=400,
+                                detail="Energy is not set (request.energy and cfg.scan.energy are both None)")
+        try:
+            energy = float(energy_val)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f"Invalid energy value: {energy_val!r}")
+
+        raw_dir = Path(app.state.beamtime.path_raw)
+        scan_name = (req.scan_name or "").strip()
+        if not scan_name:
+            raise HTTPException(status_code=400, detail="scan_name is required")
+        scan_dir = raw_dir / scan_name
+        if not scan_dir.is_dir():
+            raise HTTPException(status_code=404, detail=f"Scan folder not found: {scan_dir}")
+
+        try:
+            geo = P05Geometry(
+                scan_path=str(scan_dir),
+                energy=energy,
+                holder=req.holder,
+                qp=req.qp,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to init P05Geometry: {e}")
+
+        try:
+            z01, z02 = geo.compute_z_params()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"compute_z_params failed: {e}")
+
+        try:
+            return {"z01": float(z01), "z02": float(z02)}
+        except Exception:
+            raise HTTPException(status_code=400,
+                                detail=f"Invalid z01/z02 returned: {z01}, {z02}")
 
     @api.get("/cancel/{scan_id}")
     async def cancel_scan(scan_id: str):
@@ -301,6 +352,7 @@ def _register_routes(app: FastAPI):
             {
                 "request": request,
                 "z01": cfg.z01,
+                "z02": cfg.z02,
                 "energy": cfg.energy,
                 "basepath": app.state.cfg.paths.base_dir,
             },
@@ -404,6 +456,7 @@ def _register_routes(app: FastAPI):
                     path_raw=app.state.beamtime.path_raw,
                     path_processed=app.state.beamtime.log_path,
                     z01_new=data["z01"],
+                    z02_new=data["z02"],
                     energy=data.get("energy"),
                     cfg=cfg,
                     a0=data["a0"],
