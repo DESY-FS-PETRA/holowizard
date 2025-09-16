@@ -411,13 +411,16 @@ def _register_routes(app: FastAPI):
 
     async def worker(ws, scan, session, data):
         # run the heavy lift in a thread, get a result back
-        result = await asyncio.to_thread(
-            app.state.beamtime.phase_retrieval_single_holo,
-            scan,
-            session,
-            img_name=data["img_name"],
-            find_focus=data.get("find_focus", False),
-        )
+        try:
+            result = await asyncio.to_thread(
+                app.state.beamtime.phase_retrieval_single_holo,
+                scan,
+                session,
+                img_name=data["img_name"],
+                find_focus=data.get("find_focus", False),
+            )
+        except asyncio.CancelledError:
+            return
         if result:
             fig = px.line(
                 x=result.get("z01_values_history", []),
@@ -436,20 +439,57 @@ def _register_routes(app: FastAPI):
     async def websocket_preview(ws: WebSocket):
         await ws.accept()
         app.state.beamtime.cluster.min_worker = 1
-        session = str(uuid.uuid4())
+
+        current_session: Optional[str] = None
+        current_task: Optional[asyncio.Task] = None
+        current_scan: Optional[Scan] = None
+
+        def _switch_subscription(new_session: str):
+            nonlocal current_session, sub
+            if current_session:
+                sub.setsockopt(zmq.UNSUBSCRIBE, current_session.encode())
+            sub.setsockopt(zmq.SUBSCRIBE, new_session.encode())
+            current_session = new_session
+
+        # session = str(uuid.uuid4())
         ctx = zmq.asyncio.Context.instance()
         sub = ctx.socket(zmq.SUB)
         sub.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('PUB_PORT', '6001')}")
-        sub.setsockopt(zmq.SUBSCRIBE, session.encode())
+        # sub.setsockopt(zmq.SUBSCRIBE, session.encode())
         forward = asyncio.create_task(_forward_zmq(ws, sub))
         cfg = app.state.cfg
         try:
             while True:
                 data = await ws.receive_json()
+
+                if data.get("action") == "cancel_preview":
+                    if current_scan is not None:
+                        current_scan.cancelled = True
+                    if current_session:
+                        try:
+                            app.state.beamtime.cancel_task(current_session)
+                        except Exception as e:
+                            print(f"cancel_task failed for {current_session}: {e}")
+                    if current_task is not None:
+                        current_task.cancel()
+                        current_task = None
+                    _switch_subscription("noop-" + uuid.uuid4().hex)
+                    current_scan = None
+
+                    try:
+                        await ws.send_text(json.dumps({"stopped": True}))
+                    except Exception:
+                        pass
+                    continue
+
                 form = dict_from_form(data.get("form_data", {}))
                 cfg.reconstruction = form
                 cfg.find_focus = form
                 cfg.paths.base_dir = data.get("base_dir", cfg.paths.base_dir)
+
+                run_session = str(uuid.uuid4())
+                _switch_subscription(run_session)
+
                 scan = Scan(
                     name=data["scan_name"],
                     holder=0,
@@ -462,13 +502,25 @@ def _register_routes(app: FastAPI):
                     a0=data["a0"],
                     log_path=app.state.beamtime.log_path,
                 )
-                asyncio.create_task(worker(ws, scan, session, data))
+                scan.key = run_session
+
+                current_scan = scan
+                current_task = asyncio.create_task(worker(ws, scan, run_session, data))
 
         except WebSocketDisconnect:
             forward.cancel()
             sub.close()
-
-        app.state.beamtime.cluster.min_worker = 0
+            if current_scan is not None:
+                current_scan.cancelled = True
+            if current_task is not None:
+                current_task.cancel()
+            if current_session:
+                try:
+                    app.state.beamtime.cancel_task(current_session)
+                except Exception:
+                    pass
+        finally:
+            app.state.beamtime.cluster.min_worker = 0
 
     async def _forward_zmq(ws: WebSocket, sock: zmq.asyncio.Socket):
         try:

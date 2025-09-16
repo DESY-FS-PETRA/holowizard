@@ -128,6 +128,7 @@
         </div>
         <input id="optimize-btn" type="submit" value="Reconstruct" class="row-item">
         <input id="find-focus-btn" type="button" value="Find Focus" class="row-item">
+        <input id="stop-btn" type="button" value="Stop" class="row-item">
         <div id="preview-image" style="display:none; max-width:100%;" alt="Preview"></div>
         <div class="form-row">
             <div class="row-item">
@@ -349,6 +350,15 @@
             qs('loss-image').style.display = 'block';
             qs('loss-image').classList.add('loader');
         };
+
+        qs('stop-btn').onclick = () => {
+            try {
+                socket.send(JSON.stringify({ action: 'cancel_preview' }));
+            } catch (_) {}
+            qs('loss-image').classList.remove('loader');
+            resetLivePreview();
+        };
+
         qs('submit-btn').onclick = async () => {
             const data = {...retrieveReco(), ...retrieveStages()};
             const res = await fetch('api/submit_scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
