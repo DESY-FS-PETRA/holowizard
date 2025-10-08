@@ -43,7 +43,10 @@ $ mamba activate <path_to_env>
 
 ## Install package
 ```bash
-$ pip install holowizard
+$ pip install holowizard --no-cache
+```
+```
+INFO: The option --no-cache should help to resolve some dependencies issues.
 ```
 
 # Tools
