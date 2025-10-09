@@ -8,8 +8,8 @@ import yaml
 from omegaconf import OmegaConf
 from holowizard.pipe.utils.clean_yaml import remove_keys, to_clean_yaml
 from holowizard.core.models.cone_beam import ConeBeam
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.api.parameters import BeamSetup
+from holowizard.core.api.parameters import Measurement
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
