@@ -3,6 +3,7 @@ import sys
 import time
 import threading
 import logging
+from xmlrpc import client
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
 from holowizard.pipe.cluster.scheduler import start_scheduler
@@ -119,13 +120,10 @@ class SlurmCluster(Cluster):
         """
         while not self.stop_event.is_set():
             jobs = len(self.queue_info())
-            print(f"Jobs in queue: {jobs}")
             if jobs == 0:
-                logging.info("No tasks in queue, scaling down workers.")
                 self.cluster.scale(self.min_worker)
             else:
-                logging.info(f"Scaling up workers to {self.num_slurm_workers}.")
-                self.cluster.scale(jobs=min(self.num_slurm_workers, jobs))
+                self.cluster.scale(jobs=max(min(self.num_slurm_workers, jobs), len(self.cluster.workers)))
             time.sleep(self.check_interval)
 
     def stop_cluster(self) -> None:
