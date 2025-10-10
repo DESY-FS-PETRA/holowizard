@@ -1,3 +1,8 @@
+---
+labels: ["documentation"]
+---
+
+
 ### Documentation Area
 
 <!-- What section or file needs improvement? -->
