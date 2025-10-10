@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from holowizard.core.utils.transform import crop_center
 import dotenv
 import os
-
 matplotlib.use("Agg")
 # 1) Ask dotenv where it *would* look first:
 dotenv_path = dotenv.find_dotenv()

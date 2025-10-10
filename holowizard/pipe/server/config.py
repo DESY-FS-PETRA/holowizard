@@ -18,6 +18,7 @@ os.environ.setdefault("HNAME", HOSTNAME)
 os.environ.setdefault("SUB_PORT", str(sub_port))
 os.environ.setdefault("PUB_PORT", str(pub_port))
 env_path = Path(".") / ".env"
+
 with env_path.open("w") as f:
     f.write(f"HNAME={HOSTNAME}\n")
     f.write(f"SUB_PORT={sub_port}\n")

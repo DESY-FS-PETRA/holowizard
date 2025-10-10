@@ -119,6 +119,7 @@ class SlurmCluster(Cluster):
         """
         while not self.stop_event.is_set():
             jobs = len(self.queue_info())
+            print(f"Jobs in queue: {jobs}")
             if jobs == 0:
                 logging.info("No tasks in queue, scaling down workers.")
                 self.cluster.scale(self.min_worker)
