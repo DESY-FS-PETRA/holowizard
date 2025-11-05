@@ -17,7 +17,7 @@ dependencies = {file = "requirements.txt"}
 "*" = ["logo.png", "README.md"]
 
 [project]
-name="holowizard_livereco_client"
+name="holowizard"
 dynamic = ["version", "dependencies"]
 requires-python = ">=3.11,<3.12"
 readme = "README.md"

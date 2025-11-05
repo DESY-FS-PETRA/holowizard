@@ -2,6 +2,7 @@ import sys
 
 server_port = 8555
 viewer_port = 8556
+status_port = 8557
 
 try:
     import torch
