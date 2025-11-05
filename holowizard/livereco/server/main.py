@@ -18,10 +18,9 @@ from holowizard.core.api.viewer import LossViewer
 
 
 def main():
-    status_port = 8557
     status_context = zmq.Context()
     status_socket = status_context.socket(zmq.PUSH)
-    status_socket.bind("tcp://*:" + str(status_port))
+    status_socket.bind("tcp://*:" + str(holowizard.livereco.status_port))
 
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
