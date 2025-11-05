@@ -8,6 +8,7 @@ class BasicContext:
     network_context: zmq.Context = None
     network_socket: zmq.Socket = None
 
+
 @dataclass
 class StatusContext(BasicContext):
     status_poller: zmq.Poller = None

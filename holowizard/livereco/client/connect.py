@@ -6,12 +6,15 @@ from holowizard.livereco.client import controller_context
 from holowizard.livereco.client import status_context
 from holowizard.livereco.client.send import send
 
+
 def stop_status_polling():
     status_context.status_poll_thread_stop = True
+
 
 def disconnect():
     stop_status_polling()
     status_context.status_poll_thread.join()
+
 
 def connect_controller(address, port=holowizard.livereco.server_port):
     tcp_address = "tcp://" + str(address) + ":" + str(port)
@@ -40,16 +43,13 @@ def poll_status():
     while not status_context.status_poll_thread_stop:
         socks = dict(status_poller.poll(1000))
         status = None
-        if (
-                status_context.network_socket in socks
-                and socks[status_context.network_socket] == zmq.POLLIN
-        ):
+        if status_context.network_socket in socks and socks[status_context.network_socket] == zmq.POLLIN:
             status = status_context.network_socket.recv_json()
         if status and status["function"] == "find_focus":
             print(status["found_z01"])
 
 
-def connect_status_poller(address,port=holowizard.livereco.status_port):
+def connect_status_poller(address, port=holowizard.livereco.status_port):
     status_context.network_context = zmq.Context()
     status_context.status_poller = zmq.Poller()
 
@@ -71,10 +71,7 @@ def connect_status_poller(address,port=holowizard.livereco.status_port):
         status_context.status_poller.register(status_context.network_socket, zmq.POLLIN)
         print("Polling status")
         socks = dict(status_context.status_poller.poll(5000))
-        if (
-                status_context.network_socket in socks
-                and socks[status_context.network_socket] == zmq.POLLIN
-        ):
+        if status_context.network_socket in socks and socks[status_context.network_socket] == zmq.POLLIN:
             status = status_context.network_socket.recv_json()
 
     if status and status["function"] == "pong":
