@@ -1,7 +1,7 @@
 import json
 import numpy as np
 
-from holowizard.livereco.client import module_context
+from holowizard.livereco.client import controller_context
 from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
 
 
@@ -16,7 +16,7 @@ def send(function_name, **kwargs):
         else:
             dictionary[k] = v
 
-    if not module_context.network_socket:
+    if not controller_context.network_socket:
         raise RuntimeError("Connection to liverco server not initialized")
 
-    module_context.network_socket.send_json(dictionary)
+    controller_context.network_socket.send_json(dictionary)
