@@ -17,6 +17,7 @@ except Exception:
 
 try:
     import torch
+
     torch_running_device = torch.device(torch_running_device_name)
 except Exception:
     pass
