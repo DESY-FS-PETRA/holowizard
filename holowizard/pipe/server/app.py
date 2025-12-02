@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 from starlette.datastructures import UploadFile
 import yaml
 import markdown
-import holowizard.pipe.server.config as config
 from plotly.utils import PlotlyJSONEncoder
 import zmq
 import zmq.asyncio
@@ -231,7 +230,7 @@ def _register_routes(app: FastAPI):
                         stage,
                         OmegaConf.to_container(OmegaConf.load(str(p)), resolve=True),
                     )
-                except Exception as e:
+                except Exception:
                     raise HTTPException(status_code=400, detail=f"Please set config for stage: '{stage}'")
 
         if cfg_in.base_dir is not None:
@@ -306,8 +305,8 @@ def _register_routes(app: FastAPI):
         readme_path = Path(__file__).resolve().parents[1] / "README.md"
         try:
             md_text = readme_path.read_text(encoding="utf-8")
-        except Exception as e:
-            md_text = f""
+        except Exception:
+            md_text = ""
 
         # 2. Convert to HTML
         html_readme = markdown.markdown(md_text)

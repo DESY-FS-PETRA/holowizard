@@ -3,7 +3,6 @@ import sys
 import time
 import threading
 import logging
-from xmlrpc import client
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
 from holowizard.pipe.cluster.scheduler import start_scheduler
