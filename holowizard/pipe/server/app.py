@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 from starlette.datastructures import UploadFile
 import yaml
 import markdown
-
 from plotly.utils import PlotlyJSONEncoder
 import zmq
 import zmq.asyncio
@@ -38,6 +37,7 @@ import holowizard
 from holowizard.pipe.cluster import SlurmCluster as Cluster
 from holowizard.pipe.scan import P05Scan as Scan
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
+from holowizard.pipe.scan.p05_scan import P05Geometry
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
 import plotly.express as px
 import json
@@ -54,14 +54,22 @@ citations = OmegaConf.to_container(OmegaConf.load(str(CITATIONS_FILE)), resolve=
 # --- Pydantic Model ---
 class ScanConfig(BaseModel):
     scan_name: str
-    holder: Union[str, float, int]
+    holder: Optional[Union[str, float, int]] = None
     z01: Optional[float] = None
+    z02: Optional[float] = None
     a0: Optional[float] = None
     energy: Optional[float] = None
     base_dir: Optional[Path] = None
     stages: List[str] = Field(default_factory=list)
     options: Dict[str, Any] = Field(default_factory=dict)
     form_data: Optional[Dict[str, Any]] = None
+
+
+class GeometryRequest(BaseModel):
+    holder: int
+    qp: bool = False
+    energy: Optional[float] = None
+    scan_name: str
 
 
 # --- Utils ---
@@ -96,7 +104,7 @@ def process_image(path: Path):
     fig = px.imshow(
         img=np.rot90(arr),
         color_continuous_scale="gray",
-        origin="lower",
+        origin="upper",
         zmin=low5,
         zmax=high95,
     )
@@ -215,22 +223,28 @@ def _register_routes(app: FastAPI):
             if opt == "custom":
                 setattr(cfg, stage, dict_from_form(cfg_in.form_data or {}))
             else:
-                p = CONFIG_DIR / stage / opt
-                setattr(
-                    cfg,
-                    stage,
-                    OmegaConf.to_container(OmegaConf.load(str(p)), resolve=True),
-                )
+                try:
+                    p = CONFIG_DIR / stage / opt
+                    setattr(
+                        cfg,
+                        stage,
+                        OmegaConf.to_container(OmegaConf.load(str(p)), resolve=True),
+                    )
+                except Exception:
+                    raise HTTPException(status_code=400, detail=f"Please set config for stage: '{stage}'")
 
         if cfg_in.base_dir is not None:
             cfg.paths.base_dir = cfg_in.base_dir
 
+        holder_val = float(cfg_in.holder) if cfg_in.holder is not None else 0
+
         scan = Scan(
             name=cfg_in.scan_name,
-            holder=cfg_in.holder,
+            holder=holder_val,
             path_raw=app.state.beamtime.path_raw,
             path_processed=app.state.beamtime.path_processed,
             z01_new=cfg_in.z01,
+            z02_new=cfg_in.z02,
             energy=energy,
             cfg=cfg,
             a0=cfg_in.a0,
@@ -238,6 +252,47 @@ def _register_routes(app: FastAPI):
         )
         bg.add_task(app.state.beamtime.new_scan, scan)
         return JSONResponse({"status": "submitted"})
+
+    @api.post("/compute_z_params")
+    def api_compute_z_params(req: GeometryRequest):
+        energy_cfg = OmegaConf.select(app.state.cfg, "scan.energy")
+        energy_val = req.energy if req.energy is not None else energy_cfg
+        if energy_val is None:
+            raise HTTPException(
+                status_code=400, detail="Energy is not set (request.energy and cfg.scan.energy are both None)"
+            )
+        try:
+            energy = float(energy_val)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f"Invalid energy value: {energy_val!r}")
+
+        raw_dir = Path(app.state.beamtime.path_raw)
+        scan_name = (req.scan_name or "").strip()
+        if not scan_name:
+            raise HTTPException(status_code=400, detail="scan_name is required")
+        scan_dir = raw_dir / scan_name
+        if not scan_dir.is_dir():
+            raise HTTPException(status_code=404, detail=f"Scan folder not found: {scan_dir}")
+
+        try:
+            geo = P05Geometry(
+                scan_path=str(scan_dir),
+                energy=energy,
+                holder=req.holder,
+                qp=req.qp,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to init P05Geometry: {e}")
+
+        try:
+            z01, z02 = geo.compute_z_params()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"compute_z_params failed: {e}")
+
+        try:
+            return {"z01": float(z01), "z02": float(z02)}
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"Invalid z01/z02 returned: {z01}, {z02}")
 
     @api.get("/cancel/{scan_id}")
     async def cancel_scan(scan_id: str):
@@ -248,7 +303,10 @@ def _register_routes(app: FastAPI):
     @ui.get("/")
     async def home():
         readme_path = Path(__file__).resolve().parents[1] / "README.md"
-        md_text = readme_path.read_text(encoding="utf-8")
+        try:
+            md_text = readme_path.read_text(encoding="utf-8")
+        except Exception:
+            md_text = ""
 
         # 2. Convert to HTML
         html_readme = markdown.markdown(md_text)
@@ -301,6 +359,7 @@ def _register_routes(app: FastAPI):
             {
                 "request": request,
                 "z01": cfg.z01,
+                "z02": cfg.z02,
                 "energy": cfg.energy,
                 "basepath": app.state.cfg.paths.base_dir,
             },
@@ -359,13 +418,16 @@ def _register_routes(app: FastAPI):
 
     async def worker(ws, scan, session, data):
         # run the heavy lift in a thread, get a result back
-        result = await asyncio.to_thread(
-            app.state.beamtime.phase_retrieval_single_holo,
-            scan,
-            session,
-            img_name=data["img_name"],
-            find_focus=data.get("find_focus", False),
-        )
+        try:
+            result = await asyncio.to_thread(
+                app.state.beamtime.phase_retrieval_single_holo,
+                scan,
+                session,
+                img_name=data["img_name"],
+                find_focus=data.get("find_focus", False),
+            )
+        except asyncio.CancelledError:
+            return
         if result:
             fig = px.line(
                 x=result.get("z01_values_history", []),
@@ -384,38 +446,88 @@ def _register_routes(app: FastAPI):
     async def websocket_preview(ws: WebSocket):
         await ws.accept()
         app.state.beamtime.cluster.min_worker = 1
-        session = str(uuid.uuid4())
+
+        current_session: Optional[str] = None
+        current_task: Optional[asyncio.Task] = None
+        current_scan: Optional[Scan] = None
+
+        def _switch_subscription(new_session: str):
+            nonlocal current_session, sub
+            if current_session:
+                sub.setsockopt(zmq.UNSUBSCRIBE, current_session.encode())
+            sub.setsockopt(zmq.SUBSCRIBE, new_session.encode())
+            current_session = new_session
+
+        # session = str(uuid.uuid4())
         ctx = zmq.asyncio.Context.instance()
         sub = ctx.socket(zmq.SUB)
         sub.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('PUB_PORT', '6001')}")
-        sub.setsockopt(zmq.SUBSCRIBE, session.encode())
+        # sub.setsockopt(zmq.SUBSCRIBE, session.encode())
         forward = asyncio.create_task(_forward_zmq(ws, sub))
         cfg = app.state.cfg
         try:
             while True:
                 data = await ws.receive_json()
+
+                if data.get("action") == "cancel_preview":
+                    if current_scan is not None:
+                        current_scan.cancelled = True
+                    if current_session:
+                        try:
+                            app.state.beamtime.cancel_task(current_session)
+                        except Exception as e:
+                            print(f"cancel_task failed for {current_session}: {e}")
+                    if current_task is not None:
+                        current_task.cancel()
+                        current_task = None
+                    _switch_subscription("noop-" + uuid.uuid4().hex)
+                    current_scan = None
+
+                    try:
+                        await ws.send_text(json.dumps({"stopped": True}))
+                    except Exception:
+                        pass
+                    continue
+
                 form = dict_from_form(data.get("form_data", {}))
                 cfg.reconstruction = form
                 cfg.find_focus = form
                 cfg.paths.base_dir = data.get("base_dir", cfg.paths.base_dir)
+
+                run_session = str(uuid.uuid4())
+                _switch_subscription(run_session)
+
                 scan = Scan(
                     name=data["scan_name"],
                     holder=0,
                     path_raw=app.state.beamtime.path_raw,
                     path_processed=app.state.beamtime.log_path,
                     z01_new=data["z01"],
+                    z02_new=data["z02"],
                     energy=data.get("energy"),
                     cfg=cfg,
                     a0=data["a0"],
                     log_path=app.state.beamtime.log_path,
                 )
-                asyncio.create_task(worker(ws, scan, session, data))
+                scan.key = run_session
+
+                current_scan = scan
+                current_task = asyncio.create_task(worker(ws, scan, run_session, data))
 
         except WebSocketDisconnect:
             forward.cancel()
             sub.close()
-
-        app.state.beamtime.cluster.min_worker = 0
+            if current_scan is not None:
+                current_scan.cancelled = True
+            if current_task is not None:
+                current_task.cancel()
+            if current_session:
+                try:
+                    app.state.beamtime.cancel_task(current_session)
+                except Exception:
+                    pass
+        finally:
+            app.state.beamtime.cluster.min_worker = 0
 
     async def _forward_zmq(ws: WebSocket, sock: zmq.asyncio.Socket):
         try:
