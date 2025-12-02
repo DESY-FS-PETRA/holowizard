@@ -1,3 +1,7 @@
+---
+labels: ["Research Idea"]
+---
+
 ### Idea Summary
 
 <!-- A brief summary of your research idea -->

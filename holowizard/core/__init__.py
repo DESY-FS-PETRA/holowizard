@@ -1,5 +1,3 @@
-import torch
-
 import tempfile
 import subprocess
 
@@ -17,4 +15,9 @@ try:
 except Exception:
     pass
 
-torch_running_device = torch.device(torch_running_device_name)
+try:
+    import torch
+
+    torch_running_device = torch.device(torch_running_device_name)
+except Exception:
+    pass

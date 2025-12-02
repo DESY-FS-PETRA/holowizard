@@ -1,3 +1,7 @@
+---
+labels: ["documentation"]
+---
+
 ### Summary
 
 <!-- A clear and concise description of the feature or enhancement -->
