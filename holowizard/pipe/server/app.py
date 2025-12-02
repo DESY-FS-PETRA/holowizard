@@ -65,11 +65,13 @@ class ScanConfig(BaseModel):
     options: Dict[str, Any] = Field(default_factory=dict)
     form_data: Optional[Dict[str, Any]] = None
 
+
 class GeometryRequest(BaseModel):
     holder: int
     qp: bool = False
     energy: Optional[float] = None
     scan_name: str
+
 
 # --- Utils ---
 def _parse_val(val: str) -> Union[int, float, str]:
@@ -231,7 +233,6 @@ def _register_routes(app: FastAPI):
                     )
                 except Exception as e:
                     raise HTTPException(status_code=400, detail=f"Please set config for stage: '{stage}'")
-       
 
         if cfg_in.base_dir is not None:
             cfg.paths.base_dir = cfg_in.base_dir
@@ -258,8 +259,9 @@ def _register_routes(app: FastAPI):
         energy_cfg = OmegaConf.select(app.state.cfg, "scan.energy")
         energy_val = req.energy if req.energy is not None else energy_cfg
         if energy_val is None:
-            raise HTTPException(status_code=400,
-                                detail="Energy is not set (request.energy and cfg.scan.energy are both None)")
+            raise HTTPException(
+                status_code=400, detail="Energy is not set (request.energy and cfg.scan.energy are both None)"
+            )
         try:
             energy = float(energy_val)
         except (TypeError, ValueError):
@@ -291,8 +293,7 @@ def _register_routes(app: FastAPI):
         try:
             return {"z01": float(z01), "z02": float(z02)}
         except Exception:
-            raise HTTPException(status_code=400,
-                                detail=f"Invalid z01/z02 returned: {z01}, {z02}")
+            raise HTTPException(status_code=400, detail=f"Invalid z01/z02 returned: {z01}, {z02}")
 
     @api.get("/cancel/{scan_id}")
     async def cancel_scan(scan_id: str):

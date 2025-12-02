@@ -40,11 +40,13 @@ def get_loss_reconstruction(
     global z01_values_history
     global loss_values_history
 
-    reco_params = RecoParams(measurements=[measurement],
-                             beam_setup=beam_setup,
-                             reco_options=options,
-                             data_dimensions=data_dimensions,
-                             output_path="")
+    reco_params = RecoParams(
+        measurements=[measurement],
+        beam_setup=beam_setup,
+        reco_options=options,
+        data_dimensions=data_dimensions,
+        output_path="",
+    )
 
     reco_params.measurements[0].z01 = z01[0]
 

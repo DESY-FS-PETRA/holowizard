@@ -223,7 +223,9 @@ class Scan(ABC):
         templates.env.filters["to_yaml"] = lambda x: to_clean_yaml(x)
         scan_html_template = templates.get_template("scan.html")
 
-        html_str = scan_html_template.render(scan=self, scan_string=str(self), citations=citations, hw={"version": holowizard.__version__})
+        html_str = scan_html_template.render(
+            scan=self, scan_string=str(self), citations=citations, hw={"version": holowizard.__version__}
+        )
         output_path = f"{self.path_processed}/{self.config.paths.base_dir}/README.html"
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_str)
