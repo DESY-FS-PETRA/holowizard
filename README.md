@@ -90,7 +90,7 @@ You can submit scans using a simple `curl` POST request:
 curl -X POST \
      -H "Content-Type: application/json" \
      -d '{ "a0": 1.0,
-           "scan-name": "nano145014_s7_1_tum",
+           "scan_name": "nano145014_s7_1_tum",
            "holder": 220,
            "base_dir": "holopipe",
            "reconstruction": "wire",
