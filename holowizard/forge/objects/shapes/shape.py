@@ -4,6 +4,7 @@ from abc import ABC
 # third party libraries
 import torch
 import torchvision
+from torchvision.transforms.functional import InterpolationMode
 import matplotlib.pyplot as plt
 
 # local libraries
@@ -32,7 +33,7 @@ class Shape(ABC):
         Args:
             angle (int): Angle in degrees by which the shape is rotated.
         """
-        rotated = torchvision.transforms.functional.rotate(self.shape[None, None, :, :], angle, expand=True)[0, 0, :, :]
+        rotated = torchvision.transforms.functional.rotate(self.shape[None, None, :, :], angle, interpolation=InterpolationMode.BILINEAR,expand=True)[0, 0, :, :]
         rotated[rotated <= 0.025] = 0
         self.shape = self.remove_zero_cols_rows(rotated)
 
