@@ -3,23 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parameter Tuning</title>
 
+    <link rel="icon" type="image/png" href="static/logo.png">
+    <title>Parameter Tuning</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    
     <style>
-        body { font-family: sans-serif; padding: 1rem; }
-        .form-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; justify-content: space-around;}
-        .row-item { flex: 1;}
-        .stage-item { margin-bottom: 1rem; }
-        label { font-weight: bold; margin-right: 0.5rem; }
-        select, input { padding: 0.4rem; font-size: 1rem; }
-        .two-column { display: flex; gap: 2rem; }
-        .two-column > div { flex: 1; }
-        #stages { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
-        fieldset { border: 1px solid #ccc; padding: 0.5rem; margin-bottom: 1rem; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+
+        h1 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 0rem;
+            color: #1a1a1a;
+        }
+
+        .topbar{
+          display:flex;
+          align-items:center;
+          gap: 1rem;
+          margin-bottom:1.5rem
+        }
+
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary)}
+        .logo-btn svg{width:18px;height:18px;display:block}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label, .field-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #1a1a1a;
+            background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            -webkit-appearance: none;
+        }
+
+        select:focus, input[type="text"]:focus, input[type="number"]:focus {
+            border-color: rgba(0,0,0,0.35);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+            background: #fff;
+        }
+
+        select:disabled, input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 0.75rem 0;
+        }
+
+        .btn {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: background 0.12s, box-shadow 0.12s;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        .btn-primary:hover { background: #333; }
+
+        .btn-danger {
+            color: #993c1d;
+            border-color: rgba(153,60,29,0.3);
+        }
+        .btn-danger:hover { background: #faece7; }
+
+        input[type="submit"], input[type="button"] {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+        }
+        #optimize-btn {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        #stop-btn {
+            color: #993c1d;
+            border-color: rgba(153,60,29,0.3);
+        }
+        #stop-btn:hover { background: #faece7; }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #1a1a1a;
+            cursor: pointer;
+        }
+
+        fieldset {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        legend {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            padding: 0 4px;
+            text-transform: capitalize;
+        }
+        fieldset label {
+            font-size: 12px;
+            font-weight: 400;
+            color: #555;
+        }
+        fieldset input[type="text"] {
+            margin-bottom: 6px;
+        }
+
+        .stages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .stage-card {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            background: #fafaf9;
+        }
+
+        .stage-card .stage-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stage-card label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .divider {
+            height: 0.5px;
+            background: rgba(0,0,0,0.08);
+            margin: 0.75rem 0;
+        }
+
+        .geom-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        #preview-image, #loss-image {
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+
+        #live-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 0.75rem 0;
+        }
+
         .loader {
-            width: 100px;
-            margin: auto;
-            padding: 20px;
+            width: 60px;
+            margin: 1rem auto;
             aspect-ratio: 1;
             --g: conic-gradient(from -90deg at 10px 10px,#740000 90deg,#0000 0);
             background: var(--g), var(--g), var(--g);
@@ -32,26 +275,62 @@
             100% {background-position:20px 20px,10px 10px,0    0   }
         }
 
+        #form-container {
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #form-container::-webkit-scrollbar { width: 4px; }
+        #form-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
     </style>
-    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+
 </head>
 <body>
-<h1>Dynamic Parameter Form</h1>
-<div class="two-column">
-    <div>
-        <div class="form-row">
-            <div class="row-item">
-                <label for="stage-select">Select Stage:</label>
+
+<div class="topbar">
+  <div class="nav-wrap">
+    <button class="logo-btn" id="logo-btn" aria-label="Menu">
+    <img src="static/logo.png" alt="Logo", style="width:100%; height:100%; object-fit:contain; display:block;">
+          <!--<svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M9 6.5 L11.2 11 L9 10 L6.8 11 Z" fill="currentColor"/>
+        <circle cx="9" cy="9" r="1.2" fill="currentColor"/>
+      </svg>-->
+    </button>
+    <div class="nav-menu" id="nav-menu">
+      <div class="nav-section">Navigation</div>
+      <a class="nav-item" href="/parameter">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Parameter tuning
+      </a>
+      <a class="nav-item" href="/dashboard">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="2" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="8" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="8" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/></svg>
+        Dashboard
+      </a>
+    </div>
+  </div>
+  <h1>Parameter tuning</h1>
+</div>
+
+<div class="layout">
+
+    <!-- LEFT: Parameter form -->
+    <div class="panel">
+        <div class="panel-title">Stage &amp; Parameters</div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="stage-select">Stage</label>
                 <select id="stage-select">
                     <option value="find_focus">Find Focus</option>
                     <option value="reconstruction">Reconstruction</option>
                 </select>
             </div>
-            <div class="row-item">
-                <label for="parameter-select">Base Parameters:</label>
+            <div class="field">
+                <label for="parameter-select">Base Parameters</label>
                 <select id="parameter-select"></select>
             </div>
         </div>
+
         <div id="form-container">
             <form id="parameter-form" method="post" action="/tuning">
                 {% macro render_field(value, key_path) %}
@@ -80,94 +359,136 @@
             </form>
         </div>
     </div>
-    <div>
-        <div class="form-row">
-            <div class="row-item">
 
-                <label for="scan-select">Folder:</label>
+    <!-- RIGHT: Scan controls -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+    <div class="panel">
+        <div class="panel-title">Scan &amp; Reconstruction</div>
+
+        <!-- Folder + Image -->
+        <div class="field-row">
+            <div class="field">
+                <label for="scan-select">Folder</label>
                 <select id="scan-select"></select>
             </div>
-            <div class="row-item">
-                <label for="img-select">Image:</label>
+            <div class="field">
+                <label for="img-select">Image</label>
                 <select id="img-select"></select>
             </div>
         </div>
-        <div class="form-row">
-            <div class="row-item">
-                <label>Energy (in keV):</label><input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off">
+
+        <!-- Physical params -->
+        <div class="field-row">
+            <div class="field">
+                <label for="energy">Energy (keV)</label>
+                <input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off">
             </div>
-            <div class="row-item">
-                <label>a₀:</label><input id="a0" name="a0" type="number" step="any" value="1.0">
+            <div class="field">
+                <label for="a0">a₀</label>
+                <input id="a0" name="a0" type="number" step="any" value="1.0">
             </div>
-            <div class="row-item">
-                <label>Save prefix:</label><input id="prefix" name="prefix" value="{{ basepath }}" autocomplete="off">
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="row-item">
-                <label>z₀₁ (in mm):</label><input id="z01" name="z01" type="number" step="any" value="{{ z01 }}" autocomplete="off">
-            </div>
-            <div class="row-item">
-                <label>z₀₂ (in mm):</label><input id="z02" name="z02" type="number" step="any" value="{{ z02 }}" autocomplete="off">
-            </div>
-            <div class="form-row" style="align-items:center;">
-                <div class="row-item" style="max-width: 220px;">
-                    <label><input type="checkbox" id="use-p05"> Use P05 geometry</label>
-                </div>
-                <div class="row-item">
-                    <label>Holder (im mm):</label>
-                    <input id="holder" name="holder" type="number" step="1" min="0" disabled>
-                </div>
-                <div class="row-item" style="max-width: 220px;">
-                    <label><input type="checkbox" id="use-qp" disabled> Use QP optics</label>
-                </div>
-                <div class="row-item" style="max-width:120px;">
-                    <button id="btn-geom-calc" type="button" disabled>Calculate</button>
-                </div>
-            </div>
-        </div>
-        <input id="optimize-btn" type="submit" value="Reconstruct" class="row-item">
-        <input id="find-focus-btn" type="button" value="Find Focus" class="row-item">
-        <input id="stop-btn" type="button" value="Stop" class="row-item">
-        <div id="preview-image" style="display:none; max-width:100%;" alt="Preview"></div>
-        <div class="form-row">
-            <div class="row-item">
-                <label>v_min:</label><input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off">
-            </div>
-            <div class="row-item">
-                <label>v_max:</label><input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
-            </div>
-        </div>
-        <div id="loss-image" style="display:none; max-width:100%;" alt="Preview"></div>
-        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
-        <!-- Static stages section -->
-        <div id="stages">
-            <div class="stage-item">
-                <input type="checkbox" name="stages" value="find_focus" checked>
-                <label>Find Focus</label>
-                <br class="stage-item">
-                <select id="find_focus-select" name="find_focus_option">
-                    <option value="">-- Select Find Focus Option --</option>
-                    <option value="custom">Custom</option>
-                </select>
-            </div>
-            <div class="stage-item">
-                <input type="checkbox" name="stages" value="reconstruction" checked>
-                <label>Phase Retrieval</label>
-                <br class="stage-item">
-                <select id="reconstruction-select" name="reconstruction_method">
-                    <option value="">-- Select Phase Retrieval Option --</option>
-                    <option value="custom">Custom</option>
-                </select>
-            </div>
-            <div class="stage-item">
-                <input type="checkbox" name="stages" value="tomography" checked>
-                <label>Tomography</label>
+            <div class="field">
+                <label for="prefix">Save prefix</label>
+                <input id="prefix" name="prefix" value="{{ basepath }}" autocomplete="off">
             </div>
         </div>
 
-        <input id="submit-btn" type="button" value="Submit All">
-    </div>
+        <!-- Z params + geometry -->
+        <div class="field-row">
+            <div class="field">
+                <label for="z01">z₀₁ (mm)</label>
+                <input id="z01" name="z01" type="number" step="any" value="{{ z01 }}" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="z02">z₀₂ (mm)</label>
+                <input id="z02" name="z02" type="number" step="any" value="{{ z02 }}" autocomplete="off">
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+            <label class="checkbox-label">
+                <input type="checkbox" id="use-p05"> Use P05 geometry
+            </label>
+            <div class="field" style="flex:1;min-width:100px;">
+                <label for="holder">Holder (mm)</label>
+                <input id="holder" name="holder" type="number" step="1" min="0" disabled>
+            </div>
+            <label class="checkbox-label">
+                <input type="checkbox" id="use-qp" disabled> QP optics
+            </label>
+            <button id="btn-geom-calc" type="button" class="btn" disabled>Calculate</button>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="btn-row">
+            <input id="optimize-btn" type="submit" value="Test Reconstruction" class="btn btn-primary">
+            <input id="find-focus-btn" type="button" value="Find Focus" class="btn">
+            <input id="stop-btn" type="button" value="Stop" class="btn btn-danger">
+        </div>
+
+
+        <div class="divider"></div>
+
+        <!-- Preview image (Plotly) -->
+        <div id="preview-image" style="display:none;"></div>
+
+        <!-- vmin/vmax -->
+        <div class="field-row">
+            <div class="field">
+                <label for="vmin">v_min</label>
+                <input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="vmax">v_max</label>
+                <input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Loss / live preview -->
+        <div id="loss-image" style="display:none;"></div>
+        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
+
+        </div>
+
+        <!-- Stages -->
+        <div class="panel">
+        <div class="panel-title">Pipeline Submissions</div>
+
+        <div class="stages-grid" id="stages">
+            <div class="stage-card">
+                <div class="stage-header">
+                    <input type="checkbox" name="stages" value="find_focus" checked id="chk-focus">
+                    <label for="chk-focus">Find Focus</label>
+                </div>
+                <select id="find_focus-select" name="find_focus_option">
+                    <option value="">— option —</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="stage-card">
+                <div class="stage-header">
+                    <input type="checkbox" name="stages" value="reconstruction" checked id="chk-reco">
+                    <label for="chk-reco">Phase Retrieval</label>
+                </div>
+                <select id="reconstruction-select" name="reconstruction_method">
+                    <option value="">— option —</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="stage-card">
+                <div class="stage-header">
+                    <input type="checkbox" name="stages" value="tomography" checked id="chk-tomo">
+                    <label for="chk-tomo">Tomography</label>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:0.75rem;">
+            <input id="submit-btn" type="button" value="Submit All" class="btn btn-primary" style="width:100%;">
+        </div>
+    
+      </div>
+      </div>
 </div>
 
 <script>
@@ -191,7 +512,6 @@
     qs('stage-select').onchange = async () => {
         const opts = await fetchJson(endpoints.stage(qs('stage-select').value));
         fill(qs('parameter-select'), opts);
-
     };
     qs('parameter-select').onchange = async () => {
         const url = endpoints.parameter(qs('parameter-select').value);
@@ -210,20 +530,16 @@
         qs('live-preview').style.display = 'none';
         qs('loss-image').children = [];
         qs('loss-image').style.display = 'none';
-
     };
 
     qs('img-select').onchange = async () => {
         const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
         const blob = await (await fetch(url)).blob();
-        fetch(url).then(res => res.json()).then(fig =>{
-                Plotly.react(qs('preview-image'), fig.data, fig.layout);
-                qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
-                qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
-            }
-        )
-
-
+        fetch(url).then(res => res.json()).then(fig => {
+            Plotly.react(qs('preview-image'), fig.data, fig.layout);
+            qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
+            qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
+        });
         qs('preview-image').style.display = 'block';
         resetLivePreview();
     };
@@ -231,23 +547,13 @@
     const changeRange = () => {
         const vmin = parseFloat(qs('vmin').value);
         const vmax = parseFloat(qs('vmax').value);
-        if (isNaN(vmin) || isNaN(vmax)) {
-            console.warn('Invalid vmin/vmax values');
-            return;
-        }
-        Plotly.relayout(qs('preview-image'), {
-            'coloraxis.cmin': vmin,
-            'coloraxis.cmax': vmax
-        });
+        if (isNaN(vmin) || isNaN(vmax)) { console.warn('Invalid vmin/vmax values'); return; }
+        Plotly.relayout(qs('preview-image'), { 'coloraxis.cmin': vmin, 'coloraxis.cmax': vmax });
     };
 
-    // Safely get the parameter form
     const getFormData = () => {
         const form = document.querySelector('#form-container form');
-        if (!form) {
-            console.error('Parameter form not found');
-            return {};
-        }
+        if (!form) { console.error('Parameter form not found'); return {}; }
         return Object.fromEntries(new FormData(form));
     };
     const retrieveReco = () => ({
@@ -262,7 +568,7 @@
     });
     const retrieveStages = () => {
         const stages = Array.from(document.querySelectorAll('input[name="stages"]:checked')).map(cb => cb.value);
-        const options = Object.fromEntries(stages.map(s => [s, qs(`${s}-select`)? qs(`${s}-select`).value: null]));
+        const options = Object.fromEntries(stages.map(s => [s, qs(`${s}-select`) ? qs(`${s}-select`).value : null]));
         return {stages, options};
     };
 
@@ -301,15 +607,12 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Initialize stage params
         qs('stage-select').onchange();
-        // Populate scan-select from root folder list
         fetchJson(endpoints.folder('')).then(folders => {
             fill(qs('scan-select'), folders);
         }).catch(err => console.error(err));
 
         const socket = new WebSocket(`ws://${location.host}/ws/preview`);
-
         socket.binaryType = 'arraybuffer';
         socket.onmessage = e => {
             qs('loss-image').classList.remove('loader');
@@ -318,9 +621,8 @@
                 const blob = new Blob([data]);
                 qs('live-preview').src = URL.createObjectURL(blob);
                 qs('live-preview').style.display = 'block';
-
-            } else { // Handle Blob or other data types
-                const json_data = JSON.parse(data)
+            } else {
+                const json_data = JSON.parse(data);
                 const z01 = parseFloat(json_data.z01);
                 const z02 = parseFloat(json_data.z02);
                 const fig = json_data.data;
@@ -329,7 +631,7 @@
                 } else if (!isNaN(z02)) {
                     qs('z02').value = z02.toFixed(3);
                 } else {
-                    console.warn('Received non-numeric data:', text);
+                    console.warn('Received non-numeric data:', data);
                 }
                 Plotly.react(qs('loss-image'), fig.data, fig.layout);
                 qs('loss-image').style.display = 'block';
@@ -350,19 +652,15 @@
             qs('loss-image').style.display = 'block';
             qs('loss-image').classList.add('loader');
         };
-
         qs('stop-btn').onclick = () => {
-            try {
-                socket.send(JSON.stringify({ action: 'cancel_preview' }));
-            } catch (_) {}
+            try { socket.send(JSON.stringify({ action: 'cancel_preview' })); } catch (_) {}
             qs('loss-image').classList.remove('loader');
             resetLivePreview();
         };
-
         qs('submit-btn').onclick = async () => {
             const data = {...retrieveReco(), ...retrieveStages()};
-            const res = await fetch('api/submit_scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-            alert(res.ok? 'Submitted!':'Submit failed');
+            const res = await fetch('api/submit_scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            alert(res.ok ? 'Submitted!' : 'Submit failed');
         };
     });
 
@@ -384,7 +682,12 @@
     }
     if (reconSelect) reconSelect.addEventListener('mousedown', e => loadOptionsOnce(e, 'reconstruction'), { once: true });
     if (focusSelect) focusSelect.addEventListener('mousedown', e => loadOptionsOnce(e, 'find_focus'), { once: true });
+
+
+    const btn = document.getElementById('logo-btn');
+    const menu = document.getElementById('nav-menu');
+    btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+    document.addEventListener('click', () => menu.classList.remove('open'));
 </script>
 </body>
 </html>
-

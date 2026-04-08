@@ -9,5 +9,4 @@ defaults:
   - spider
   - wire
 - find_focus: 
-  - spider
-  - wire
+  - default

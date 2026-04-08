@@ -23,6 +23,7 @@ from fastapi import (
     WebSocketDisconnect,
     Depends,
 )
+
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
@@ -30,6 +31,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.concurrency import run_in_threadpool
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from omegaconf import OmegaConf
 
@@ -152,6 +154,9 @@ def create_app(cfg=None, config_dir: Union[str, Path] = None) -> FastAPI:
     if cfg:
         app.state._initial_cfg = cfg
     _register_routes(app)
+
+    app.mount("/static", StaticFiles(directory=str(BASE_DIR / ".." / "templates/static")), name="static")
+
     return app
 
 
