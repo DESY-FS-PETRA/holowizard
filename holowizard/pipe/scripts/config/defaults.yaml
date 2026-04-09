@@ -6,8 +6,7 @@ defaults:
 - scan
 - tomography
 - reconstruction: 
-  - spider
-  - wire
+  - defaults_thin
+  - defaults_thick
 - find_focus: 
-  - spider
-  - wire
+  - defaults
