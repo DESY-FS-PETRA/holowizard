@@ -18,12 +18,12 @@ def find_focus(
     with open(flatfield_correction_params.components_path, "rb") as file:
         components_model = pickle.load(file)
 
-    logging.info("raw", reco_params.measurements[0].data.cpu().numpy())
+    logging.image_debug("raw", reco_params.measurements[0].data.cpu().numpy())
 
     logging.info("Correct flatfield")
     corrected_image = correct_flatfield(reco_params.measurements[0].data.float(), components_model)
 
-    logging.info("flatfield_corrected", corrected_image.cpu().numpy())
+    logging.image_debug("flatfield_corrected", corrected_image.cpu().numpy())
 
     reco_params.measurements[0].data = corrected_image
 

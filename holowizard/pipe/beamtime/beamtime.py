@@ -159,7 +159,7 @@ class Beamtime(ABC):
         viewer = [WebsocketViewer(session_id)]
         img_index = [i for i, path in enumerate(scan.hologram_path) if img_name in path][0] if img_name else img_name
         if find_focus:
-            find_focus_task = FindFocusTask(scan, flatfield_task.save_path, viewer=viewer)
+            find_focus_task = FindFocusTask(scan, flatfield_task.save_path, viewer=None)
             result, status = submit_and_handle("find_focus", find_focus_task, self.cluster, scan, img_index)
             if result and status == "done":
                 scan.z01 = result.get("z01")

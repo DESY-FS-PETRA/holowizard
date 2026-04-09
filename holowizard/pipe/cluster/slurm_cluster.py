@@ -86,7 +86,7 @@ class SlurmCluster(Cluster):
                 f"--output={self.slurm_output_path}/slurm-%j.out",
                 "--ntasks=1",
                 "--nodes=1",
-                '--constraint="A100|V100|P100"',
+                '--constraint="A100|V100"',
             ],
             worker_extra_args=["--no-nanny"],
         )

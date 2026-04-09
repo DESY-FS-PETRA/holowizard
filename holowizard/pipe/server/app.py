@@ -8,6 +8,9 @@ from starlette.datastructures import UploadFile
 import yaml
 import markdown
 from plotly.utils import PlotlyJSONEncoder
+
+# Import for side effects: initializes server env vars and writes .env.
+import holowizard.pipe.server.config as config  # noqa: F401
 import zmq
 import zmq.asyncio
 import tifffile
