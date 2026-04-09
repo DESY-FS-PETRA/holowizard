@@ -5,4 +5,4 @@ paths:
   tomo_dir: "tomo_reco"
   params_dir: "params"
   logs_dir: "logs"
-  pipe_config: "pipe_config_jg"
+  pipe_config: "pipe_config"
