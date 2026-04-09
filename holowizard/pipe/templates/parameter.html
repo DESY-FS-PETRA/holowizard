@@ -117,7 +117,7 @@
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
-            margin: 0.75rem 0;
+            margin: 0.75rem 0 1.5rem 0;
         }
 
         .btn {
@@ -362,10 +362,11 @@
 
     <!-- RIGHT: Scan controls -->
     <div style="display:flex;flex-direction:column;gap:1.25rem;">
-    <div class="panel">
-        <div class="panel-title">Scan &amp; Reconstruction</div>
+         <!-- Stages -->
+        <div class="panel">
+        <div class="panel-title">Scan Parameters</div>
 
-        <!-- Folder + Image -->
+           <!-- Folder + Image -->
         <div class="field-row">
             <div class="field">
                 <label for="scan-select">Folder</label>
@@ -427,32 +428,7 @@
         </div>
 
 
-        <div class="divider"></div>
-
-        <!-- Preview image (Plotly) -->
-        <div id="preview-image" style="display:none;"></div>
-
-        <!-- vmin/vmax -->
-        <div class="field-row">
-            <div class="field">
-                <label for="vmin">v_min</label>
-                <input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off">
-            </div>
-            <div class="field">
-                <label for="vmax">v_max</label>
-                <input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
-            </div>
-        </div>
-
-        <!-- Loss / live preview -->
-        <div id="loss-image" style="display:none;"></div>
-        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
-
-        </div>
-
-        <!-- Stages -->
-        <div class="panel">
-        <div class="panel-title">Pipeline Submissions</div>
+        <div class="panel-title">Pipeline Submission</div>
 
         <div class="stages-grid" id="stages">
             <div class="stage-card">
@@ -488,6 +464,33 @@
         </div>
     
       </div>
+
+    <div class="panel">
+        <div class="panel-title">Plots</div>
+
+        <div class="divider"></div>
+
+        <!-- Preview image (Plotly) -->
+        <div id="preview-image" style="display:none;"></div>
+
+        <!-- vmin/vmax -->
+        <div class="field-row">
+            <div class="field">
+                <label for="vmin">v_min</label>
+                <input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="vmax">v_max</label>
+                <input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Loss / live preview -->
+        <div id="loss-image" style="display:none;"></div>
+        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
+
+        </div>
+
       </div>
 </div>
 
