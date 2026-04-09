@@ -9,7 +9,8 @@ import os
 
 matplotlib.use("Agg")
 # 1) Ask dotenv where it *would* look first:
-dotenv_path = dotenv.find_dotenv()
+print(os.getcwd())
+dotenv_path = dotenv.find_dotenv(usecwd=True)
 print("dotenv will load from:", dotenv_path or "<none found>")
 
 # 2) Actually load it (you can also pass verbose=True to get a little feedback)

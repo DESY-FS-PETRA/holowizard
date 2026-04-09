@@ -19,7 +19,7 @@ def main():
         ## TODO soll das hier sein?
         bm = Beamtime(cfg.beamtime.name, cfg.beamtime.year, "")
 
-        destination_dir = f"{bm.path_processed}/pipe_config"
+        destination_dir = f"{bm.path_processed}/{cfg.paths.pipe_config}"
         if os.path.exists(destination_dir):
             shutil.rmtree(destination_dir)
         os.makedirs(destination_dir, exist_ok=True)
