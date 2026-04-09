@@ -66,7 +66,7 @@ class FindFocusTask:
         measurement = self.reco_params_find_focus.measurements[0]
         measurement.data = scan["hologram", img_index]
 
-        Logger.current_log_level = Logger.level_num_image_info
+        Logger.current_log_level = Logger.level_num_image_final
 
         timestamp = time.time()
         log_time = datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d_%H-%M-%S")
