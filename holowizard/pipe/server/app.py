@@ -8,6 +8,9 @@ from starlette.datastructures import UploadFile
 import yaml
 import markdown
 from plotly.utils import PlotlyJSONEncoder
+
+# Import for side effects: initializes server env vars and writes .env.
+import holowizard.pipe.server.config as config  # noqa: F401
 import zmq
 import zmq.asyncio
 import tifffile
@@ -23,6 +26,7 @@ from fastapi import (
     WebSocketDisconnect,
     Depends,
 )
+
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
@@ -30,6 +34,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.concurrency import run_in_threadpool
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from omegaconf import OmegaConf
 
@@ -152,6 +157,9 @@ def create_app(cfg=None, config_dir: Union[str, Path] = None) -> FastAPI:
     if cfg:
         app.state._initial_cfg = cfg
     _register_routes(app)
+
+    app.mount("/static", StaticFiles(directory=str(BASE_DIR / ".." / "templates/static")), name="static")
+
     return app
 
 
@@ -429,15 +437,7 @@ def _register_routes(app: FastAPI):
         except asyncio.CancelledError:
             return
         if result:
-            fig = px.line(
-                x=result.get("z01_values_history", []),
-                y=result.get("loss_values_history", []),
-                labels={"x": "z01", "y": "Loss"},
-                title="Focus Optimization Results",
-            )
-            fig = fig.to_dict()
             ret = dict(
-                data=fig,
                 z01=result.get("z01"),
             )
             await ws.send_text(json.dumps(ret, cls=PlotlyJSONEncoder))

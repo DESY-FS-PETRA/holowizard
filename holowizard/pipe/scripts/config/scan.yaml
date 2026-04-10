@@ -11,7 +11,7 @@ scan:
     - reconstruction
     - tomography
   px_size: 0.0065
-  z01_confidence: 10
+  z01_confidence: 5
   detector: Hamamatsu
   data:
     total_size:

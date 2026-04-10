@@ -23,7 +23,7 @@ class FindFocusTask:
         focus.plot_results()
     """
 
-    def __init__(self, scan: Scan, flatfield_params_save_path, viewer=[]):
+    def __init__(self, scan: Scan, flatfield_params_save_path, viewer=[], plotter=[]):
         """
         Initialize the focus finder with a given holopipe configuration.
 
@@ -40,6 +40,8 @@ class FindFocusTask:
             #         )
             return  # nothing else to set up
         self.viewer = viewer
+        self.plotter = plotter
+
         if "find_focus" not in scan.config.scan.tasks:
             Logger.log(
                 f"Find focus is disabled in the configuration. Skipping find focus task. Using default focus {scan.z01}",
@@ -66,7 +68,7 @@ class FindFocusTask:
         measurement = self.reco_params_find_focus.measurements[0]
         measurement.data = scan["hologram", img_index]
 
-        Logger.current_log_level = Logger.level_num_image_info
+        Logger.current_log_level = Logger.level_num_image_final
 
         timestamp = time.time()
         log_time = datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d_%H-%M-%S")
@@ -82,6 +84,7 @@ class FindFocusTask:
             flatfield_correction_params=self.flatfield_params,
             reco_params=self.reco_params_find_focus,
             viewer=self.viewer,
+            plotter=self.plotter,
         )
         return {
             "z01": z01_guess,
