@@ -65,7 +65,7 @@ class NelderMeadPlotter(Plotter):
         self.fig.canvas.draw()
 
     def update(self, iteration, x_axis, y_axis, image):
-        self.x_axis = np.array(x_axis) / 1e6
+        self.x_axis = np.array(x_axis)
         self.y_axis = y_axis
 
         self.fig_title = "Find focus with model fit criterion - Running - Iteration " + str(iteration)
