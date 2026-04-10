@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import pathlib
 
 from holowizard.core.logging.logger import Logger
-from holowizard.core.api.viewer import LossViewer, PyPlotViewer
+from holowizard.core.api.viewer import LossViewer
+from holowizard.core.api.plotter import NelderMeadPlotter
 from holowizard.core.api.functions.find_focus.find_focus import find_focus
 from holowizard.core.utils.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
@@ -103,7 +104,7 @@ reco_params = RecoParams(
     data_dimensions=data_dimensions,
 )
 
-result, z01_records, loss_values_history = find_focus(reco_params, viewer=[LossViewer(), PyPlotViewer()])
+result, z01_records, loss_values_history = find_focus(reco_params, viewer=[LossViewer()], plotter=[NelderMeadPlotter()])
 
 print("Found z01=", result, " after ", len(z01_records), " iterations")
 
