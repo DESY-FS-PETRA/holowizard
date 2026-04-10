@@ -6,6 +6,7 @@ from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorr
 from holowizard.core.reconstruction.viewer import Viewer
 from holowizard.core.api.functions.find_focus.find_focus_flatfieldcorrection import find_focus as find_focus_internal
 from holowizard.core.api.functions.default_load_data_callback import default_load_data_callback
+from holowizard.core.reconstruction.plotter import Plotter
 
 
 def find_focus(
@@ -14,8 +15,9 @@ def find_focus(
     reco_params: RecoParams,
     image_index,
     load_data_callback=default_load_data_callback,
-    viewer: List[Viewer] = None,
-):
+    viewer: List[Viewer] = None, 
+    plotter:List[Plotter]= None):
+
     data_path_loaded, data = load_data_callback(glob_data_path, image_index)
 
     reco_params.measurements[0].data_path = data_path_loaded
@@ -24,7 +26,7 @@ def find_focus(
     logging.debug("loaded", data)
 
     z01_guess, z01_values_history, loss_values_history = find_focus_internal(
-        flatfield_correction_params, reco_params, viewer
+        flatfield_correction_params, reco_params, viewer, plotter
     )
 
     return z01_guess, z01_values_history, loss_values_history

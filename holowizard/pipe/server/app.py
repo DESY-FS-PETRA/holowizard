@@ -437,15 +437,7 @@ def _register_routes(app: FastAPI):
         except asyncio.CancelledError:
             return
         if result:
-            fig = px.line(
-                x=result.get("z01_values_history", []),
-                y=result.get("loss_values_history", []),
-                labels={"x": "z01", "y": "Loss"},
-                title="Focus Optimization Results",
-            )
-            fig = fig.to_dict()
             ret = dict(
-                data=fig,
                 z01=result.get("z01"),
             )
             await ws.send_text(json.dumps(ret, cls=PlotlyJSONEncoder))

@@ -8,13 +8,15 @@ from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorr
 from holowizard.core.find_focus.find_focus_z01_a0_orthogonal_search import find_focus as find_focus_internal
 from holowizard.core.reconstruction.viewer import Viewer
 from holowizard.core.preprocessing.correct_flatfield import correct_flatfield
+from holowizard.core.reconstruction.plotter import Plotter
 
 
 def find_focus(
     flatfield_correction_params: FlatfieldCorrectionParams,
     reco_params: RecoParams,
     viewer: List[Viewer] = None,
-):
+    plotter:List[Plotter]=None):
+
     logging.info("Load components from " + flatfield_correction_params.components_path)
     with open(flatfield_correction_params.components_path, "rb") as file:
         components_model = pickle.load(file)
@@ -41,6 +43,7 @@ def find_focus(
         reco_params.reco_options,
         reco_params.data_dimensions,
         viewer,
+        plotter
     )
 
     return (

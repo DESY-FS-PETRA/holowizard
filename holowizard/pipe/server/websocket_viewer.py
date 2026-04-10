@@ -19,10 +19,10 @@ print(f"load_dotenv(verbose=True) returned: {loaded}")
 
 
 # 1) create a single global ZMQ context + PUB socket
-zmq_ctx = zmq.Context.instance()
-pub_sock = zmq_ctx.socket(zmq.PUB)
+zmq_ctx_viewer = zmq.Context.instance()
+pub_sock_viewer = zmq_ctx_viewer.socket(zmq.PUB)
 
-pub_sock.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('SUB_PORT', '6000')}")
+pub_sock_viewer.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('SUB_PORT', '6000')}")
 print(f"WebsocketViewer connected to PUB socket at tcp://{os.getenv('HNAME')}:{os.getenv('SUB_PORT', '6000')}")
 
 
@@ -72,6 +72,6 @@ class WebsocketViewer(Viewer):
         buf.seek(0)
         png_bytes = buf.getvalue()
         try:
-            pub_sock.send_multipart([self.topic, png_bytes], flags=zmq.DONTWAIT)
+            pub_sock_viewer.send_multipart([self.topic, png_bytes], flags=zmq.DONTWAIT)
         except zmq.Again:
             pass
