@@ -14,9 +14,8 @@ def find_focus(
     flatfield_correction_params: FlatfieldCorrectionParams,
     reco_params: RecoParams,
     viewer: List[Viewer] = None,
-    plotter:List[Plotter]=None
-    ):
-
+    plotter: List[Plotter] = None,
+):
     logging.info("Load components from " + flatfield_correction_params.components_path)
     with open(flatfield_correction_params.components_path, "rb") as file:
         components_model = pickle.load(file)

@@ -24,20 +24,24 @@ from holowizard.core.api.parameters import (
 ###### Holowizard imports for reprojection routine
 
 from holowizard.core.reconstruction.methods.reprojection.repro_options import ReproOptions
-from holowizard.core.reconstruction.methods.reprojection.reprojection_reconstruction import reconstruct as reprojection_reconstruction
+from holowizard.core.reconstruction.methods.reprojection.reprojection_reconstruction import (
+    reconstruct as reprojection_reconstruction,
+)
 
 ########################################################################################################################################################
 
 output_path = "/gpfs/petra3/scratch/dorajoha/envs/holowizard_main/logs/"
 
-#downsampling angles for debugging....
+# downsampling angles for debugging....
 downsample_angles_debugging = 16
 
 #### Load angles
 
-filename = "/asap3/petra3/gpfs/p05/2020/data/11008588/raw/nano3674_Mg-6Ag_r_3day_3/nano3674_Mg-6Ag_r_3day_3__LogScan.log"
+filename = (
+    "/asap3/petra3/gpfs/p05/2020/data/11008588/raw/nano3674_Mg-6Ag_r_3day_3/nano3674_Mg-6Ag_r_3day_3__LogScan.log"
+)
 
-lines = [line.rstrip('\n') for line in open(filename)]
+lines = [line.rstrip("\n") for line in open(filename)]
 
 lines = lines[10:]
 angles = []
@@ -46,7 +50,7 @@ for i, line in enumerate(lines):
     line2 = lines[i].split()[8]
     line3 = lines[i].split()[0]
     if "img_y0" in line3:
-        angles.append(np.round(float(line2), 3))     #* np.pi / 180)
+        angles.append(np.round(float(line2), 3))  # * np.pi / 180)
         img_str.append(str(line3))
 
 angles = torch.tensor(angles)
@@ -59,22 +63,22 @@ angles = -angles[::downsample_angles_debugging]
 ##### Load corrected holograms
 
 object_shape = (2048, 2048)
-#root = str(pathlib.Path(__file__).parent.resolve()) + "/"
+# root = str(pathlib.Path(__file__).parent.resolve()) + "/"
 
 root = f"/data/dust/user/hernande/holow_repro_scripts/data/mg_holograms/"
-image_file_list = glob.glob(root+"img_*.tiff")
+image_file_list = glob.glob(root + "img_*.tiff")
 image_file_list.sort()
 
 
 ### DOWNSAMPLING FOR DEBUGGING CT...
 image_file_list = image_file_list[::downsample_angles_debugging]
 
-#print("Exists:", os.path.isdir(root))
-#print("Files:", os.listdir(root))
+# print("Exists:", os.path.isdir(root))
+# print("Files:", os.listdir(root))
 
 image_data_list = [tifffile.imread(image_name) for image_name in image_file_list]
-#image_data_list = [np.rot90(tifffile.imread(image_name), k=2).copy() for image_name in image_file_list]
-#image_data_list = image_data_list[:-1]
+# image_data_list = [np.rot90(tifffile.imread(image_name), k=2).copy() for image_name in image_file_list]
+# image_data_list = image_data_list[:-1]
 
 print(len(angles))
 print(len(image_data_list))
@@ -91,7 +95,15 @@ Logger.configure(session_name=session_name, working_dir=working_dir)
 ##### Set up measurements
 
 z01 = 470.71
-measurements = [Measurement(angle=i,data_path="", data=torch.tensor(image_data_list[i],device=torch.device("cpu"),dtype=torch.float), z01=z01) for i in range(len(image_data_list))]
+measurements = [
+    Measurement(
+        angle=i,
+        data_path="",
+        data=torch.tensor(image_data_list[i], device=torch.device("cpu"), dtype=torch.float),
+        z01=z01,
+    )
+    for i in range(len(image_data_list))
+]
 
 ##### Set up single projection single stage ASRM options together with tomography and angle selection options per stage (RepoOptions(Options))
 
@@ -107,13 +119,13 @@ padding_options = Padding(
 )
 
 options_warmup = ReproOptions(
-    ct_alg =  "SIRT",    #### wont be used, if update_blocks = 1 (hardcoded FBP to be used first always!)
-    ct_params = "10",    #### wont be used, if update_blocks = 1 (hardcoded FBP to be used first always!)
-    as_alg = "white",
-    #as_params =   "69", 
-    as_params= str(len(angles)),
-    angles =  angles,
-    update_blocks = 1,
+    ct_alg="SIRT",  #### wont be used, if update_blocks = 1 (hardcoded FBP to be used first always!)
+    ct_params="10",  #### wont be used, if update_blocks = 1 (hardcoded FBP to be used first always!)
+    as_alg="white",
+    # as_params =   "69",
+    as_params=str(len(angles)),
+    angles=angles,
+    update_blocks=1,
     regularization_object=Regularization(
         iterations=700,
         update_rate=0.9,
@@ -126,14 +138,14 @@ options_warmup = ReproOptions(
 )
 
 options_upscale_8 = ReproOptions(
-    #ct_alg =  "TV_SIRT",
-    #ct_params = [100,0.0001],    
-    ct_alg =  "SIRT",
-    ct_params = "100",    
-    as_alg = "white",
-    as_params =   "20", 
-    angles =  angles,
-    update_blocks = 5,
+    # ct_alg =  "TV_SIRT",
+    # ct_params = [100,0.0001],
+    ct_alg="SIRT",
+    ct_params="100",
+    as_alg="white",
+    as_params="20",
+    angles=angles,
+    update_blocks=5,
     regularization_object=Regularization(
         iterations=200,
         update_rate=0.9,
@@ -147,12 +159,12 @@ options_upscale_8 = ReproOptions(
 
 
 options_upscale_4 = ReproOptions(
-    ct_alg =  "SIRT", 
-    ct_params = "10", 
-    as_alg = "white",
-    as_params =   "20", 
-    angles =  angles,
-    update_blocks = 5,
+    ct_alg="SIRT",
+    ct_params="10",
+    as_alg="white",
+    as_params="20",
+    angles=angles,
+    update_blocks=5,
     regularization_object=Regularization(
         iterations=200,
         update_rate=1.1,
@@ -165,12 +177,12 @@ options_upscale_4 = ReproOptions(
 )
 
 options_upscale_2 = ReproOptions(
-    ct_alg =  "SIRT", 
-    ct_params = "10", 
-    as_alg = "white",
-    as_params =   "20", 
-    angles =  angles,
-    update_blocks = 1,
+    ct_alg="SIRT",
+    ct_params="10",
+    as_alg="white",
+    as_params="20",
+    angles=angles,
+    update_blocks=1,
     regularization_object=Regularization(
         iterations=200,
         update_rate=1.1,
@@ -184,12 +196,12 @@ options_upscale_2 = ReproOptions(
 )
 
 options_mainrun = ReproOptions(
-    ct_alg =  "SIRT", 
-    ct_params = "5", 
-    as_alg = "white",
-    as_params =   "20", 
-    angles =  angles,
-    update_blocks = 1,
+    ct_alg="SIRT",
+    ct_params="5",
+    as_alg="white",
+    as_params="20",
+    angles=angles,
+    update_blocks=1,
     regularization_object=Regularization(
         iterations=500,
         update_rate=1.1,
@@ -216,15 +228,16 @@ reco_params = RecoParams(
     output_path=output_path,
     measurements=measurements,
     reco_options=[options_warmup, options_upscale_8, options_upscale_4, options_upscale_2, options_mainrun],
-    data_dimensions=data_dimensions
+    data_dimensions=data_dimensions,
 )
 ###### Reconstruct
 
-dask_options = DaskOptions(working_dir=working_dir + "/dask_worker/",
-                           partitions="maxgpu,allgpu",
-                           num_worker=numpy.minimum(len(measurements),80),
-                           python_env="/gpfs/petra3/scratch/dorajoha/envs/holowizard_main_env",
-                           constraint="A100|V100")
+dask_options = DaskOptions(
+    working_dir=working_dir + "/dask_worker/",
+    partitions="maxgpu,allgpu",
+    num_worker=numpy.minimum(len(measurements), 80),
+    python_env="/gpfs/petra3/scratch/dorajoha/envs/holowizard_main_env",
+    constraint="A100|V100",
+)
 
 result = reprojection_reconstruction(reco_params, viewer=[LossViewer()], dask_options=dask_options)
-

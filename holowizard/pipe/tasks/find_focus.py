@@ -84,7 +84,7 @@ class FindFocusTask:
             flatfield_correction_params=self.flatfield_params,
             reco_params=self.reco_params_find_focus,
             viewer=self.viewer,
-            plotter=self.plotter
+            plotter=self.plotter,
         )
         return {
             "z01": z01_guess,

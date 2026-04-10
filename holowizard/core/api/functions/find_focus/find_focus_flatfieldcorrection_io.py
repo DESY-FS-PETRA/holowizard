@@ -15,9 +15,9 @@ def find_focus(
     reco_params: RecoParams,
     image_index,
     load_data_callback=default_load_data_callback,
-    viewer: List[Viewer] = None, 
-    plotter:List[Plotter]= None):
-
+    viewer: List[Viewer] = None,
+    plotter: List[Plotter] = None,
+):
     data_path_loaded, data = load_data_callback(glob_data_path, image_index)
 
     reco_params.measurements[0].data_path = data_path_loaded

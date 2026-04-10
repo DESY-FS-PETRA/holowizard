@@ -37,8 +37,8 @@ def get_loss_reconstruction(
     beam_setup: BeamSetup,
     options: List[Options],
     data_dimensions: DataDimensions,
-    viewer:List[Viewer],
-    plotter:List[Plotter]
+    viewer: List[Viewer],
+    plotter: List[Plotter],
 ):
     global z01_values_history
     global loss_values_history
@@ -66,11 +66,13 @@ def get_loss_reconstruction(
                 "focus_series_" + str(z01[0]),
                 crop_center(current_result.real, fov_size).cpu().numpy(),
             )
-        
+
         current_result_cropped = crop_center(current_result.real, fov_size).cpu().numpy()
         if plotter is not None:
             for plotter_instance in plotter:
-                plotter_instance.update(len(z01_values_history),z01_values_history,loss_values_history, current_result_cropped)
+                plotter_instance.update(
+                    len(z01_values_history), z01_values_history, loss_values_history, current_result_cropped
+                )
 
     else:
         # Fix for buggy nelder-mead implementation when bounds are used and nelder-mead reflects to outside of bound interval. Punish this out-of-bound case
@@ -86,8 +88,8 @@ def find_focus(
     beam_setup: BeamSetup,
     options: List[Options],
     data_dimensions: DataDimensions,
-    viewer:List[Viewer],
-    plotter:List[Plotter]
+    viewer: List[Viewer],
+    plotter: List[Plotter],
 ):
     global z01_values_history
     global loss_values_history

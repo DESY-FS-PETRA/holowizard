@@ -25,8 +25,8 @@ matplotlib.use("Qt5Agg")
 test_file = "/gpfs/petra3/scratch/dorajoha/envs/temp/train.hdf5"
 holo_index = 8
 
-with h5py.File(test_file, 'r') as f:
-    hologram = f["/images/hologram"][holo_index,:,:]
+with h5py.File(test_file, "r") as f:
+    hologram = f["/images/hologram"][holo_index, :, :]
     z01 = float(f["/metadata/setup/z01"][holo_index])
     z02 = float(f["/metadata/setup/z02"][holo_index])
     energy = float(f["/metadata/setup/energy"][holo_index])
@@ -104,7 +104,7 @@ reco_params = RecoParams(
         options_warmup_2,
         options_mainrun,
     ],
-    data_dimensions=data_dimensions
+    data_dimensions=data_dimensions,
 )
 
 result, loss_records = reconstruct(reco_params, viewer=[LossViewer(), PyPlotViewer()])

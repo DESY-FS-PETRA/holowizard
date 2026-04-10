@@ -36,7 +36,6 @@ class WebsocketPlotter(Viewer):
         plt.pause(0.05)
         self.fig = plt.figure(figsize=(12.8, 8.8))
 
-    
     def draw(self):
         self.fig.clear()
         self.fig.suptitle(self.fig_title)
@@ -45,33 +44,39 @@ class WebsocketPlotter(Viewer):
         self.axs1 = self.fig.add_subplot(121)
 
         pos = self.axs0.imshow(self.image, cmap="gray", interpolation="none")
-        cbar = self.fig.colorbar(pos, ax=self.axs0, fraction=0.046, pad=0.07)#, orientation="horizontal")
-        cbar.ax.set_xlabel(r'$\phi$ / rad')
+        cbar = self.fig.colorbar(pos, ax=self.axs0, fraction=0.046, pad=0.07)  # , orientation="horizontal")
+        cbar.ax.set_xlabel(r"$\phi$ / rad")
 
         self.axs0.set_title(self.axs0_title)
         self.axs0.tick_params(left=False, bottom=False)
 
-        self.axs1.plot(self.x_axis, self.y_axis, marker='.')
+        self.axs1.plot(self.x_axis, self.y_axis, marker=".")
 
         ylims = self.axs1.get_ylim()
         ylims = (ylims[0] - (ylims[1] - ylims[0]) / 6, ylims[1])
-        self.axs1.set_ylim(ylims[0],ylims[1])
+        self.axs1.set_ylim(ylims[0], ylims[1])
 
-        for i in range(np.minimum(5,len(self.y_axis))):
-            self.axs1.annotate(str(i+1), (self.x_axis[i], self.y_axis[i]), xytext=(0, -20), textcoords='offset points',
-                         size='large', horizontalalignment='center')
+        for i in range(np.minimum(5, len(self.y_axis))):
+            self.axs1.annotate(
+                str(i + 1),
+                (self.x_axis[i], self.y_axis[i]),
+                xytext=(0, -20),
+                textcoords="offset points",
+                size="large",
+                horizontalalignment="center",
+            )
 
         min_index = np.argmin(self.y_axis)
-        minimum_mm = round(self.x_axis[min_index],1)
+        minimum_mm = round(self.x_axis[min_index], 1)
 
         if min_index == len(self.y_axis) - 1:
             self.min_image = self.image
 
-        self.axs1.plot(self.x_axis[min_index],self.y_axis[min_index],'*',color='red')
-        self.axs1.set_xlabel(r'$z_{01}$ / mm')
+        self.axs1.plot(self.x_axis[min_index], self.y_axis[min_index], "*", color="red")
+        self.axs1.set_xlabel(r"$z_{01}$ / mm")
         self.axs1.set_ylabel("MFE / A.U.")
 
-        self.axs1.set_title(r'Sampling, minimum at $z_{01}$=' +str(minimum_mm) + "mm")
+        self.axs1.set_title(r"Sampling, minimum at $z_{01}$=" + str(minimum_mm) + "mm")
         h, w = self.image.shape[:2]
 
         plt.tight_layout()
@@ -83,13 +88,12 @@ class WebsocketPlotter(Viewer):
         self.y_axis = y_axis
 
         self.fig_title = "Find focus with model fit criterion - Running - Iteration " + str(iteration)
-        self.axs0_title = "Object at sampling point " + r'$z_{01}$=' + str(round(self.x_axis[-1],1)) + "mm"
+        self.axs0_title = "Object at sampling point " + r"$z_{01}$=" + str(round(self.x_axis[-1], 1)) + "mm"
 
         self.image = image
 
         self.draw()
         self.send_figure()
-
 
     def finish(self):
         self.fig_title = "Find focus with model fit criterion - Finished!"
@@ -99,7 +103,6 @@ class WebsocketPlotter(Viewer):
 
         self.draw()
         self.send_figure()
-
 
     def send_figure(self):
         buf = io.BytesIO()

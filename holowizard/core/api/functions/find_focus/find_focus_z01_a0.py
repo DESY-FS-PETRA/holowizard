@@ -7,7 +7,7 @@ from holowizard.core.reconstruction.viewer import Viewer
 from holowizard.core.reconstruction.plotter import Plotter
 
 
-def find_focus(reco_params: RecoParams, viewer: List[Viewer] = None, plotter:List[Plotter]=None):
+def find_focus(reco_params: RecoParams, viewer: List[Viewer] = None, plotter: List[Plotter] = None):
     for i in range(len(reco_params.measurements)):
         reco_params.measurements[i].data = torch.sqrt(reco_params.measurements[i].data)
 
@@ -23,7 +23,7 @@ def find_focus(reco_params: RecoParams, viewer: List[Viewer] = None, plotter:Lis
         reco_params.reco_options,
         reco_params.data_dimensions,
         viewer,
-        plotter
+        plotter,
     )
 
     return (
