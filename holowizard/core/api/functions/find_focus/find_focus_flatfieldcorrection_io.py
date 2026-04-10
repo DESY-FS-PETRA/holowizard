@@ -23,7 +23,7 @@ def find_focus(
     reco_params.measurements[0].data_path = data_path_loaded
     reco_params.measurements[0].data = data
 
-    logging.debug("loaded", data)
+    logging.image_debug("loaded", data)
 
     z01_guess, z01_values_history, loss_values_history = find_focus_internal(
         flatfield_correction_params, reco_params, viewer, plotter
