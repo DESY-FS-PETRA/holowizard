@@ -44,10 +44,8 @@ classifiers = [
 ]
 
 maintainers = [
-  {name = "Johannes Dora", email = "johannes.dora@desy.de"},
-  {name = "André Lopes", email="andre.lopes@hereon.de"},
+  {name = "Johannes Dora", email = "johannes.dora@hereon.de"},
   {name = "Johannes Grün", email="johannes.gruen@desy.de"},
-  {name = "Sebastian Eberle", email="sebastian.eberle@desy.de"},
   {name = "Johannes Hagemann", email = "johannes.hagemann@desy.de"}
 ]
 
@@ -55,7 +53,7 @@ maintainers = [
 Repository = "https://github.com/DESY-FS-PETRA/holowizard"
 Paper_ASRM = "https://doi.org/10.1364/OE.514641"
 Paper_Autofocus = "https://doi.org/10.1364/OE.544573"
-Zenodo = "https://doi.org/10.5281/zenodo.8349364"
+Zenodo = "https://doi.org/10.5281/zenodo.16275927"
 
 [project.scripts]
 holowizard_forge_generate_data = "holowizard.forge.scripts.generate_data:main"
