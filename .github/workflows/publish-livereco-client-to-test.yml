@@ -34,9 +34,11 @@ jobs:
           rm pyproject.toml
           rm MANIFEST.in
           rm requirements.txt
-          mv holowizard/livereco/client/pyproject.toml ./
-          mv holowizard/livereco/client/MANIFEST.in ./
-          mv holowizard/livereco/client/requirements.txt ./
+          rm holowizard/__init__.py
+          mv holowizard/livereco/client/pyproject_tocopytoroot.toml ./pyproject.toml
+          mv holowizard/livereco/client/MANIFEST_tocopytoroot.in ./MANIFEST.in
+          mv holowizard/livereco/client/requirements_tocopytoroot.txt ./requirements.txt
+          mv holowizard/livereco/client/__init__tocopytoholowizard.txt ./holowizard/__init__.py
 
       - name: Build release distributions
         run: |
