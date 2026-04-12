@@ -1,7 +1,7 @@
 tqdm
 numpy==1.26.4
-torch
-torchvision
+torch==2.10
+torchvision==0.25
 matplotlib
 PySide2
 pandas
