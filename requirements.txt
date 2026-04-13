@@ -28,3 +28,4 @@ hydra-core
 fastapi[standard]
 markdown
 plotly
+starlette==0.52.1
