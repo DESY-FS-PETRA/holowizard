@@ -25,8 +25,8 @@ if "cuda" in holowizard.core.torch_running_device_name:
 else:
     from holowizard.core.models.fresnel_propagator_torch import FresnelPropagator
 
-from holowizard.core.phantoms import dicty_sketch
-from holowizard.core.preprocessing.process_data_dimensions import (
+from holowizard.core.utils.phantoms import dicty_sketch
+from holowizard.core.methods.preprocessing.process_data_dimensions import (
     process_data_dimensions,
 )
 from holowizard.core.utils.transform import pad_to_size, crop_center
