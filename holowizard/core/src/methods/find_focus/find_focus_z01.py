@@ -7,7 +7,7 @@ from typing import List
 
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.src.parameters.reco_params import RecoParams
-from holowizard.core.src.reconstruction.single_projection.reconstruct_multistage import (
+from holowizard.core.src.methods.reconstruction.single_projection.reconstruct_multistage import (
     reconstruct,
 )
 from holowizard.core.src.parameters.options import Options
@@ -15,8 +15,8 @@ from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
 from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.utils.transform import crop_center
-from holowizard.core.src.reconstruction.viewer import Viewer
-from holowizard.core.src.reconstruction.plotter.plotter import Plotter
+from holowizard.core.src.methods.reconstruction.viewer import Viewer
+from holowizard.core.src.methods.reconstruction.plotter.plotter import Plotter
 
 
 z01_values_history = []

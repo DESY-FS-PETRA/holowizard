@@ -6,7 +6,7 @@ import sys
 from typing import List
 import math
 
-from holowizard.core.src.reconstruction.single_projection.reconstruct_multistage import (
+from holowizard.core.src.methods.reconstruction.single_projection.reconstruct_multistage import (
     reconstruct,
 )
 from holowizard.core.src.parameters.options import Options

@@ -2,10 +2,10 @@ import torch
 import logging
 
 import holowizard.core.src
-from holowizard.core.src.reconstruction.constraints import regularization
-from holowizard.core.src.reconstruction.gradients.analytical import get_gradient
-from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.reconstruction.utils.filter import get_filter_kernels
+from holowizard.core.src.methods.reconstruction.constraints import regularization
+from holowizard.core.src.methods.reconstruction.gradients.analytical import get_gradient
+from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.utils.filter import get_filter_kernels
 from holowizard.core.src.utils.transform import crop_center
 
 

@@ -2,10 +2,10 @@ import torch
 from typing import List
 import logging
 
-from holowizard.core.src.reconstruction.utils.logging import log_input, log_params, log_results
-from holowizard.core.src.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
-from holowizard.core.src.reconstruction.viewer import Viewer
-from holowizard.core.src.reconstruction.methods.asrm.reconstruct_single_stage import reconstruct_single_stage
+from holowizard.core.src.methods.reconstruction.utils.logging import log_input, log_params, log_results
+from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
+from holowizard.core.src.methods.reconstruction.viewer import Viewer
+from holowizard.core.src.methods.reconstruction.methods.asrm.reconstruct_single_stage import reconstruct_single_stage
 import holowizard.core.src
 
 if "cuda" in holowizard.core.src.torch_running_device_name:

@@ -11,7 +11,7 @@ from holowizard.core.src.parameters.options import Options
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
 from holowizard.core.src.parameters import member_value_adapter, measurement
 from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
-from holowizard.core.src.reconstruction.viewer import Viewer
+from holowizard.core.src.methods.reconstruction.viewer import Viewer
 
 
 @dataclass(init=True)

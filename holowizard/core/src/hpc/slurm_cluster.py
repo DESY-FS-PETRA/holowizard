@@ -7,7 +7,7 @@ import logging
 from dask import config
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
-from holowizard.core.src.reconstruction.controller.dask_utils.scheduler import start_scheduler
+from holowizard.core.src.methods.reconstruction.controller.dask_utils.scheduler import start_scheduler
 from holowizard.core.src.parameter_classes.dask_options import DaskOptions
 
 
@@ -155,35 +155,4 @@ class SlurmCluster():
             pure=False,
         )
 
-        return future
-
-    def submit_sirt_task_get_future(self, task, slices_indices, tomogram_path, root, updated_keys_list, angles, n_iters, cor, part, key=0):
-        future = self.client_scheduler.submit(
-            task,
-            slices_indices,
-            tomogram_path,
-            root,
-            updated_keys_list,
-            angles,
-            n_iters,
-            cor,
-            part,
-            priority=100,
-            key=f"{task.__name__}-{uuid.uuid4()}-{key}",
-            pure=False,
-        )
-        return future
-    
-    def submit_forward_projection_task_get_future(self, task, tomogram_path, output_dir, angle_keys, angles, cor, key=0):
-        future = self.client_scheduler.submit(
-            task,
-            tomogram_path,
-            output_dir,
-            angle_keys,
-            angles,
-            cor,
-            priority=100,
-            key=f"{task.__name__}-{uuid.uuid4()}-{key}",
-            pure=False,
-        )
         return future

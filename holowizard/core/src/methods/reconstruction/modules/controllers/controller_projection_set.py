@@ -14,20 +14,20 @@ from pathlib import Path
 import holowizard.core.src
 from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.core.src.parameters.reco_params import RecoParams
-from holowizard.core.src.reconstruction.viewer.viewer import Viewer
-from holowizard.core.src.preprocessing.process_padding_options import process_data_dimensions 
+from holowizard.core.src.methods.reconstruction.viewer.viewer import Viewer
+from holowizard.core.src.methods.preprocessing.process_padding_options import process_data_dimensions 
 
-from holowizard.core.src.reconstruction.contexts.context_projection_set import ContextProjectionsSet
-from holowizard.core.src.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.reconstruction.controller.controller_projection_multistage_lazy import ControllerProjectionMultistageLazy as ControllerProjectionMultistage
-from holowizard.core.src.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
-from holowizard.core.src.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
-from holowizard.core.src.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
-from holowizard.core.src.reconstruction.controller.tasks.broadcast_task import broadcast_task
-from holowizard.core.src.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import task_run_asrm_lazyflipandpad as task_run_asrm
+from holowizard.core.src.methods.reconstruction.contexts.context_projection_set import ContextProjectionsSet
+from holowizard.core.src.methods.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage_lazy import ControllerProjectionMultistageLazy as ControllerProjectionMultistage
+from holowizard.core.src.methods.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
+from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
+from holowizard.core.src.methods.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
+from holowizard.core.src.methods.reconstruction.controller.tasks.broadcast_task import broadcast_task
+from holowizard.core.src.methods.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import task_run_asrm_lazyflipandpad as task_run_asrm
 
-from holowizard.core.src.reconstruction.controller.visualization import slider_2_3d_matrices
+from holowizard.core.src.methods.reconstruction.controller.visualization import slider_2_3d_matrices
 #from memory_profiler import profile
 
 class ControllerProjectionSet:

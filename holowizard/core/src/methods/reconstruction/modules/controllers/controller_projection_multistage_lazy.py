@@ -3,14 +3,14 @@ from copy import deepcopy
 from pathlib import Path
 
 import holowizard.core.src
-from holowizard.core.src.preprocessing.process_padding_options import (
+from holowizard.core.src.methods.preprocessing.process_padding_options import (
     process_padding_options_noflipandpad,
 )
 
-from holowizard.core.src.reconstruction.utils.logging import log_preprocessed_params
-from holowizard.core.src.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
-from holowizard.core.src.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.utils.logging import log_preprocessed_params
+from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
+from holowizard.core.src.methods.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
 from holowizard.core.src.utils.transform import resize_arrays_to_size
 
 from holowizard.core.src.utils.memory import memory_breakdown
