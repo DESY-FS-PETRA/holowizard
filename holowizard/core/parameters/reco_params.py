@@ -1,6 +1,7 @@
 import sys
 from typing import List
 import json
+import os 
 
 from holowizard.core.parameters.beam_setup import BeamSetup
 from holowizard.core.parameters.measurement import Measurement
@@ -45,6 +46,26 @@ class RecoParams:
         json_writable = JsonInput(self)
 
         return json.dumps(json_writable, default=lambda o: o.__dict__)
+
+    def to_log_json(self):
+        log_dict = {
+            "beam_setup": json.loads(self.beam_setup.to_log_json()),
+            #"measurements": [json.loads(measurement.to_log_json()) for measurement in self.measurements],
+            "reco_options": [json.loads(reco_option.to_log_json()) for reco_option in self.reco_options],
+            "data_dimensions": json.loads(self.data_dimensions.to_log_json()),
+            "output_path": self.output_path,
+            "session_params": self.session_params.get_dict() if self.session_params is not None else None,
+        }
+        return json.dumps(log_dict, indent=4)
+
+    def save_log_json(self):
+        os.makedirs(self.output_path, exist_ok=True)
+        file_path = os.path.join(self.output_path, "params_log.json")
+
+        with open(file_path, "w") as f:
+            f.write(self.to_log_json())
+
+        return file_path
 
     @staticmethod
     def from_json(data):
@@ -128,7 +149,7 @@ class RecoParams:
 
     @reco_options.setter
     def reco_options(self, reco_options):
-        if type(reco_options) is list and len(reco_options) > 0 and type(reco_options[0]) is Options:
+        if isinstance(reco_options, list) and reco_options and isinstance(reco_options[0], (Options)):
             self._reco_options = reco_options
         else:
             raise TypeError("Expected list[Options] but got ", type(reco_options)).with_traceback(sys.exc_info()[2])

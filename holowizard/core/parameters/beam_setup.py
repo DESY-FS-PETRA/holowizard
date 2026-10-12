@@ -1,16 +1,18 @@
 import json
+from pathlib import Path
 
 from holowizard.core.parameters import member_value_adapter
 from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
 
 
 class BeamSetup:
-    def __init__(self, energy, px_size, z02, flat_field=None, probe=None):
+    def __init__(self, energy, px_size, z02, flat_field=None, probe=None, probe_path=None):
         self.energy = energy
         self.px_size = px_size
         self.z02 = z02
         self.flat_field = flat_field
-        self.probe = probe
+        self.probe_refractive = member_value_adapter.get_array_refractive_from_wavefield(probe)
+        self.probe_path = probe_path
 
     @staticmethod
     def unit_energy():
@@ -41,8 +43,9 @@ class BeamSetup:
                 self.energy = beam_setup.energy
                 self.px_size = beam_setup.px_size
                 self.z02 = beam_setup.z02
+                self.probe_path = member_value_adapter.get_string(beam_setup.probe_path)
                 self.flat_field = JsonWritable.get_array(member_value_adapter.get_numpy_array(beam_setup.flat_field))
-                self.probe = JsonWritable.get_array(beam_setup.probe)
+                self.probe = JsonWritable.get_array(member_value_adapter.get_numpy_array_complex(beam_setup.probe))
 
         json_writable = JsonWriterInput(self)
 
@@ -61,6 +64,9 @@ class BeamSetup:
         if "energy" not in data or "px_size" not in data or "z02" not in data:
             return None
 
+        if "flat_field" not in data or "probe" not in data:
+            return None
+
         flat_field = JsonWritable.get_numpy_from_array(data["flat_field"])
         probe = JsonWritable.get_numpy_from_array(data["probe"])
 
@@ -70,6 +76,7 @@ class BeamSetup:
             z02=data["z02"],
             flat_field=flat_field,
             probe=probe,
+            probe_path=data["probe_path"],
         )
 
     @property
@@ -90,11 +97,15 @@ class BeamSetup:
 
     @property
     def probe(self):
-        return self._probe
+        return member_value_adapter.get_array_wavefield_from_refractive(self.probe_refractive)
 
     @property
     def probe_refractive(self):
-        return member_value_adapter.get_array_refractive_from_wavefield(self._probe)
+        return self._probe_refractive
+    
+    @property
+    def probe_path(self):
+        return self._probe_path
 
     @energy.setter
     def energy(self, energy):
@@ -112,10 +123,14 @@ class BeamSetup:
     def flat_field(self, flat_field) -> None:
         self._flat_field = member_value_adapter.get_array(flat_field)
 
-    @probe.setter
-    def probe(self, probe) -> None:
-        self._probe = member_value_adapter.get_array(probe)
+    #@probe.setter
+    #def probe(self, probe) -> None:
+    #    self._probe = member_value_adapter.get_array(probe)
 
     @probe_refractive.setter
-    def probe_refractive(self, probe) -> None:
-        self._probe = member_value_adapter.get_array_wavefield_from_refractive(probe)
+    def probe_refractive(self, probe_refractive) -> None:
+        self._probe_refractive = member_value_adapter.get_array(probe_refractive)
+
+    @probe_path.setter
+    def probe_path(self, probe_path):
+        self._probe_path = member_value_adapter.get_path(probe_path)

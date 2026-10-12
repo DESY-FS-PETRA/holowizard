@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from pathlib import Path
 
 from holowizard.core.parameters.type_conversion.member_value_adapter_interface import (
     MemberValueAdapterInterface,
@@ -56,10 +57,19 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
 
     @staticmethod
     def get_float(data):
-        if type(data) is float or type(data) is np.float64:
-            return data
+        if type(data) is float or isinstance(data, np.floating):
+            return float(data)
         elif type(data) is int:
             return float(data)
+        else:
+            raise TypeError("Expected float or int but got ", type(data)).with_traceback(sys.exc_info()[2])
+
+    @staticmethod
+    def get_numpy_float(data):
+        if type(data) is float or isinstance(data, np.floating):
+            return np.float32(data)
+        elif type(data) is int:
+            return np.float32(data)
         else:
             raise TypeError("Expected float or int but got ", type(data)).with_traceback(sys.exc_info()[2])
 
@@ -134,7 +144,22 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
 
     @staticmethod
     def get_string(data):
+        if data is None:
+            return None
         if type(data) is str:
             return data
+        if isinstance(data, Path):
+            return str(data)
         else:
-            raise TypeError("Expected string but got ", type(data)).with_traceback(sys.exc_info()[2])
+            raise TypeError("Expected string or Path but got ", type(data)).with_traceback(sys.exc_info()[2])
+        
+    @staticmethod
+    def get_path(data):
+        if data is None:
+            return None
+        if type(data) is str:
+            return Path(data)
+        if isinstance(data, Path):
+            return data
+        else:
+            raise TypeError("Expected string or Path but got ", type(data)).with_traceback(sys.exc_info()[2])

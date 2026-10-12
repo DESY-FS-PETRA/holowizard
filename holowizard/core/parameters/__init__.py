@@ -8,6 +8,7 @@ if importlib.util.find_spec("torch") is not None:
     )
 
     member_value_adapter = MemberValueAdapterTorch
+
 else:
     from holowizard.core.parameters.type_conversion.member_value_adapter_numpy import (
         MemberValueAdapterNumpy,

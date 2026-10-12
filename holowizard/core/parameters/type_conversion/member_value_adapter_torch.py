@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from pathlib import Path
 
 import holowizard.core
 from holowizard.core.parameters.type_conversion.member_value_adapter_numpy import (
@@ -114,3 +115,12 @@ if "torch" in sys.modules:
 
             data_torch = MemberValueAdapterTorch.get_array(data)
             return torch.angle(data_torch) - 1j * torch.log(torch.abs(data_torch))
+
+        @staticmethod
+        def get_string(data):
+            if type(data) is str:
+                return data
+            if isinstance(data, Path):
+                return str(data)
+            else:
+                raise TypeError("Expected string or Path but got ", type(data)).with_traceback(sys.exc_info()[2])

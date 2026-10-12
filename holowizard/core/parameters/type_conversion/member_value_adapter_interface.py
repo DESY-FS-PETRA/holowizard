@@ -36,6 +36,10 @@ class MemberValueAdapterInterface(ABC):
 
     @staticmethod
     @abstractmethod
+    def get_numpy_float(data): ...
+
+    @staticmethod
+    @abstractmethod
     def get_float(data): ...
 
     @staticmethod
@@ -45,6 +49,10 @@ class MemberValueAdapterInterface(ABC):
     @staticmethod
     @abstractmethod
     def get_string(data): ...
+
+    @staticmethod
+    @abstractmethod
+    def get_path(data): ...
 
     @staticmethod
     @abstractmethod
