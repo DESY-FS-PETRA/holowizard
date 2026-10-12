@@ -6,9 +6,9 @@ import traceback
 import time
 
 import holowizard.core.src
-from holowizard.core.src.utils.fileio import check_file_exists
-from holowizard.core.src.utils.torchio import write_torch_array
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.misc.fileio import check_file_exists
+from holowizard.core.src.misc.torchio import write_torch_array
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
 from holowizard.core.src.methods.reconstruction.controller.io.controller_beam_setup_io import ControllerBeamSetupIO
 
 class ControllerSingleStageContextIO:

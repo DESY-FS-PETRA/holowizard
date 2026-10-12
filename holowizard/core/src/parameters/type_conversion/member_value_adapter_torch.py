@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 import holowizard.core.src
-from holowizard.core.src.src.parameter_classes.type_conversion.member_value_adapter_numpy import (
+from holowizard.core.src.parameter_classes.type_conversion.member_value_adapter_numpy import (
     MemberValueAdapterNumpy,
 )
 

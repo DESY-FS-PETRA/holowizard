@@ -5,12 +5,12 @@ import torchvision.transforms as ttf
 import math
 from torchvision.transforms import InterpolationMode
 
-from holowizard.core.src.utils.transform import crop_center
-from holowizard.core.src.utils.transform import pad_to_size
+from holowizard.core.src.misc.transform import crop_center
+from holowizard.core.src.misc.transform import pad_to_size
 
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
 from holowizard.core.src.parameters.padding import Padding
-from holowizard.core.src.methods.reconstruction.constraints.window_2d import get_2d_window
+from holowizard.core.src.methods.preprocessing.window_2d import get_2d_window
 
 from .boundaries import Boundaries
 

@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 
-from holowizard.core.src.src.parameter_classes import member_value_adapter
+from holowizard.core.src.parameter_classes import member_value_adapter
 from holowizard.core.src.parameter_classes.type_conversion.json_writable import JsonWritable
 
 

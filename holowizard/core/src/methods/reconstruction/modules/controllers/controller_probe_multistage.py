@@ -12,17 +12,17 @@ from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.methods.reconstruction.viewer.viewer import Viewer
-from holowizard.core.src.methods.reconstruction.contexts.context_probe_multistage import ContextProbeMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_probe_multistage import ContextProbeMultistage
 from holowizard.core.src.methods.preprocessing.process_padding_options import process_beam_setup_noflipandpad, process_data_dimensions
 from holowizard.core.src.methods.preprocessing.process_data_dimensions import get_window_from_padding_options
 from holowizard.core.src.methods.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_set import ContextProjectionsSet
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_set import ContextProjectionsSet
 from holowizard.core.src.methods.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
 from holowizard.core.src.methods.reconstruction.controller.io.controller_beam_setup_io import ControllerBeamSetupIO
 from holowizard.core.src.methods.reconstruction.controller.controller_projection_set import ControllerProjectionSet
 from holowizard.core.src.methods.reconstruction.constraints import regularization
 from holowizard.core.src.methods.reconstruction.utils.filter import get_filter_kernels
-from holowizard.core.src.utils.transform import resize_arrays_to_size
+from holowizard.core.src.misc.transform import resize_arrays_to_size
 
 
 
@@ -30,7 +30,7 @@ from holowizard.core.src.models.fresnel_propagator_torch import FresnelPropagato
 from holowizard.core.src.methods.reconstruction.gradients.analytical import get_gradient
 
 from holowizard.core.src.methods.preprocessing.flip_and_pad import flip_and_pad_and_fade
-from holowizard.core.src.utils.transform import crop_center
+from holowizard.core.src.misc.transform import crop_center
 
 class ControllerProbeMultistage:
     def __init__(self, working_dir:Path):

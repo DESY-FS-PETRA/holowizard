@@ -3,8 +3,8 @@ import logging
 import numpy as np
 
 from holowizard.core.src.logging.logger import Logger
-from holowizard.core.src.utils.transform import crop_center
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.misc.transform import crop_center
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
 
 
 def log_preprocessed_params(beam_setup, data_dimensions):

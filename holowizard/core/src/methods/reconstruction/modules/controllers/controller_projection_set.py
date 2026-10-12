@@ -17,9 +17,9 @@ from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.methods.reconstruction.viewer.viewer import Viewer
 from holowizard.core.src.methods.preprocessing.process_padding_options import process_data_dimensions 
 
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_set import ContextProjectionsSet
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_set import ContextProjectionsSet
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
 from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage_lazy import ControllerProjectionMultistageLazy as ControllerProjectionMultistage
 from holowizard.core.src.methods.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
 from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO

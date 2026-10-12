@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.decomposition import FastICA
 
-from holowizard.core.src.utils.remove_outliers import remove_outliers_multiprocess_wrapper
+from holowizard.core.src.misc.remove_outliers import remove_outliers_multiprocess_wrapper
 
 
 def calculate_flatfield_components(ref_data, num_components, model=FastICA, log_mode=True):

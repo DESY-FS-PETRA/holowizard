@@ -9,10 +9,10 @@ import logging
 import holowizard.core.src
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.src.parameters.dask_options import DaskOptions
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_set import ContextProjectionsSet
-from holowizard.core.src.utils.transform import crop_center
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_set import ContextProjectionsSet
+from holowizard.core.src.misc.transform import crop_center
 from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
 
 

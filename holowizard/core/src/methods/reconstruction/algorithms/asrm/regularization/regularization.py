@@ -1,7 +1,7 @@
 import torch
 
-from holowizard.core.src.parameter_classes.padding import Padding
-from holowizard.core.src.src.parameter_classes.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.padding import Padding
+from holowizard.core.src.parameter_classes.data_dimensions import DataDimensions
 from holowizard.core.src.methods.preprocessing.process_image import flip_and_pad
 
 

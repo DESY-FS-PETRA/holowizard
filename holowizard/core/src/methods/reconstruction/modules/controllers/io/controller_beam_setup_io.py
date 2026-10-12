@@ -6,8 +6,8 @@ import traceback
 
 import holowizard.core.src
 from holowizard.core.src.parameters.beam_setup import BeamSetup
-from holowizard.core.src.utils.fileio import check_file_exists
-from holowizard.core.src.utils.torchio import write_torch_array
+from holowizard.core.src.misc.fileio import check_file_exists
+from holowizard.core.src.misc.torchio import write_torch_array
 
 class ControllerBeamSetupIO:
     def __init__(self, default_postfix=None):

@@ -15,9 +15,9 @@ from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.methods.reconstruction.viewer.viewer import Viewer
 from holowizard.core.src.methods.reconstruction.utils.logging import Logger, log_preprocessed_params
-from holowizard.core.src.utils.transform import resize_arrays_to_size
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.methods.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.misc.transform import resize_arrays_to_size
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
 from holowizard.core.src.models.cone_beam import ConeBeam
 
 

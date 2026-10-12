@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from holowizard.core.src.utils.remove_outliers import remove_outliers
+from holowizard.core.src.misc.remove_outliers import remove_outliers
 import holowizard.core.src
 
 
