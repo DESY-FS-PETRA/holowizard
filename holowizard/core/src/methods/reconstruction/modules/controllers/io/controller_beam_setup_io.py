@@ -4,10 +4,10 @@ import torch
 from pathlib import Path
 import traceback
 
-import holowizard.core
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.utils.fileio import check_file_exists
-from holowizard.core.utils.torchio import write_torch_array
+import holowizard.core.src
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.utils.fileio import check_file_exists
+from holowizard.core.src.utils.torchio import write_torch_array
 
 class ControllerBeamSetupIO:
     def __init__(self, default_postfix=None):
@@ -30,7 +30,7 @@ class ControllerBeamSetupIO:
         
         try:
             check_file_exists(file_path=file_path)
-            beam_setup.probe_refractive = torch.load(file_path).to(holowizard.core.torch_running_device)
+            beam_setup.probe_refractive = torch.load(file_path).to(holowizard.core.src.torch_running_device)
         except Exception as exception:
             tb = traceback.format_exc()
             raise RuntimeError(f"Could not read probe file with name {file_path}: {tb}") from exception

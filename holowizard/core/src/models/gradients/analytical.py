@@ -1,8 +1,8 @@
 import torch
 from typing import List
 
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.measurement import Measurement
 
 
 def get_gradient(

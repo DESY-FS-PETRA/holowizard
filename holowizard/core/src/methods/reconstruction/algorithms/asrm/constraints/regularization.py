@@ -1,8 +1,8 @@
 import torch
 
-from holowizard.core.parameters.padding import Padding
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.preprocessing.process_image import flip_and_pad
+from holowizard.core.src.parameter_classes.padding import Padding
+from holowizard.core.src.src.parameter_classes.data_dimensions import DataDimensions
+from holowizard.core.src.methods.preprocessing.process_image import flip_and_pad
 
 
 def apply_padding_refractive(image, data_dimensions: DataDimensions, padding_options: Padding, a0_log):

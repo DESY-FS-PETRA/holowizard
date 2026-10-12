@@ -1,6 +1,6 @@
 import glob
 
-from holowizard.core.utils.fileio import load_img_data
+from holowizard.core.misc.fileio import load_img_data
 
 
 def default_load_data_callback(glob_data_path, image_index):

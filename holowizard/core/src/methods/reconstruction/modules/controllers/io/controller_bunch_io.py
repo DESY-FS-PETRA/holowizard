@@ -6,14 +6,14 @@ import os
 from tqdm import tqdm
 import logging
 
-import holowizard.core
-from holowizard.core.logging.logger import Logger
-from holowizard.core.parameters.dask_options import DaskOptions
-from holowizard.core.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.reconstruction.contexts.context_projection_set import ContextProjectionsSet
-from holowizard.core.utils.transform import crop_center
-from holowizard.core.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
+import holowizard.core.src
+from holowizard.core.src.logging.logger import Logger
+from holowizard.core.src.parameters.dask_options import DaskOptions
+from holowizard.core.src.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.reconstruction.contexts.context_projection_set import ContextProjectionsSet
+from holowizard.core.src.utils.transform import crop_center
+from holowizard.core.src.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
 
 
 class ControllerBunchIO:
@@ -94,7 +94,7 @@ class ControllerBunchIO:
             file.write(current_stage_context.to_json())
 
     def read_context_file(
-        self, key: str, dask_options: DaskOptions, timeout=1000, device=holowizard.core.torch_running_device
+        self, key: str, dask_options: DaskOptions, timeout=1000, device=holowizard.core.src.torch_running_device
     ) -> ContextProjectionSingleStage:
         file_name = "projection_context_" + key + ".txt"
         file_path = dask_options.working_dir / file_name

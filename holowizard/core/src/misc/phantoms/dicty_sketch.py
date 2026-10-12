@@ -2,8 +2,8 @@ import os
 import numpy as np
 from skimage import io
 
-from holowizard.core.phantoms.model_wave_field import model_wave_field
-import holowizard.core.phantoms.options as options
+from holowizard.core.src.misc.phantoms.model_wave_field import model_wave_field
+import holowizard.core.src.misc.phantoms.options as options
 
 
 def dicty_sketch(N):

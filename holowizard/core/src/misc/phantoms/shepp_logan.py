@@ -1,8 +1,8 @@
 from skimage.data import shepp_logan_phantom
 import numpy as np
 
-from holowizard.core.phantoms.model_wave_field import model_wave_field
-import holowizard.core.phantoms.options as options
+from holowizard.core.src.misc.phantoms.model_wave_field import model_wave_field
+import holowizard.core.src.misc.phantoms.options as options
 
 
 def shepp_logan(N):

@@ -2,13 +2,13 @@ import torch
 from typing import List
 import logging
 
-from holowizard.core.reconstruction.utils.logging import log_input, log_params, log_results
-from holowizard.core.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
-from holowizard.core.reconstruction.viewer import Viewer
-from holowizard.core.reconstruction.methods.asrm.reconstruct_single_stage import reconstruct_single_stage
-import holowizard.core
+from holowizard.core.src.reconstruction.utils.logging import log_input, log_params, log_results
+from holowizard.core.src.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
+from holowizard.core.src.reconstruction.viewer import Viewer
+from holowizard.core.src.reconstruction.methods.asrm.reconstruct_single_stage import reconstruct_single_stage
+import holowizard.core.src
 
-if "cuda" in holowizard.core.torch_running_device_name:
+if "cuda" in holowizard.core.src.torch_running_device_name:
     import cupy as cp
 
 
@@ -35,7 +35,7 @@ def reconstruct_asrm(
         controller.prepare_next_reco_block(context_multi_stage)
         reconstruct_single_stage(context_multi_stage.current_projection_singlestage)
 
-        if "cuda" in holowizard.core.torch_running_device_name:
+        if "cuda" in holowizard.core.src.torch_running_device_name:
             torch.cuda.empty_cache()  # should empty device cache
             cp.get_default_memory_pool().free_all_blocks()
 

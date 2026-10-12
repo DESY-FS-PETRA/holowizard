@@ -1,7 +1,7 @@
 import torch
-import holowizard.core
+import holowizard.core.src
 
-if "cuda" in holowizard.core.torch_running_device_name:
+if "cuda" in holowizard.core.src.torch_running_device_name:
     from cupyx.scipy.ndimage import fourier_gaussian
     from cupy import ones
 else:

@@ -2,10 +2,10 @@ import logging
 import torch
 from typing import List
 
-from holowizard.core.parameters.reco_params import RecoParams
+from holowizard.core.src.parameter_classes.reco_params import RecoParams
 from holowizard.core.reconstruction.single_projection.reconstruct_multistage import reconstruct as reco_multistage
-from holowizard.core.utils.transform import crop_center
-from holowizard.core.reconstruction.viewer import Viewer
+from holowizard.core.misc.transform import crop_center
+from holowizard.core.misc.viewer import Viewer
 
 
 def reconstruct(reco_params: RecoParams, viewer: List[Viewer] = []):

@@ -2,8 +2,8 @@ import sys
 import numpy as np
 from pathlib import Path
 
-import holowizard.core
-from holowizard.core.parameters.type_conversion.member_value_adapter_numpy import (
+import holowizard.core.src
+from holowizard.core.src.src.parameter_classes.type_conversion.member_value_adapter_numpy import (
     MemberValueAdapterNumpy,
 )
 
@@ -26,7 +26,7 @@ if "torch" in sys.modules:
             elif type(data) is torch.Tensor:
                 return data.to(torch.complex64)
             elif type(data) is np.ndarray:
-                return torch.from_numpy(data.astype(np.complex64)).to(holowizard.core.torch_running_device)
+                return torch.from_numpy(data.astype(np.complex64)).to(holowizard.core.src.torch_running_device)
             else:
                 raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
                     sys.exc_info()[2]
@@ -39,7 +39,7 @@ if "torch" in sys.modules:
             elif type(data) is torch.Tensor:
                 return data.to(torch.float)
             elif type(data) is np.ndarray:
-                return torch.from_numpy(data.astype(np.single)).to(holowizard.core.torch_running_device)
+                return torch.from_numpy(data.astype(np.single)).to(holowizard.core.src.torch_running_device)
             else:
                 raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
                     sys.exc_info()[2]
@@ -52,7 +52,7 @@ if "torch" in sys.modules:
             elif type(data) is torch.Tensor:
                 return data.to(torch.uint16)
             elif type(data) is np.ndarray:
-                return torch.from_numpy(data.astype(np.uint16)).to(holowizard.core.torch_running_device)
+                return torch.from_numpy(data.astype(np.uint16)).to(holowizard.core.src.torch_running_device)
             else:
                 raise TypeError("Expected torch tensor or numpy array but got ", type(data)).with_traceback(
                     sys.exc_info()[2]

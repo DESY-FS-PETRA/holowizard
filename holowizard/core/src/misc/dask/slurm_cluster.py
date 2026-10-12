@@ -7,8 +7,8 @@ import logging
 from dask import config
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
-from holowizard.core.reconstruction.controller.dask_utils.scheduler import start_scheduler
-from holowizard.core.parameters.dask_options import DaskOptions
+from holowizard.core.src.reconstruction.controller.dask_utils.scheduler import start_scheduler
+from holowizard.core.src.parameter_classes.dask_options import DaskOptions
 
 
 class SlurmCluster():

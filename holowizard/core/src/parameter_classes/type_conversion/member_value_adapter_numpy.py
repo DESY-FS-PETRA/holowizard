@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from pathlib import Path
 
-from holowizard.core.parameters.type_conversion.member_value_adapter_interface import (
+from holowizard.core.src.parameter_classes.type_conversion.member_value_adapter_interface import (
     MemberValueAdapterInterface,
 )
 

@@ -3,17 +3,17 @@ from tqdm import tqdm
 from typing import List
 from dask.distributed import as_completed
 
-import holowizard.core
-from holowizard.core.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
-from holowizard.core.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+import holowizard.core.src
+from holowizard.core.src.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
+from holowizard.core.src.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
 
 def broadcast_task(
     cluster: SlurmCluster,
     projection_contexts: List[ContextProjectionMultistage],
     task,
     keys=None,
-    device=holowizard.core.torch_running_device,
+    device=holowizard.core.src.torch_running_device,
     max_retries: int = 3,
 ) -> List[ContextProjectionSingleStage]:
     results = []

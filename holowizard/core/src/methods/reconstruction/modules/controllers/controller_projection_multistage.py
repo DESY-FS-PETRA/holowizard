@@ -6,24 +6,24 @@ import logging
 from enum import Enum
 import os
 
-import holowizard.core
-from holowizard.core.preprocessing.process_padding_options import (
+import holowizard.core.src
+from holowizard.core.src.preprocessing.process_padding_options import (
     process_padding_options,
 )
-from holowizard.core.parameters.measurement import Measurement
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.reconstruction.viewer.viewer import Viewer
-from holowizard.core.reconstruction.utils.logging import Logger, log_preprocessed_params
-from holowizard.core.utils.transform import resize_arrays_to_size
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.models.cone_beam import ConeBeam
+from holowizard.core.src.parameters.measurement import Measurement
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.reconstruction.viewer.viewer import Viewer
+from holowizard.core.src.reconstruction.utils.logging import Logger, log_preprocessed_params
+from holowizard.core.src.utils.transform import resize_arrays_to_size
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.models.cone_beam import ConeBeam
 
 
 class ControllerProjectionMultistage:
     def create_multistage_context(
-        self, reco_params: RecoParams, viewer: List[Viewer] = None, torch_device=holowizard.core.torch_running_device
+        self, reco_params: RecoParams, viewer: List[Viewer] = None, torch_device=holowizard.core.src.torch_running_device
     ):
         context_multistage = ContextProjectionMultistage(
             current_projection_singlestage=None,

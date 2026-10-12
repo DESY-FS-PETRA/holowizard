@@ -11,23 +11,23 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
-import holowizard.core
-from holowizard.core.parameters.dask_options import DaskOptions
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.reconstruction.viewer.viewer import Viewer
-from holowizard.core.preprocessing.process_padding_options import process_data_dimensions 
+import holowizard.core.src
+from holowizard.core.src.parameters.dask_options import DaskOptions
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.reconstruction.viewer.viewer import Viewer
+from holowizard.core.src.preprocessing.process_padding_options import process_data_dimensions 
 
-from holowizard.core.reconstruction.contexts.context_projection_set import ContextProjectionsSet
-from holowizard.core.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.reconstruction.controller.controller_projection_multistage_lazy import ControllerProjectionMultistageLazy as ControllerProjectionMultistage
-from holowizard.core.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
-from holowizard.core.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
-from holowizard.core.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
-from holowizard.core.reconstruction.controller.tasks.broadcast_task import broadcast_task
-from holowizard.core.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import task_run_asrm_lazyflipandpad as task_run_asrm
+from holowizard.core.src.reconstruction.contexts.context_projection_set import ContextProjectionsSet
+from holowizard.core.src.reconstruction.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.reconstruction.controller.controller_projection_multistage_lazy import ControllerProjectionMultistageLazy as ControllerProjectionMultistage
+from holowizard.core.src.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
+from holowizard.core.src.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
+from holowizard.core.src.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
+from holowizard.core.src.reconstruction.controller.tasks.broadcast_task import broadcast_task
+from holowizard.core.src.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import task_run_asrm_lazyflipandpad as task_run_asrm
 
-from holowizard.core.reconstruction.controller.visualization import slider_2_3d_matrices
+from holowizard.core.src.reconstruction.controller.visualization import slider_2_3d_matrices
 #from memory_profiler import profile
 
 class ControllerProjectionSet:
@@ -51,7 +51,7 @@ class ControllerProjectionSet:
         self.start_stage = start_stage
 
         if torch_device is None:
-            torch_device = holowizard.core.torch_running_device 
+            torch_device = holowizard.core.src.torch_running_device 
 
 
         logging.info("Creating Projections context")
@@ -318,12 +318,12 @@ class ControllerProjectionSet:
         #        if context.projection_contexts[i].key == key:
         #            #self.controller_bunch_io.read_bunch(context, [key],verbose=False)
         #            path = context.projection_contexts[i].current_projection_singlestage.oref_predicted_path
-        #            objects.append(torch.load(path, map_location=holowizard.core.torch_running_device)) 
+        #            objects.append(torch.load(path, map_location=holowizard.core.src.torch_running_device)) 
         #            #self.controller_bunch_io.clean_bunch_from_ram(context, [key])
 
         def load_slice(i):
             path = context.projection_contexts[i].current_projection_singlestage.oref_predicted_path
-            return torch.load(path, map_location=holowizard.core.torch_running_device)
+            return torch.load(path, map_location=holowizard.core.src.torch_running_device)
 
         with ThreadPoolExecutor() as executor:
             objects = list(tqdm(executor.map(load_slice, indices), total=len(indices)))
@@ -331,7 +331,7 @@ class ControllerProjectionSet:
         #objects = []
         #for i in tqdm(indices):
         #    path = context.projection_contexts[i].current_projection_singlestage.oref_predicted_path
-        #    objects.append(torch.load(path, map_location=holowizard.core.torch_running_device))
+        #    objects.append(torch.load(path, map_location=holowizard.core.src.torch_running_device))
    
         return objects
 

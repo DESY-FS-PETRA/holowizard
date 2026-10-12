@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing import List
 from abc import ABC
 
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.options import Options
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.reconstruction.viewer import Viewer
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.options import Options
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.reconstruction.viewer import Viewer
 
 
 @dataclass(init=True)

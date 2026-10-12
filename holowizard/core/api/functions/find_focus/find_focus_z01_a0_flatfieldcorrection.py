@@ -3,12 +3,12 @@ import logging
 import pickle
 import torch
 
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
-from holowizard.core.find_focus.find_focus_z01_a0_orthogonal_search import find_focus as find_focus_internal
-from holowizard.core.reconstruction.viewer import Viewer
-from holowizard.core.preprocessing.correct_flatfield import correct_flatfield
-from holowizard.core.reconstruction.plotter import Plotter
+from holowizard.core.src.parameter_classes.reco_params import RecoParams
+from holowizard.core.src.parameter_classes.flatfield_correction_params import FlatfieldCorrectionParams
+from holowizard.core.methods.find_focus.find_focus_z01_a0_orthogonal_search import find_focus as find_focus_internal
+from holowizard.core.misc.viewer import Viewer
+from holowizard.core.methods.preprocessing.correct_flatfield import correct_flatfield
+from holowizard.core.misc.plotter import Plotter
 
 
 def find_focus(

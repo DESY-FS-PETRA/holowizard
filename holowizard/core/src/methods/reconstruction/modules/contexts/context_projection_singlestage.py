@@ -4,14 +4,14 @@ from dataclasses import dataclass
 from typing import List
 from pathlib import Path
 
-import holowizard.core
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.measurement import Measurement
-from holowizard.core.parameters.options import Options
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters import member_value_adapter, measurement
-from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
-from holowizard.core.reconstruction.viewer import Viewer
+import holowizard.core.src
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.measurement import Measurement
+from holowizard.core.src.parameters.options import Options
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters import member_value_adapter, measurement
+from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.src.reconstruction.viewer import Viewer
 
 
 @dataclass(init=True)
@@ -88,7 +88,7 @@ class ContextProjectionSingleStage:
     @staticmethod
     def from_dict(data, device=None):
         if device is None:
-            device = holowizard.core.torch_running_device
+            device = holowizard.core.src.torch_running_device
 
         if not isinstance(data, dict):
             return None
@@ -171,6 +171,6 @@ class ContextProjectionSingleStage:
     @staticmethod
     def from_json(data, device=None):
         if device is None:
-            device = holowizard.core.torch_running_device
+            device = holowizard.core.src.torch_running_device
         obj_dict = json.loads(data)
         return ContextProjectionSingleStage.from_dict(obj_dict, device)

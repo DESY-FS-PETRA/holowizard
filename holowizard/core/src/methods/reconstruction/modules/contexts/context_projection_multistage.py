@@ -2,8 +2,8 @@ import torch
 from dataclasses import dataclass
 from typing import List
 
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.reconstruction.contexts.abstract_context_multistage import AbstractContextMultistage
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.reconstruction.contexts.abstract_context_multistage import AbstractContextMultistage
 
 
 @dataclass(init=True)

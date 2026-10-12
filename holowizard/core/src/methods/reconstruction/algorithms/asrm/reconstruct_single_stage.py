@@ -1,18 +1,18 @@
 import torch
 import logging
 
-import holowizard.core
-from holowizard.core.reconstruction.constraints import regularization
-from holowizard.core.reconstruction.gradients.analytical import get_gradient
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.reconstruction.utils.filter import get_filter_kernels
-from holowizard.core.utils.transform import crop_center
+import holowizard.core.src
+from holowizard.core.src.reconstruction.constraints import regularization
+from holowizard.core.src.reconstruction.gradients.analytical import get_gradient
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.reconstruction.utils.filter import get_filter_kernels
+from holowizard.core.src.utils.transform import crop_center
 
 
-if "cuda" in holowizard.core.torch_running_device_name:
-    from holowizard.core.models.fresnel_propagator_cupy import FresnelPropagatorCupy as FresnelPropagatorImpl
+if "cuda" in holowizard.core.src.torch_running_device_name:
+    from holowizard.core.src.models.fresnel_propagator_cupy import FresnelPropagatorCupy as FresnelPropagatorImpl
 else:
-    from holowizard.core.models.fresnel_propagator_torch import FresnelPropagatorTorch as FresnelPropagatorImpl
+    from holowizard.core.src.models.fresnel_propagator_torch import FresnelPropagatorTorch as FresnelPropagatorImpl
 
 
 def print_infos(iteration, context: ContextProjectionSingleStage, force_update):
@@ -38,7 +38,7 @@ def print_infos(iteration, context: ContextProjectionSingleStage, force_update):
 def reconstruct_single_stage(context: ContextProjectionSingleStage):
     with torch.no_grad():
         model = FresnelPropagatorImpl(
-            context.fresnel_numbers, context.data_dimensions.total_size, holowizard.core.torch_running_device_name
+            context.fresnel_numbers, context.data_dimensions.total_size, holowizard.core.src.torch_running_device_name
         )
 
         (
@@ -47,13 +47,13 @@ def reconstruct_single_stage(context: ContextProjectionSingleStage):
         ) = get_filter_kernels(
             context.options.regularization_object.gaussian_filter_fwhm,
             context.data_dimensions.total_size,
-            holowizard.core.torch_running_device_name,
+            holowizard.core.src.torch_running_device_name,
         )
 
         filter_kernel_vt, _ = get_filter_kernels(
             context.options.nesterov_object.gaussian_filter_fwhm,
             context.data_dimensions.total_size,
-            holowizard.core.torch_running_device_name,
+            holowizard.core.src.torch_running_device_name,
         )
 
         iteration = None

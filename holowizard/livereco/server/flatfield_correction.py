@@ -5,19 +5,19 @@ import torch
 from typing import List
 
 import holowizard.core
-from holowizard.core.preprocessing.calculate_flatfield_components import (
+from holowizard.core.methods.preprocessing.calculate_flatfield_components import (
     calculate_flatfield_components,
 )
-from holowizard.core.preprocessing.correct_flatfield import correct_flatfield
-from holowizard.core.parameters.flatfield_components_params import (
+from holowizard.core.methods.preprocessing.correct_flatfield import correct_flatfield
+from holowizard.core.src.parameter_classes.flatfield_components_params import (
     FlatfieldComponentsParams,
 )
-from holowizard.core.parameters.flatfield_correction_params import (
+from holowizard.core.src.parameter_classes.flatfield_correction_params import (
     FlatfieldCorrectionParams,
 )
-from holowizard.core.reconstruction.viewer import Viewer
+from holowizard.core.misc.viewer import Viewer
 
-from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.parameter_classes.type_conversion.json_writable import JsonWritable
 
 
 def log_files(files):

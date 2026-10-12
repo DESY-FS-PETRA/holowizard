@@ -5,11 +5,11 @@ from pathlib import Path
 import traceback
 import time
 
-import holowizard.core
-from holowizard.core.utils.fileio import check_file_exists
-from holowizard.core.utils.torchio import write_torch_array
-from holowizard.core.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.reconstruction.controller.io.controller_beam_setup_io import ControllerBeamSetupIO
+import holowizard.core.src
+from holowizard.core.src.utils.fileio import check_file_exists
+from holowizard.core.src.utils.torchio import write_torch_array
+from holowizard.core.src.reconstruction.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.reconstruction.controller.io.controller_beam_setup_io import ControllerBeamSetupIO
 
 class ControllerSingleStageContextIO:
     def __init__(self):
@@ -21,7 +21,7 @@ class ControllerSingleStageContextIO:
         for i in range(tries):
             try:
                 check_file_exists(file_path=file_name)
-                data = torch.load(file_name, map_location=holowizard.core.torch_running_device)
+                data = torch.load(file_name, map_location=holowizard.core.src.torch_running_device)
                 break
             except Exception as exception:
                 if (i+1) <tries:

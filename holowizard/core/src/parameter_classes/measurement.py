@@ -1,7 +1,7 @@
 import json
 
-from holowizard.core.parameters import member_value_adapter
-from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.src.src.parameter_classes import member_value_adapter
+from holowizard.core.src.parameter_classes.type_conversion.json_writable import JsonWritable
 
 
 class Measurement:

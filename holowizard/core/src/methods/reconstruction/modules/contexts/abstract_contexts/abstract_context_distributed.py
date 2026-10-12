@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from abc import ABC
 
-from holowizard.core.parameters.dask_options import DaskOptions
-from holowizard.core.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
+from holowizard.core.src.parameters.dask_options import DaskOptions
+from holowizard.core.src.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
 
 
 @dataclass(init=True)
