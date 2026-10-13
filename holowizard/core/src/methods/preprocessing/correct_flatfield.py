@@ -1,13 +1,13 @@
 import numpy as np
 import torch
-from holowizard.core.src.misc.remove_outliers import remove_outliers
-import holowizard.core.src
+from holowizard.core.utils.remove_outliers import remove_outliers
+import holowizard.core
 
 
 def components_model_to_tensors(components_model):
-    components_model.mean_ = torch.tensor(components_model.mean_, device=holowizard.core.src.torch_running_device)
+    components_model.mean_ = torch.tensor(components_model.mean_, device=holowizard.core.torch_running_device)
     components_model.components_ = torch.tensor(
-        components_model.components_, device=holowizard.core.src.torch_running_device
+        components_model.components_, device=holowizard.core.torch_running_device
     )
 
     return components_model
