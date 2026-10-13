@@ -1,9 +1,9 @@
 import io
-from holowizard.core.misc.viewer.viewer import Viewer
+from holowizard.core.src.visualization.viewer import Viewer
 import zmq
 import matplotlib
 import matplotlib.pyplot as plt
-from holowizard.core.misc.transform import crop_center
+from holowizard.core.src.misc.transform import crop_center
 import dotenv
 import os
 

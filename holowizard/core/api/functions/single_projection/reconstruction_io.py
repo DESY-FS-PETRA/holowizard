@@ -1,9 +1,9 @@
 import numpy as np
 from typing import List
 
-import holowizard.core.misc.fileio as fileio
-from holowizard.core.src.parameter_classes.reco_params import RecoParams
-from holowizard.core.misc.viewer import Viewer
+import holowizard.core.src.misc.fileio as fileio
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.visualization.viewer import Viewer
 from holowizard.core.api.functions.default_load_data_callback import default_load_data_callback
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct as reconstruct_base
 

@@ -9,14 +9,14 @@ from holowizard.core.api.functions.single_projection.reconstruction_flatfieldcor
     reconstruct,
 )
 
-from holowizard.core.src.parameter_classes.measurement import Measurement
+from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.misc import fileio
-from holowizard.core.src.parameter_classes.reco_params import RecoParams
-from holowizard.core.src.parameter_classes.flatfield_correction_params import (
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.parameters.flatfield_correction_params import (
     FlatfieldCorrectionParams,
 )
 
-from holowizard.core.misc.viewer import Viewer
+from holowizard.core.src.visualization.viewer import Viewer
 from holowizard.core.api.viewer import LossViewer
 
 

@@ -9,15 +9,15 @@ from holowizard.core.methods.preprocessing.calculate_flatfield_components import
     calculate_flatfield_components,
 )
 from holowizard.core.methods.preprocessing.correct_flatfield import correct_flatfield
-from holowizard.core.src.parameter_classes.flatfield_components_params import (
+from holowizard.core.src.parameters.flatfield_components_params import (
     FlatfieldComponentsParams,
 )
-from holowizard.core.src.parameter_classes.flatfield_correction_params import (
+from holowizard.core.src.parameters.flatfield_correction_params import (
     FlatfieldCorrectionParams,
 )
-from holowizard.core.misc.viewer import Viewer
+from holowizard.core.src.visualization.viewer import Viewer
 
-from holowizard.core.parameter_classes.type_conversion.json_writable import JsonWritable
+from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
 
 
 def log_files(files):

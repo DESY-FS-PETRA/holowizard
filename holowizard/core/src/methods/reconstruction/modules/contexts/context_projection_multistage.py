@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List
 
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.methods.reconstruction.modules.contexts.abstract_context_multistage import AbstractContextMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.abstract_contexts.abstract_context_multistage import AbstractContextMultistage
 
 
 @dataclass(init=True)

@@ -6,24 +6,24 @@ import logging
 from enum import Enum
 import os
 
-import holowizard.core.src
+import holowizard.core
 from holowizard.core.src.methods.preprocessing.process_padding_options import (
     process_padding_options,
 )
 from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.parameters.reco_params import RecoParams
-from holowizard.core.src.methods.reconstruction.viewer.viewer import Viewer
-from holowizard.core.src.methods.reconstruction.utils.logging import Logger, log_preprocessed_params
+from holowizard.core.src.visualization.viewer.viewer import Viewer
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.utils.logging import Logger, log_preprocessed_params
 from holowizard.core.src.misc.transform import resize_arrays_to_size
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.models.cone_beam import ConeBeam
+from holowizard.core.src.models.beam_setups.cone_beam import ConeBeam
 
 
 class ControllerProjectionMultistage:
     def create_multistage_context(
-        self, reco_params: RecoParams, viewer: List[Viewer] = None, torch_device=holowizard.core.src.torch_running_device
+        self, reco_params: RecoParams, viewer: List[Viewer] = None, torch_device=holowizard.core.torch_running_device
     ):
         context_multistage = ContextProjectionMultistage(
             current_projection_singlestage=None,

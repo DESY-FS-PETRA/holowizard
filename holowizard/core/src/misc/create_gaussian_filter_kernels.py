@@ -1,7 +1,7 @@
 import torch
 import holowizard.core.src
 
-if "cuda" in holowizard.core.src.torch_running_device_name:
+if "cuda" in holowizard.core.torch_running_device_name:
     from cupyx.scipy.ndimage import fourier_gaussian
     from cupy import ones
 else:
@@ -9,7 +9,7 @@ else:
     from scipy.ndimage import fourier_gaussian
 
 
-def get_filter_kernels(gaussian_filter_fwhm, shape, device):
+def create_gaussian_filter_kernels(gaussian_filter_fwhm, shape, device):
     if gaussian_filter_fwhm is not None and gaussian_filter_fwhm.real != 0.0:
         filter_kernel_obj_phase = torch.tensor(
             fourier_gaussian(

@@ -8,7 +8,7 @@ from holowizard.core.src.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer
 from holowizard.core.api.plotter import NelderMeadPlotter
 from holowizard.core.api.functions.find_focus.find_focus import find_focus
-from holowizard.core.misc.fileio import load_img_data
+from holowizard.core.src.misc.fileio import load_img_data
 from holowizard.core.api.parameters.paths.project_paths import ProjectPaths
 from holowizard.core.api.parameters import (
     BeamSetup,

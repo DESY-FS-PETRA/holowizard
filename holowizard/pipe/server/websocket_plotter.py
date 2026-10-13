@@ -1,6 +1,6 @@
 import io
 import numpy as np
-from holowizard.core.misc.viewer.viewer import Viewer
+from holowizard.core.src.visualization.viewer import Viewer
 import zmq
 import matplotlib
 import matplotlib.pyplot as plt

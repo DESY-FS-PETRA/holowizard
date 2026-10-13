@@ -3,13 +3,13 @@ from typing import List
 import json
 import os 
 
-from holowizard.core.src.parameter_classes.beam_setup import BeamSetup
-from holowizard.core.src.parameter_classes.measurement import Measurement
-from holowizard.core.src.parameter_classes.options import Options
-from holowizard.core.src.parameter_classes.data_dimensions import DataDimensions
-from holowizard.core.src.parameter_classes.paths import Paths
-from holowizard.core.src.parameter_classes.type_conversion.json_writable import JsonWritable
-from holowizard.core.src.parameter_classes import member_value_adapter
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.measurement import Measurement
+from holowizard.core.src.parameters.options import Options
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.paths import Paths
+from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.src.parameters import member_value_adapter
 
 
 class RecoParams:

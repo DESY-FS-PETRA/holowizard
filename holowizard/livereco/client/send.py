@@ -2,7 +2,7 @@ import json
 import numpy as np
 
 from holowizard.livereco.client import controller_context
-from holowizard.core.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
 
 
 def send(function_name, **kwargs):

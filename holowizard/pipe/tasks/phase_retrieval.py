@@ -10,7 +10,7 @@ from holowizard.core.api.functions.single_projection.reconstruction_flatfieldcor
 )
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.misc import fileio
-from holowizard.core.misc.transform import crop_center
+from holowizard.core.src.misc.transform import crop_center
 from holowizard.core.api.parameters import FlatfieldCorrectionParams
 from holowizard.pipe.scan import Scan
 from holowizard.pipe.utils.reco_params import build_reco_params

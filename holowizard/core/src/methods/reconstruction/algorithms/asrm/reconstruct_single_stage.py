@@ -1,15 +1,15 @@
 import torch
 
 import holowizard.core.src
-from holowizard.core.src.methods.reconstruction.algorithms.asrm.constraints import regularization
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.regularization import regularization
 from holowizard.core.src.methods.reconstruction.algorithms.asrm.gradients.analytical import get_gradient
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
 from holowizard.core.src.misc.create_gaussian_filter_kernels import create_gaussian_filter_kernels
 
-if "cuda" in holowizard.core.src.torch_running_device_name:
-    from holowizard.core.src.models.fresnel_propagator_cupy import FresnelPropagatorCupy as FresnelPropagatorImpl
+if "cuda" in holowizard.core.torch_running_device_name:
+    from holowizard.core.src.models.propagators.fresnel_propagator_cupy import FresnelPropagator as FresnelPropagatorImpl
 else:
-    from holowizard.core.src.models.fresnel_propagator_torch import FresnelPropagatorTorch as FresnelPropagatorImpl
+    from holowizard.core.src.models.propagators.fresnel_propagator_torch import FresnelPropagator as FresnelPropagatorImpl
 
 
 def print_infos(iteration, context: ContextProjectionSingleStage, force_update):
@@ -35,7 +35,7 @@ def print_infos(iteration, context: ContextProjectionSingleStage, force_update):
 def reconstruct_single_stage(context: ContextProjectionSingleStage):
     with torch.no_grad():
         model = FresnelPropagatorImpl(
-            context.fresnel_numbers, context.data_dimensions.total_size, holowizard.core.src.torch_running_device_name
+            context.fresnel_numbers, context.data_dimensions.total_size, holowizard.core.torch_running_device_name
         )
 
         (
@@ -44,13 +44,13 @@ def reconstruct_single_stage(context: ContextProjectionSingleStage):
         ) = create_gaussian_filter_kernels(
             context.options.regularization_object.gaussian_filter_fwhm,
             context.data_dimensions.total_size,
-            holowizard.core.src.torch_running_device_name,
+            holowizard.core.torch_running_device_name,
         )
 
         filter_kernel_vt, _ = create_gaussian_filter_kernels(
             context.options.nesterov_object.gaussian_filter_fwhm,
             context.data_dimensions.total_size,
-            holowizard.core.src.torch_running_device_name,
+            holowizard.core.torch_running_device_name,
         )
 
         iteration = None

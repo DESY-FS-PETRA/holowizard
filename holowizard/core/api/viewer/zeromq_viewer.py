@@ -1,8 +1,8 @@
 import zmq
 import json
 import numpy as np
-from holowizard.core.misc.transform import crop_center
-from holowizard.core.misc.viewer.viewer import Viewer
+from holowizard.core.src.misc.transform import crop_center
+from holowizard.core.src.visualization.viewer import Viewer
 
 
 class ZeroMQViewer(Viewer):

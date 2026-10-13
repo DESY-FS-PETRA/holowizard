@@ -15,7 +15,7 @@ from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
 from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.misc.transform import crop_center
-from holowizard.core.src.methods.reconstruction.viewer import Viewer
+from holowizard.core.src.visualization.viewer import Viewer
 from holowizard.core.src.methods.reconstruction.plotter.plotter import Plotter
 
 

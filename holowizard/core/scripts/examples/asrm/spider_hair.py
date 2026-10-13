@@ -15,7 +15,7 @@ from holowizard.core.api.parameters import (
     DataDimensions,
     RecoParams,
 )
-import holowizard.core.misc.fileio as fileio
+import holowizard.core.src.misc.fileio as fileio
 
 matplotlib.use("Qt5Agg")
 

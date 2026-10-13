@@ -94,7 +94,7 @@ class ControllerBunchIO:
             file.write(current_stage_context.to_json())
 
     def read_context_file(
-        self, key: str, dask_options: DaskOptions, timeout=1000, device=holowizard.core.src.torch_running_device
+        self, key: str, dask_options: DaskOptions, timeout=1000, device=holowizard.core.torch_running_device
     ) -> ContextProjectionSingleStage:
         file_name = "projection_context_" + key + ".txt"
         file_path = dask_options.working_dir / file_name

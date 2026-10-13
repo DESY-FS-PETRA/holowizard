@@ -28,7 +28,7 @@ def init_logger(dask_options, context):
     logging.info("task_run_asrm for key " + context.key)
 
 def init_nesterov_vt(context: ContextProjectionSingleStage):
-    context.nesterov_vt = torch.zeros(context.data_dimensions.total_size, device=holowizard.core.src.torch_running_device, dtype=torch.complex64)
+    context.nesterov_vt = torch.zeros(context.data_dimensions.total_size, device=holowizard.core.torch_running_device, dtype=torch.complex64)
 
 def cleanup_nesterov_vt(context):
     context.nesterov_vt = None

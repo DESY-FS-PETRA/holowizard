@@ -25,11 +25,11 @@ if "cuda" in holowizard.core.torch_running_device_name:
 else:
     from holowizard.core.models.propagators.fresnel_propagator_torch import FresnelPropagator
 
-from holowizard.core.misc.phantoms import dicty_sketch
+from holowizard.core.src.misc.phantoms import dicty_sketch
 from holowizard.core.methods.preprocessing.process_data_dimensions import (
     process_data_dimensions,
 )
-from holowizard.core.misc.transform import pad_to_size, crop_center
+from holowizard.core.src.misc.transform import pad_to_size, crop_center
 
 matplotlib.use("Qt5Agg")
 

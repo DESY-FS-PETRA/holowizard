@@ -11,7 +11,7 @@ import holowizard.core.src
 from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.parameters.measurement import Measurement
-from holowizard.core.src.methods.reconstruction.viewer.viewer import Viewer
+from holowizard.core.src.visualization.viewer.viewer import Viewer
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_probe_multistage import ContextProbeMultistage
 from holowizard.core.src.methods.preprocessing.process_padding_options import process_beam_setup_noflipandpad, process_data_dimensions
 from holowizard.core.src.methods.preprocessing.process_data_dimensions import get_window_from_padding_options
@@ -21,7 +21,7 @@ from holowizard.core.src.methods.reconstruction.controller.io.controller_bunch_i
 from holowizard.core.src.methods.reconstruction.controller.io.controller_beam_setup_io import ControllerBeamSetupIO
 from holowizard.core.src.methods.reconstruction.controller.controller_projection_set import ControllerProjectionSet
 from holowizard.core.src.methods.reconstruction.constraints import regularization
-from holowizard.core.src.methods.reconstruction.utils.filter import get_filter_kernels
+from holowizard.core.src.misc.create_gaussian_filter_kernels import get_filter_kernels
 from holowizard.core.src.misc.transform import resize_arrays_to_size
 
 
@@ -55,9 +55,9 @@ class ControllerProbeMultistage:
             bunch_size=min(50, len(reco_params.measurements)),
             current_iter_offset=0,
             dask_options=dask_options,
-            torch_device=holowizard.core.src.torch_running_device,
+            torch_device=holowizard.core.torch_running_device,
             cluster=cluster,
-            se_losses_all=torch.empty(0, device=holowizard.core.src.torch_running_device),
+            se_losses_all=torch.empty(0, device=holowizard.core.torch_running_device),
             current_global_beam_setup=deepcopy(reco_params.beam_setup),
             current_options=None,
             current_data_dimensions=None,
@@ -188,7 +188,7 @@ class ControllerProbeMultistage:
         ) = get_filter_kernels(
             context_projection_set.current_options.regularization_probe.gaussian_filter_fwhm,
             context_projection_set.current_data_dimensions.total_size,
-            holowizard.core.src.torch_running_device,
+            holowizard.core.torch_running_device,
         )
 
         context_probe.current_global_beam_setup.probe_refractive = regularization.apply_filter(
@@ -213,7 +213,7 @@ class ControllerProbeMultistage:
         ) = get_filter_kernels(
             context_projection_set.current_options.regularization_object.gaussian_filter_fwhm,
             context_projection_set.current_data_dimensions.total_size,
-            holowizard.core.src.torch_running_device_name,
+            holowizard.core.torch_running_device_name,
         )
 
         object_to_plot = None

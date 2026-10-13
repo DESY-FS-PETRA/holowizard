@@ -30,7 +30,7 @@ class ControllerBeamSetupIO:
         
         try:
             check_file_exists(file_path=file_path)
-            beam_setup.probe_refractive = torch.load(file_path).to(holowizard.core.src.torch_running_device)
+            beam_setup.probe_refractive = torch.load(file_path).to(holowizard.core.torch_running_device)
         except Exception as exception:
             tb = traceback.format_exc()
             raise RuntimeError(f"Could not read probe file with name {file_path}: {tb}") from exception

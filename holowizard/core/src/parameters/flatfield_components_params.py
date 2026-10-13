@@ -1,8 +1,8 @@
 import json
 import sys
 
-from holowizard.core.src.parameter_classes.type_conversion.json_writable import JsonWritable
-from holowizard.core.src.parameter_classes import member_value_adapter
+from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
+from holowizard.core.src.parameters import member_value_adapter
 
 
 class FlatfieldComponentsParams:

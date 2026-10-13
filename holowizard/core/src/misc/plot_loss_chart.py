@@ -65,7 +65,7 @@ def plot_loss_chart(root, support, title, csv_output_flag=False):
 
         x_values_images.append(x)
 
-        image = torch.tensor(io.imread(file), device=holowizard.core.src.torch_running_device)[support]
+        image = torch.tensor(io.imread(file), device=holowizard.core.torch_running_device)[support]
 
         """
 		sample_grid = torch.meshgrid(torch.fft.fftfreq(image.shape[0], device=torch.device("cuda")),
@@ -80,7 +80,7 @@ def plot_loss_chart(root, support, title, csv_output_flag=False):
 
         filter_kernel = torch.tensor(
             fourier_gaussian(np.ones(image.shape), sigma=4 / 2.35)[:, 0 : int(image.shape[1] / 2) + 1],
-            device=holowizard.core.src.torch_running_device,
+            device=holowizard.core.torch_running_device,
         )
 
         values_real_fft = torch.fft.rfft2(image)

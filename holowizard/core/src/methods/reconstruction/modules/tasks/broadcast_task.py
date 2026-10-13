@@ -11,7 +11,7 @@ def broadcast_task(
     projection_contexts: List[ContextProjectionMultistage],
     task,
     keys=None,
-    device=holowizard.core.src.torch_running_device,
+    device=holowizard.core.torch_running_device,
 ) -> List[ContextProjectionSingleStage]:
     results = broadcast_task_impl(
     cluster,

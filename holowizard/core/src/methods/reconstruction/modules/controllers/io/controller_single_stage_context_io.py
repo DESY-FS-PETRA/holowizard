@@ -21,7 +21,7 @@ class ControllerSingleStageContextIO:
         for i in range(tries):
             try:
                 check_file_exists(file_path=file_name)
-                data = torch.load(file_name, map_location=holowizard.core.src.torch_running_device)
+                data = torch.load(file_name, map_location=holowizard.core.torch_running_device)
                 break
             except Exception as exception:
                 if (i+1) <tries:
