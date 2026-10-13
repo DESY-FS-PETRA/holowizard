@@ -53,7 +53,7 @@ class SlurmCluster():
                 for i in $(seq 1 $gpu_count); do
                 gpu_index=$((i - 1))
                 CUDA_VISIBLE_DEVICES=$gpu_index \
-                    python -m distributed.cli.dask_worker {self.scheduler_address} --nthreads 1 --memory-limit 128GB --preload holowizard.pipe.cluster.unset &
+                    python -m distributed.cli.dask_worker {self.scheduler_address} --nthreads 1 --memory-limit 128GB --preload holowizard.core.src.hpc.unset &
                 done
                 """,
             ],

@@ -7,7 +7,7 @@ from holowizard.core.src.methods.preprocessing.process_padding_options import (
     process_padding_options_noflipandpad,
 )
 
-from holowizard.core.src.logging import log_preprocessed_params
+from holowizard.core.src.methods.reconstruction.utils.logging import log_preprocessed_params
 from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
