@@ -3,11 +3,11 @@ import numpy as np
 from typing import List
 from copy import deepcopy
 
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters.measurement import Measurement
-from holowizard.core.parameters.padding import Padding
-from holowizard.core.utils.transform import resize_arrays_to_size
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.measurement import Measurement
+from holowizard.core.src.parameters.padding import Padding
+from holowizard.core.src.misc.transform import resize_arrays_to_size
 
 from .process_data_dimensions import process_data_dimensions
 from .process_measurement import process_measurement, process_measurement_noflipandpad

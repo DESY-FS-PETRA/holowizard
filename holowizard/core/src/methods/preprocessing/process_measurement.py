@@ -1,9 +1,9 @@
 import torch
 import logging
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters.padding import Padding
-from holowizard.core.preprocessing.flip_and_pad import resize_and_flip_and_pad_and_fade
-from holowizard.core.utils.transform import resize_arrays_to_size
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.padding import Padding
+from holowizard.core.src.methods.preprocessing.flip_and_pad import resize_and_flip_and_pad_and_fade
+from holowizard.core.src.misc.transform import resize_arrays_to_size
 
 def process_measurement(image, padding_options: Padding, data_dimensions: DataDimensions, index):
     image = torch.rot90(image / padding_options.a0)

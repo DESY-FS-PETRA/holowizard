@@ -1,10 +1,10 @@
 import logging
 import torch
 
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters.padding import Padding
-from holowizard.core.utils.transform import resize_arrays_to_size
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.padding import Padding
+from holowizard.core.src.misc.transform import resize_arrays_to_size
 
 from .flip_and_pad import flip_and_pad_and_fade
 

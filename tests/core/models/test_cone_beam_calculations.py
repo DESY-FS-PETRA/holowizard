@@ -1,5 +1,5 @@
-from holowizard.core.parameters.beam_setup import BeamSetup
-from holowizard.core.parameters.measurement import Measurement
+from holowizard.core.src.parameters.beam_setup import BeamSetup
+from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.models.cone_beam import ConeBeam
 
 

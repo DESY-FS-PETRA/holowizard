@@ -1,9 +1,9 @@
 import logging
 
 import holowizard.core
-from holowizard.core.parameters.data_dimensions import DataDimensions
-from holowizard.core.parameters.padding import Padding
-from holowizard.core.reconstruction.constraints.window_2d import get_2d_window
+from holowizard.core.src.parameters.data_dimensions import DataDimensions
+from holowizard.core.src.parameters.padding import Padding
+from holowizard.core.src.methods.preprocessing.window_2d import get_2d_window
 
 from .boundaries import Boundaries
 
