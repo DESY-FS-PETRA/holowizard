@@ -1,8 +1,8 @@
 import matplotlib
 import matplotlib.pyplot as plt
-from holowizard.core.src.misc.transform import crop_center
+from holowizard.core.utils.transform import crop_center
 
-from holowizard.core.src.visualization.viewer import Viewer
+from holowizard.core.reconstruction.viewer.viewer import Viewer
 
 
 class PyPlotViewer(Viewer):
@@ -22,7 +22,7 @@ class PyPlotViewer(Viewer):
         if matplotlib.rcParams["figure.raise_window"]:
             matplotlib.rcParams["figure.raise_window"] = False
 
-    def update(self, iteration, object, probe, data_dimensions, loss):
+    def update(self, iteration, hologram_measured, hologram_guess, object, probe, data_dimensions, loss):
         self.fig.clear()
 
         axs0 = self.fig.add_subplot(221)

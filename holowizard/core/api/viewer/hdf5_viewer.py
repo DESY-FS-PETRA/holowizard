@@ -2,8 +2,8 @@ import h5py
 import os
 import numpy as np
 
-from holowizard.core.src.misc.transform import crop_center
-from holowizard.core.src.visualization.viewer import Viewer
+from holowizard.core.utils.transform import crop_center
+from holowizard.core.reconstruction.viewer.viewer import Viewer
 
 
 class Hdf5Viewer(Viewer):
@@ -59,7 +59,7 @@ class Hdf5Viewer(Viewer):
             and self.file["images"][str(self.stage)].shape[2] == data_dimensions.fov_size[1]
         )
 
-    def update(self, iteration, object, probe, data_dimensions, loss):
+    def update(self, iteration, hologram_measured, hologram_guess, object, probe, data_dimensions, loss):
         if iteration < self.start_iteration:
             return
 
