@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dask.distributed import as_completed
 from holowizard.pipe.scan import Scan
-from holowizard.pipe.cluster import Cluster
+from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster
 from holowizard.pipe.tasks import (
     FlatFieldTask,
     PhaseRetrievalTask,

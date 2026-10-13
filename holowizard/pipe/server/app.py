@@ -39,7 +39,7 @@ from contextlib import asynccontextmanager
 from omegaconf import OmegaConf
 
 import holowizard
-from holowizard.pipe.cluster import SlurmCluster as Cluster
+from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster
 from holowizard.pipe.scan import P05Scan as Scan
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.scan.p05_scan import P05Geometry
