@@ -1,6 +1,5 @@
 import logging
-
-from holowizard.core.reconstruction.viewer.viewer import Viewer
+from holowizard.core.src.visualization.viewer import Viewer
 
 
 class LossViewer(Viewer):
