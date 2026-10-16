@@ -335,7 +335,7 @@ def _register_routes(app: FastAPI):
             raise HTTPException(status_code=400, detail=f"Invalid z01/z02 returned: {z01}, {z02}")
 
     def _ui_state_path() -> Path:
-        return Path(app.state.beamtime.log_path).parent / UI_STATE_FILE
+        return Path(app.state.beamtime.log_path) / UI_STATE_FILE
 
     @api.get("/ui_state/{page}")
     async def get_ui_state(page: str):
