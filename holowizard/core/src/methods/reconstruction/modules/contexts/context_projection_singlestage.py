@@ -9,7 +9,7 @@ from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.parameters.options import Options
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
-from holowizard.core.src.parameters import member_value_adapter, measurement
+from holowizard.core.src.parameters import member_value_adapter
 from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable
 from holowizard.core.src.visualization.viewer import Viewer
 
@@ -156,7 +156,7 @@ class ContextProjectionSingleStage:
             measurements=measurements,
             data_dimensions=data_dimensions,
             fresnel_numbers=fresnel_numbers,
-            # oref_predicted=oref_predicted,
+            oref_predicted=oref_predicted,
             nesterov_vt=nesterov_vt,
             grad_probe=grad_probe,
             se_losses_all=se_losses_all,

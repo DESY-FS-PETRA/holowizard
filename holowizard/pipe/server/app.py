@@ -38,7 +38,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-from omegaconf import OmegaConf
 
 import holowizard
 from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster

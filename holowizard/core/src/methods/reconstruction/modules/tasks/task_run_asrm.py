@@ -8,9 +8,9 @@ from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
     ContextProjectionSingleStage,
 )
-from holowizard.core.src.methods.reconstruction.methods.asrm.reconstruct_single_stage import reconstruct_single_stage
-from holowizard.core.src.api.viewer.loss_viewer import LossViewer
-from holowizard.core.src.methods.reconstruction.utils.logging import log_params
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.reconstruct_single_stage import reconstruct_single_stage
+from holowizard.core.api.viewer.loss_viewer import LossViewer
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.utils.logging import log_params
 from holowizard.core.src.misc.transform import crop_center
 
 

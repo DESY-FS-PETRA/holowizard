@@ -30,7 +30,8 @@ def flip_and_pad(image, padding_options: Padding, data_dimensions: DataDimension
     elif padding_options.padding_mode.value == Padding.PaddingMode.MIRROR_LEFT.value:
         m = nn.ReflectionPad2d((fov_size[0] - 1, 0, 0, 0))
     elif padding_options.padding_mode.value == Padding.PaddingMode.CONSTANT.value:
-        m = lambda x: x
+        def m(x):
+            return x
     else:
         raise RuntimeError("Padding mode " + str(padding_options.padding_mode.value) + " not implemented")
 

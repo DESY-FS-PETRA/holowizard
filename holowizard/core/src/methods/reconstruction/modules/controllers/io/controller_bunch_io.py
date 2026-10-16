@@ -9,9 +9,6 @@ import logging
 import holowizard.core.src
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.src.parameters.dask_options import DaskOptions
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (
-    ContextProjectionMultistage,
-)
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
     ContextProjectionSingleStage,
 )

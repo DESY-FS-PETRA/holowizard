@@ -1,6 +1,6 @@
 from typing import List
 
-import holowizard.core.src
+import holowizard.core
 from holowizard.core.src.hpc.slurm_cluster import SlurmCluster
 from holowizard.core.src.hpc.broadcast_task import broadcast_task as broadcast_task_impl
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (

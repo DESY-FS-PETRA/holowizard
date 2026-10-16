@@ -5,13 +5,11 @@ from copy import deepcopy
 from tqdm import tqdm
 from multiprocessing.dummy import Pool
 from itertools import repeat
-import os
-import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
-import holowizard.core.src
+import holowizard.core
 from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.visualization.viewer.viewer import Viewer
@@ -24,20 +22,19 @@ from holowizard.core.src.methods.reconstruction.modules.contexts.context_project
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
     ContextProjectionSingleStage,
 )
-from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage_lazy import (
+from holowizard.core.src.methods.reconstruction.modules.controllers.controller_projection_multistage_lazy import (
     ControllerProjectionMultistageLazy as ControllerProjectionMultistage,
 )
-from holowizard.core.src.methods.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
-from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import (
+from holowizard.core.src.methods.reconstruction.modules.controllers.io.controller_bunch_io import ControllerBunchIO
+from holowizard.core.src.methods.reconstruction.modules.controllers.io.controller_single_stage_context_io import (
     ControllerSingleStageContextIO,
 )
-from holowizard.core.src.methods.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
-from holowizard.core.src.methods.reconstruction.controller.tasks.broadcast_task import broadcast_task
-from holowizard.core.src.methods.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import (
+from holowizard.core.src.hpc.slurm_cluster import SlurmCluster
+from holowizard.core.src.methods.reconstruction.modules.tasks.broadcast_task import broadcast_task
+from holowizard.core.src.methods.reconstruction.modules.tasks.task_run_asrm_lazyflipandpad import (
     task_run_asrm_lazyflipandpad as task_run_asrm,
 )
 
-from holowizard.core.src.methods.reconstruction.controller.visualization import slider_2_3d_matrices
 # from memory_profiler import profile
 
 
@@ -387,7 +384,7 @@ class ControllerProjectionSet:
         context.cluster.start_cluster()
         for i in range(num_bunches):
             bunch_keys = self.controller_bunch_io.get_bunch_keys(context, i)
-            if bunch_keys == None:
+            if bunch_keys is None:
                 keys_to_process = keys
             else:
                 if keys is not None:

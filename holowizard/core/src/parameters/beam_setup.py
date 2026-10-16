@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 from holowizard.core.src.parameters import member_value_adapter
 from holowizard.core.src.parameters.type_conversion.json_writable import JsonWritable

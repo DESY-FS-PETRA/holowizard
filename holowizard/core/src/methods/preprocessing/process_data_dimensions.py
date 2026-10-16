@@ -1,4 +1,3 @@
-import logging
 
 import holowizard.core
 from holowizard.core.src.parameters.data_dimensions import DataDimensions

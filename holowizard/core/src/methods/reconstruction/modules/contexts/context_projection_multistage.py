@@ -1,6 +1,4 @@
-import torch
 from dataclasses import dataclass
-from typing import List
 
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
     ContextProjectionSingleStage,

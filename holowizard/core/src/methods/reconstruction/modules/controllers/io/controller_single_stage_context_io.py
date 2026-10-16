@@ -1,5 +1,3 @@
-from typing import List
-import os
 import torch
 from pathlib import Path
 import traceback
