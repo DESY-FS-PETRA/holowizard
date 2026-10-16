@@ -503,30 +503,83 @@
     const qs = s => document.getElementById(s);
     const fetchJson = async (url, opts) => (await fetch(url, opts)).json();
 
+    // --- Persisted UI state (stored server-side next to the beamtime log path) ---
+    const STATE_URL = '/api/ui_state/parameter';
+    const PERSISTED_IDS = [
+        'stage-select', 'parameter-select', 'scan-select', 'img-select',
+        'energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp',
+        'vmin', 'vmax', 'chk-focus', 'chk-reco', 'chk-tomo',
+        'find_focus-select', 'reconstruction-select'
+    ];
+    let restoring = false;
+    let saveTimer = null;
+    let formKey = null;      // "<stage>/<parameter set>" the loaded parameter form belongs to
+    let restorePrefs = {};   // select id -> value to pick on the next fill()
+
+    const setField = (el, v) => { if (el.type === 'checkbox') el.checked = !!v; else el.value = v; };
+    const hasOption = (sel, v) => Array.from(sel.options).some(o => o.value === String(v));
+
+    const collectState = () => {
+        const fields = {};
+        PERSISTED_IDS.forEach(id => {
+            const el = qs(id);
+            if (el) fields[id] = el.type === 'checkbox' ? el.checked : el.value;
+        });
+        const form_data = {};
+        const form = document.querySelector('#form-container form');
+        if (form) {
+            form.querySelectorAll('input[name]:not([type=hidden]):not([type=submit])')
+                .forEach(el => { form_data[el.name] = el.value; });
+        }
+        return { fields, form_key: formKey, form_data };
+    };
+    const saveState = (keepalive = false) => {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        if (restoring) return;
+        fetch(STATE_URL, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(collectState()), keepalive
+        }).catch(err => console.warn('Could not save UI state:', err));
+    };
+    const scheduleSave = () => {
+        if (restoring) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveState, 500);
+    };
+    document.addEventListener('input', scheduleSave);
+    document.addEventListener('change', scheduleSave);
+    window.addEventListener('pagehide', () => { if (saveTimer) saveState(true); });
+
     const fill = (sel, items) => {
         if (!Array.isArray(items)) {
             console.error(`Cannot fill select #${sel.id}: expected array, got`, items);
             return;
         }
         sel.innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join('');
-        sel.onchange();
+        const pref = restorePrefs[sel.id];
+        delete restorePrefs[sel.id];
+        if (pref != null && hasOption(sel, pref)) sel.value = pref;
+        return sel.onchange();
     };
 
     qs('stage-select').onchange = async () => {
         const opts = await fetchJson(endpoints.stage(qs('stage-select').value));
-        fill(qs('parameter-select'), opts);
+        await fill(qs('parameter-select'), opts);
     };
     qs('parameter-select').onchange = async () => {
         const url = endpoints.parameter(qs('parameter-select').value);
         const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dropdown: qs('stage-select').value}) });
         qs('form-container').innerHTML = await res.text();
         qs('stage-hidden').value = qs('stage-select').value;
+        formKey = `${qs('stage-select').value}/${qs('parameter-select').value}`;
+        scheduleSave();
     };
 
     qs('scan-select').onchange = async () => {
         const opts = await fetchJson(endpoints.folder(qs('scan-select').value));
-        fill(qs('img-select'), opts);
         resetLivePreview();
+        await fill(qs('img-select'), opts);
     };
     const resetLivePreview = () => {
         qs('live-preview').src = '';
@@ -537,14 +590,13 @@
 
     qs('img-select').onchange = async () => {
         const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
-        const blob = await (await fetch(url)).blob();
-        fetch(url).then(res => res.json()).then(fig => {
-            Plotly.react(qs('preview-image'), fig.data, fig.layout);
-            qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
-            qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
-        });
         qs('preview-image').style.display = 'block';
         resetLivePreview();
+        const fig = await fetchJson(url);
+        Plotly.react(qs('preview-image'), fig.data, fig.layout);
+        qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
+        qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
+        scheduleSave();
     };
 
     const changeRange = () => {
@@ -603,17 +655,70 @@
             const { z01, z02 } = await res.json();
             if (Number.isFinite(Number(z01))) qs('z01').value = Number(z01).toFixed(3);
             if (Number.isFinite(Number(z02))) qs('z02').value = Number(z02).toFixed(3);
+            scheduleSave();
         } catch (e) {
             console.error('Geometry compute failed:', e);
             alert('Could not compute geometry. Check inputs and try again.');
         }
     });
 
+    const applyFormData = (state) => {
+        if (!state.form_data || state.form_key !== formKey) return;
+        const form = document.querySelector('#form-container form');
+        if (!form) return;
+        Object.entries(state.form_data).forEach(([name, v]) => {
+            const el = form.querySelector(`input[name="${CSS.escape(name)}"]`);
+            if (el && el.type !== 'hidden') el.value = v;
+        });
+    };
+
+    const restoreState = async () => {
+        let state = {};
+        try {
+            state = await fetchJson(STATE_URL);
+        } catch (err) {
+            console.warn('Could not load UI state:', err);
+        }
+        const f = state.fields || {};
+        restoring = true;
+        try {
+            ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp', 'chk-focus', 'chk-reco', 'chk-tomo']
+                .forEach(id => { if (id in f && qs(id)) setField(qs(id), f[id]); });
+            toggleGeomControls();
+
+            for (const [id, stage] of [['find_focus-select', 'find_focus'], ['reconstruction-select', 'reconstruction']]) {
+                const sel = qs(id), v = f[id];
+                if (!sel || !v) continue;
+                if (!hasOption(sel, v)) await loadStageOptions(sel, stage);
+                if (hasOption(sel, v)) sel.value = v;
+            }
+
+            if (f['stage-select'] && hasOption(qs('stage-select'), f['stage-select'])) {
+                qs('stage-select').value = f['stage-select'];
+            }
+            restorePrefs = {
+                'parameter-select': f['parameter-select'],
+                'scan-select': f['scan-select'],
+                'img-select': f['img-select'],
+            };
+
+            const results = await Promise.allSettled([
+                qs('stage-select').onchange().then(() => applyFormData(state)),
+                fetchJson(endpoints.folder('')).then(folders => fill(qs('scan-select'), folders)).then(() => {
+                    if ('vmin' in f) qs('vmin').value = f.vmin;
+                    if ('vmax' in f) qs('vmax').value = f.vmax;
+                    if (qs('preview-image').data) changeRange();
+                }),
+            ]);
+            results.filter(r => r.status === 'rejected').forEach(r => console.error(r.reason));
+        } finally {
+            restoring = false;
+            restorePrefs = {};
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
-        qs('stage-select').onchange();
-        fetchJson(endpoints.folder('')).then(folders => {
-            fill(qs('scan-select'), folders);
-        }).catch(err => console.error(err));
+        restoreState();
 
         const socket = new WebSocket(`ws://${location.host}/ws/preview`);
         socket.binaryType = 'arraybuffer';
@@ -636,6 +741,7 @@
                 } else {
                     console.warn('Received non-numeric data:', data);
                 }
+                scheduleSave();
                 Plotly.react(qs('loss-image'), fig.data, fig.layout);
                 qs('loss-image').style.display = 'block';
             }
@@ -669,8 +775,10 @@
 
     const reconSelect = qs('reconstruction-select');
     const focusSelect = qs('find_focus-select');
-    async function loadOptionsOnce(e, stage) {
-        const select = e.target;
+    const stageOptionsLoaded = {};
+    async function loadStageOptions(select, stage) {
+        if (stageOptionsLoaded[stage]) return;
+        stageOptionsLoaded[stage] = true;
         try {
             const opts = await fetchJson(endpoints.stage(stage));
             opts.forEach(o => {
@@ -683,8 +791,8 @@
             console.error('Error loading options for', stage, err);
         }
     }
-    if (reconSelect) reconSelect.addEventListener('mousedown', e => loadOptionsOnce(e, 'reconstruction'), { once: true });
-    if (focusSelect) focusSelect.addEventListener('mousedown', e => loadOptionsOnce(e, 'find_focus'), { once: true });
+    if (reconSelect) reconSelect.addEventListener('mousedown', () => loadStageOptions(reconSelect, 'reconstruction'), { once: true });
+    if (focusSelect) focusSelect.addEventListener('mousedown', () => loadStageOptions(focusSelect, 'find_focus'), { once: true });
 
 
     const btn = document.getElementById('logo-btn');

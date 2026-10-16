@@ -54,6 +54,8 @@ import json
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_DIR = BASE_DIR / "configs"
 CITATIONS_FILE = BASE_DIR.parent / "citations.yaml"
+UI_STATE_FILE = "ui_state.json"
+_ui_state_lock = threading.Lock()
 
 # Load citations
 citations = OmegaConf.to_container(OmegaConf.load(str(CITATIONS_FILE)), resolve=True).get("citations", {})
@@ -124,6 +126,25 @@ def load_yaml(path: Path) -> Dict[str, Any]:
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"Config not found: {path}")
     return yaml.safe_load(path.read_text())
+
+
+def _read_ui_state(path: Path) -> Dict[str, Any]:
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return state if isinstance(state, dict) else {}
+
+
+def save_ui_state(path: Path, page: str, page_state: Dict[str, Any]):
+    """Merge the state of one page into the UI state file (atomic write)."""
+    with _ui_state_lock:
+        state = _read_ui_state(path)
+        state[page] = page_state
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+        tmp.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        os.replace(tmp, path)
 
 
 # --- Lifespan & App Factory ---
@@ -312,6 +333,24 @@ def _register_routes(app: FastAPI):
             return {"z01": float(z01), "z02": float(z02)}
         except Exception:
             raise HTTPException(status_code=400, detail=f"Invalid z01/z02 returned: {z01}, {z02}")
+
+    def _ui_state_path() -> Path:
+        return Path(app.state.beamtime.log_path).parent / UI_STATE_FILE
+
+    @api.get("/ui_state/{page}")
+    async def get_ui_state(page: str):
+        state = await run_in_threadpool(_read_ui_state, _ui_state_path())
+        return state.get(page, {})
+
+    @api.post("/ui_state/{page}")
+    async def post_ui_state(page: str, page_state: Dict[str, Any]):
+        if not page.isidentifier():
+            raise HTTPException(status_code=400, detail=f"Invalid page name: {page!r}")
+        try:
+            await run_in_threadpool(save_ui_state, _ui_state_path(), page, page_state)
+        except OSError as e:
+            raise HTTPException(status_code=500, detail=f"Could not save UI state: {e}")
+        return {"status": "saved"}
 
     @api.get("/cancel/{scan_id}")
     async def cancel_scan(scan_id: str):
