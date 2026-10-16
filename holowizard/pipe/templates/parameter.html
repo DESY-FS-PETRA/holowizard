@@ -540,7 +540,9 @@
         fetch(STATE_URL, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(collectState()), keepalive
-        }).catch(err => console.warn('Could not save UI state:', err));
+        }).then(async res => {
+            if (!res.ok) console.error(`Could not save UI state (HTTP ${res.status}):`, await res.text());
+        }).catch(err => console.error('Could not save UI state:', err));
     };
     const scheduleSave = () => {
         if (restoring) return;
@@ -675,9 +677,11 @@
     const restoreState = async () => {
         let state = {};
         try {
-            state = await fetchJson(STATE_URL);
+            const res = await fetch(STATE_URL);
+            if (res.ok) state = await res.json();
+            else console.error(`Could not load UI state (HTTP ${res.status}):`, await res.text());
         } catch (err) {
-            console.warn('Could not load UI state:', err);
+            console.error('Could not load UI state:', err);
         }
         const f = state.fields || {};
         restoring = true;
