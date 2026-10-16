@@ -80,3 +80,8 @@ exclude = [
 
 [tool.ruff.lint]
 ignore = ["E722"]
+
+[tool.pytest.ini_options]
+markers = [
+    "gpu: tests that require a CUDA-capable GPU",
+]
