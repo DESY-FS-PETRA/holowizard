@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from pathlib import Path
 import uuid
@@ -24,6 +25,7 @@ from fastapi import (
     BackgroundTasks,
     HTTPException,
     Request,
+    Response,
     WebSocket,
     WebSocketDisconnect,
     Depends,
@@ -54,7 +56,8 @@ import json
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_DIR = BASE_DIR / "configs"
 CITATIONS_FILE = BASE_DIR.parent / "citations.yaml"
-UI_STATE_FILE = "ui_state.json"
+UI_STATE_DIR = "ui_state"  # one JSON file per browser, inside beamtime.log_path
+UI_CLIENT_COOKIE = "holowizard_client_id"
 _ui_state_lock = threading.Lock()
 
 # Load citations
@@ -334,20 +337,27 @@ def _register_routes(app: FastAPI):
         except Exception:
             raise HTTPException(status_code=400, detail=f"Invalid z01/z02 returned: {z01}, {z02}")
 
-    def _ui_state_path() -> Path:
-        return Path(app.state.beamtime.log_path) / UI_STATE_FILE
+    def _ui_state_path(request: Request, response: Response) -> Path:
+        """State file of the requesting browser; assigns a new client id cookie if it has none."""
+        client_id = request.cookies.get(UI_CLIENT_COOKIE, "")
+        if not re.fullmatch(r"[0-9a-f]{32}", client_id):
+            client_id = uuid.uuid4().hex
+            response.set_cookie(
+                UI_CLIENT_COOKIE, client_id, max_age=10 * 365 * 24 * 3600, httponly=True, samesite="lax"
+            )
+        return Path(app.state.beamtime.log_path) / UI_STATE_DIR / f"{client_id}.json"
 
     @api.get("/ui_state/{page}")
-    async def get_ui_state(page: str):
-        state = await run_in_threadpool(_read_ui_state, _ui_state_path())
+    async def get_ui_state(page: str, request: Request, response: Response):
+        state = await run_in_threadpool(_read_ui_state, _ui_state_path(request, response))
         return state.get(page, {})
 
     @api.post("/ui_state/{page}")
-    async def post_ui_state(page: str, page_state: Dict[str, Any]):
+    async def post_ui_state(page: str, page_state: Dict[str, Any], request: Request, response: Response):
         if not page.isidentifier():
             raise HTTPException(status_code=400, detail=f"Invalid page name: {page!r}")
         try:
-            await run_in_threadpool(save_ui_state, _ui_state_path(), page, page_state)
+            await run_in_threadpool(save_ui_state, _ui_state_path(request, response), page, page_state)
         except OSError as e:
             raise HTTPException(status_code=500, detail=f"Could not save UI state: {e}")
         return {"status": "saved"}
