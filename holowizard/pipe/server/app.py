@@ -359,36 +359,8 @@ def _register_routes(app: FastAPI):
 
     # UI routes
     @ui.get("/")
-    async def home():
-        readme_path = Path(__file__).resolve().parents[1] / "README.md"
-        try:
-            md_text = readme_path.read_text(encoding="utf-8")
-        except Exception:
-            md_text = ""
-
-        # 2. Convert to HTML
-        html_readme = markdown.markdown(md_text)
-
-        html_content = f"""
-        <html>
-        <head>
-            <title>HoloServer</title>
-        </head>
-        <body>
-            <h1>HoloServer is running for beamtime {app.state.beamtime.beamtime_name}</h1>
-            <p>If you want to use the web interface, please open the following URL in your browser:</p>
-            <ul>
-            <li><a href="/dashboard">Dashboard</a> - see the queue status</li>
-            <li><a href="/parameter">Parameter</a> - view and set scan parameters</li>
-            </ul>
-            <p>For further information and documentation read the following:</p>
-            <div style="border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9;">
-                {html_readme}
-            </div>
-        </body>
-        </html>
-        """
-        return HTMLResponse(content=html_content, status_code=200)
+    async def home(request: Request):
+        return RedirectResponse(url=request.url_for("parameter_form"))
 
     @ui.get("/dashboard")
     async def dashboard(request: Request):
