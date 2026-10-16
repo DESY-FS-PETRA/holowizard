@@ -1,7 +1,7 @@
 from holowizard.core.api.functions.find_focus.find_focus_flatfieldcorrection import (
     find_focus,
 )
-from holowizard.core.logging.logger import Logger
+from holowizard.core.src.logging.logger import Logger
 from holowizard.core.api.parameters import (
     FlatfieldCorrectionParams,
 )

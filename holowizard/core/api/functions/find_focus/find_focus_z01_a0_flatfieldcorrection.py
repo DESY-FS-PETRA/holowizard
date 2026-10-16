@@ -5,10 +5,10 @@ import torch
 
 from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.parameters.flatfield_correction_params import FlatfieldCorrectionParams
-from holowizard.core.methods.find_focus.find_focus_z01_a0_orthogonal_search import find_focus as find_focus_internal
+from holowizard.core.src.methods.find_focus.find_focus_z01_a0_orthogonal_search import find_focus as find_focus_internal
 from holowizard.core.src.visualization.viewer import Viewer
-from holowizard.core.methods.preprocessing.correct_flatfield import correct_flatfield
-from holowizard.core.src.misc.plotter import Plotter
+from holowizard.core.src.methods.preprocessing.correct_flatfield import correct_flatfield
+from holowizard.core.src.visualization.plotter import Plotter
 
 
 def find_focus(

@@ -5,9 +5,7 @@ import scipy
 import sys
 from typing import List
 
-from holowizard.core.src.methods.reconstruction.single_projection.reconstruct_multistage import (
-    reconstruct,
-)
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.reconstruct_asrm import reconstruct_asrm
 from holowizard.core.src.parameters.options import Options
 from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
@@ -45,7 +43,7 @@ def get_loss_reconstruction(
     found, loss_local = check_history(values)
 
     if not found:
-        current_result, loss_se_all, fov_size = reconstruct([measurement], beam_setup, options, data_dimensions, viewer)
+        current_result, loss_se_all, fov_size = reconstruct_asrm([measurement], beam_setup, options, data_dimensions, viewer)
         loss_local = loss_se_all[-1]
         values_history.append(values)
         loss_values_history.append(loss_local.cpu().numpy())

@@ -8,7 +8,7 @@ from holowizard.core.api.parameters import (
     FlatfieldComponentsParams,
 )
 from holowizard.pipe.scan import Scan
-from holowizard.core.logging.logger import Logger
+from holowizard.core.src.logging.logger import Logger
 
 
 class FlatFieldTask:

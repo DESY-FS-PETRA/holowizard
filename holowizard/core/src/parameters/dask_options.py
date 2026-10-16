@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 
 
@@ -46,6 +47,7 @@ class DaskOptions:
     @staticmethod
     def from_dict(data):
         if not isinstance(data, dict):
+            logging.error("Data is not a dictionary")
             return None
 
         if (
@@ -57,6 +59,7 @@ class DaskOptions:
             or "python_env" not in data
             or "check_interval" not in data
         ):
+            logging.error("Missing required keys in data")
             return None
 
         return DaskOptions(

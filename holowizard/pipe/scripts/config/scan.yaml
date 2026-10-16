@@ -1,5 +1,5 @@
 scan:
-  _target_: holopipe.scan.P05Scan
+  _target_: holowizard.pipe.scan.P05Scan
   name: t
   energy: 17.0
   holder: 220

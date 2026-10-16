@@ -36,7 +36,7 @@ class WebsocketViewer(Viewer):
         plt.pause(0.05)
         self.fig = plt.figure(figsize=(12.8, 8.8))
 
-    def update(self, iteration, object, probe, data_dimensions, loss):
+    def update(self, iteration, hologram_measured, hologram_guess, object, probe, data_dimensions, loss):
         self.fig.clear()
 
         axs0 = self.fig.add_subplot(221)

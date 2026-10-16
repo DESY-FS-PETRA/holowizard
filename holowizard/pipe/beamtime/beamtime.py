@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from dask.distributed import as_completed
 from holowizard.pipe.scan import Scan
 from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster
@@ -28,9 +29,9 @@ class Beamtime(ABC):
 
     def __init__(self, path_raw, path_processed, log_path, beamtime_name, cluster: Cluster):
         self.beamtime_name = beamtime_name
-        self.path_raw = path_raw
-        self.path_processed = path_processed
-        self.log_path = log_path
+        self.path_raw = Path(path_raw)
+        self.path_processed = Path(path_processed)
+        self.log_path = Path(log_path)
         # self.meta_dict = self._load_metadata("")
         self.scans = []
         self.current_scan = None

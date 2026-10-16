@@ -7,16 +7,14 @@ from typing import List
 
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.src.parameters.reco_params import RecoParams
-from holowizard.core.src.methods.reconstruction.single_projection.reconstruct_multistage import (
-    reconstruct,
-)
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.reconstruct_asrm import reconstruct_asrm
 from holowizard.core.src.parameters.options import Options
 from holowizard.core.src.parameters.measurement import Measurement
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
 from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.misc.transform import crop_center
 from holowizard.core.src.visualization.viewer import Viewer
-from holowizard.core.src.methods.reconstruction.plotter.plotter import Plotter
+from holowizard.core.src.visualization.plotter import Plotter
 
 
 z01_values_history = []
@@ -56,7 +54,7 @@ def get_loss_reconstruction(
     found, loss_local = check_history(reco_params.measurements[0].z01)
 
     if not found:
-        current_result, loss_se_all, fov_size = reconstruct(reco_params, viewer)
+        current_result, loss_se_all, fov_size = reconstruct_asrm(reco_params, viewer)
         loss_local = loss_se_all[-1]
         z01_values_history.append(measurement.z01)
         loss_values_history.append(loss_local.cpu().numpy())

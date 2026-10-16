@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 import uuid
 import threading
@@ -8,6 +9,7 @@ from starlette.datastructures import UploadFile
 import yaml
 import markdown
 from plotly.utils import PlotlyJSONEncoder
+from omegaconf import OmegaConf
 
 # Import for side effects: initializes server env vars and writes .env.
 import holowizard.pipe.server.config as config  # noqa: F401
@@ -40,6 +42,7 @@ from omegaconf import OmegaConf
 
 import holowizard
 from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster
+from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.pipe.scan import P05Scan as Scan
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.scan.p05_scan import P05Geometry
@@ -127,8 +130,16 @@ def load_yaml(path: Path) -> Dict[str, Any]:
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     cfg = getattr(app.state, "_initial_cfg", OmegaConf.load(str(CONFIG_DIR / "defaults.yaml")))
-    cluster = Cluster(cfg)
-    app.state.beamtime = Beamtime(beamtime_name=cfg.beamtime.name, year=cfg.beamtime.year, cluster=cluster)
+    app.state.beamtime = Beamtime(beamtime_name=cfg.beamtime.name, year=cfg.beamtime.year, cluster=None)
+    dask_dict = OmegaConf.to_container(cfg["dask_options"], resolve=True)
+    dask_options = DaskOptions.from_dict(dask_dict)
+    if dask_options is None:
+        raise RuntimeError("Could not create dask options from hydra config")
+    dask_options.working_dir = app.state.beamtime.log_path / dask_options.working_dir
+    dask_options.python_env = sys.prefix
+    app.state.beamtime.cluster=Cluster(dask_options=dask_options)
+    app.state.beamtime.cluster.start_cluster()
+
     app.state.cfg = cfg
     templates = Jinja2Templates(directory=str(BASE_DIR / ".." / "templates"))
     templates.env.filters["to_yaml"] = to_clean_yaml

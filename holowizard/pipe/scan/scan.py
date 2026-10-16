@@ -8,7 +8,7 @@ import yaml
 import holowizard
 from omegaconf import OmegaConf
 from holowizard.pipe.utils.clean_yaml import remove_keys, to_clean_yaml
-from holowizard.core.models.cone_beam import ConeBeam
+from holowizard.core.src.models.beam_setups.cone_beam import ConeBeam
 from holowizard.core.api.parameters import BeamSetup
 from holowizard.core.api.parameters import Measurement
 from pathlib import Path

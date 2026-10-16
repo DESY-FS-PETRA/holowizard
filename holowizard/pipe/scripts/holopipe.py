@@ -17,14 +17,14 @@ def main():
         cfg = compose(config_name="defaults", overrides=overrides)
 
         ## TODO soll das hier sein?
-        bm = Beamtime(cfg.beamtime.name, cfg.beamtime.year, "")
+        bm = Beamtime(beamtime_name=cfg.beamtime.name, year=cfg.beamtime.year, cluster="")
 
         destination_dir = f"{bm.path_processed}/{cfg.paths.pipe_config}"
         if os.path.exists(destination_dir):
             shutil.rmtree(destination_dir)
         os.makedirs(destination_dir, exist_ok=True)
         shutil.copytree(config_dir, destination_dir, dirs_exist_ok=True)
-        os.remove(os.path.join(destination_dir, "cluster.yaml"))  # Remove cluster config if it exists
+        os.remove(os.path.join(destination_dir, "dask_options.yaml"))  # Remove cluster config if it exists
         os.remove(os.path.join(destination_dir, "beamtime.yaml"))  # Remove beamtime config if it exists
 
         app = create_app(cfg, destination_dir)
