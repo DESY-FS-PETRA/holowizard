@@ -4,7 +4,9 @@ import numpy as np
 
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.src.misc.transform import crop_center
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (
+    ContextProjectionMultistage,
+)
 
 
 def log_preprocessed_params(beam_setup, data_dimensions):
@@ -39,7 +41,7 @@ def log_result(logging_prefix, result_phaseshift, result_absorption, fov_size, i
     logging.image_info(logging_prefix + "_absorption_" + str(index).zfill(4), result_absorption)
     logging.image_info(logging_prefix + "_intensities", np.exp(-1 * result_absorption))
 
-    '''
+    """
     logging.image_info(
         logging_prefix + "_phaseshift_cropped_" + str(index).zfill(4),
         crop_center(result_phaseshift, fov_size),
@@ -48,8 +50,8 @@ def log_result(logging_prefix, result_phaseshift, result_absorption, fov_size, i
         logging_prefix + "_absorption_cropped_" + str(index).zfill(4),
         crop_center(result_absorption, fov_size),
     )
-    '''
-    
+    """
+
     logging.image_info(logging_prefix + "_intensities_cropped", crop_center(np.exp(-1 * result_absorption), fov_size))
 
 

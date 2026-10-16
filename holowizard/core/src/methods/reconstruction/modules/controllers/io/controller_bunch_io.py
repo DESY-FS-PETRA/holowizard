@@ -9,18 +9,24 @@ import logging
 import holowizard.core.src
 from holowizard.core.src.logging.logger import Logger
 from holowizard.core.src.parameters.dask_options import DaskOptions
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (
+    ContextProjectionMultistage,
+)
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
+    ContextProjectionSingleStage,
+)
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_set import ContextProjectionsSet
 from holowizard.core.src.misc.transform import crop_center
-from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
+from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import (
+    ControllerSingleStageContextIO,
+)
 
 
 class ControllerBunchIO:
     def __init__(self):
         self.controller_single_stage_context_io = ControllerSingleStageContextIO()
         return
-    
+
     def apply_for_keys(self, context, functions, keys, *args, verbose=True, **kwargs):
         iteratable_keys = tqdm(keys) if verbose else keys
         for key in iteratable_keys:
@@ -53,28 +59,37 @@ class ControllerBunchIO:
 
         return keys
 
-    def write_bunch(self, context: ContextProjectionsSet, keys,verbose=True):
-        self.apply_for_keys(context=context,functions=[
-                            self.controller_single_stage_context_io.swap_oref_predicted_from_ram_to_file,
-                            self.controller_single_stage_context_io.swap_measurements_from_ram_to_file
-                            ]
-                            ,keys=keys,verbose=verbose)
-        #self.apply_for_keys(context=context,function=self.controller_single_stage_context_io.swap_probe_refractive_from_ram_to_file,keys=keys,verbose=verbose)
-
+    def write_bunch(self, context: ContextProjectionsSet, keys, verbose=True):
+        self.apply_for_keys(
+            context=context,
+            functions=[
+                self.controller_single_stage_context_io.swap_oref_predicted_from_ram_to_file,
+                self.controller_single_stage_context_io.swap_measurements_from_ram_to_file,
+            ],
+            keys=keys,
+            verbose=verbose,
+        )
+        # self.apply_for_keys(context=context,function=self.controller_single_stage_context_io.swap_probe_refractive_from_ram_to_file,keys=keys,verbose=verbose)
 
     def read_bunch(self, context: ContextProjectionsSet, keys, verbose=True):
-        self.apply_for_keys(context=context,functions=[
-                            self.controller_single_stage_context_io.swap_measurements_from_file_to_ram,
-                            self.controller_single_stage_context_io.swap_oref_predicted_from_file_to_ram
-                            ],keys=keys,verbose=verbose)
-        #self.apply_for_keys(context,self.controller_single_stage_context_io.swap_probe_refractive_from_file_to_ram,keys=keys,verbose=verbose)
-
+        self.apply_for_keys(
+            context=context,
+            functions=[
+                self.controller_single_stage_context_io.swap_measurements_from_file_to_ram,
+                self.controller_single_stage_context_io.swap_oref_predicted_from_file_to_ram,
+            ],
+            keys=keys,
+            verbose=verbose,
+        )
+        # self.apply_for_keys(context,self.controller_single_stage_context_io.swap_probe_refractive_from_file_to_ram,keys=keys,verbose=verbose)
 
     def get_num_bunches(self, context: ContextProjectionsSet):
         return int(np.ceil(len(context.reco_params.measurements) / self.get_current_bunch_size(context)))
 
     def clean_bunch_from_ram(self, context: ContextProjectionsSet, keys):
-        self.apply_for_keys(context=context,functions=[self.controller_single_stage_context_io.clean_arrays],keys=keys, verbose=False)
+        self.apply_for_keys(
+            context=context, functions=[self.controller_single_stage_context_io.clean_arrays], keys=keys, verbose=False
+        )
 
     def clean_context_file(self, context: ContextProjectionSingleStage, dask_options: DaskOptions) -> None:
         file_name = "projection_context_" + context.key + ".txt"

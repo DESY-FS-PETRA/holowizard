@@ -11,7 +11,7 @@ from holowizard.core.src.hpc.scheduler import start_scheduler
 from holowizard.core.src.parameters.dask_options import DaskOptions
 
 
-class SlurmCluster():
+class SlurmCluster:
     def __init__(self, dask_options: DaskOptions, scale_down_workers: bool = True):
         config.set({"distributed.admin.large-graph-warning-threshold": "1000MB"})
         self.dask_options = dask_options
@@ -21,11 +21,10 @@ class SlurmCluster():
         self.client_scheduler = None
         self.worker_thread = None
         self.stop_event = None
-        
+
         logging.info(f"Using environment: {self.env}")
 
         os.makedirs(self.dask_options.working_dir, exist_ok=True)
-
 
     def get_cluster(self) -> SLURMCluster:
         logging.info("Creating Dask SLURM Cluster...")
@@ -63,7 +62,7 @@ class SlurmCluster():
                 "--ntasks=1",
                 "--nodes=1",
                 f'--constraint="{self.dask_options.constraint}"',
-                #"--exclude=max-p3ag028"
+                # "--exclude=max-p3ag028"
             ],
             worker_extra_args=["--no-nanny"],
         )
@@ -109,7 +108,7 @@ class SlurmCluster():
             self.cluster.scale(jobs=scale_up_to)
 
     def stop_cluster(self) -> None:
-        #if self.client_cluster:
+        # if self.client_cluster:
         #    self.client_cluster.close()
         if self.cluster:
             self.cluster.scale(0)
@@ -143,7 +142,6 @@ class SlurmCluster():
         except Exception as e:
             logging.error(f"Error retrieving queue info: {e}")
             return {"error": str(e)}
-        
 
     def submit_task_get_future(self, task, args, key=0):
         future = self.client_scheduler.submit(

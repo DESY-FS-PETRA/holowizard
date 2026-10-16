@@ -1,7 +1,7 @@
 import sys
 from typing import List
 import json
-import os 
+import os
 
 from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.parameters.measurement import Measurement
@@ -50,7 +50,7 @@ class RecoParams:
     def to_log_json(self):
         log_dict = {
             "beam_setup": json.loads(self.beam_setup.to_log_json()),
-            #"measurements": [json.loads(measurement.to_log_json()) for measurement in self.measurements],
+            # "measurements": [json.loads(measurement.to_log_json()) for measurement in self.measurements],
             "reco_options": [json.loads(reco_option.to_log_json()) for reco_option in self.reco_options],
             "data_dimensions": json.loads(self.data_dimensions.to_log_json()),
             "output_path": self.output_path,

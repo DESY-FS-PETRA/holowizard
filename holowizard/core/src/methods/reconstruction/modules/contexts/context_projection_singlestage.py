@@ -63,7 +63,7 @@ class ContextProjectionSingleStage:
                 self.measurements = [json.loads(measurement.to_json()) for measurement in context.measurements]
                 self.data_dimensions = context.data_dimensions.to_json()
 
-                self.beam_setup = context. beam_setup.to_json()
+                self.beam_setup = context.beam_setup.to_json()
 
                 self.se_losses_all = JsonWritable.get_array(
                     member_value_adapter.get_numpy_array_float(context.se_losses_all)
@@ -156,7 +156,7 @@ class ContextProjectionSingleStage:
             measurements=measurements,
             data_dimensions=data_dimensions,
             fresnel_numbers=fresnel_numbers,
-            #oref_predicted=oref_predicted,
+            # oref_predicted=oref_predicted,
             nesterov_vt=nesterov_vt,
             grad_probe=grad_probe,
             se_losses_all=se_losses_all,
@@ -165,7 +165,7 @@ class ContextProjectionSingleStage:
             absorption_max=absorption_max,
             phaseshift_min=phaseshift_min,
             phaseshift_max=phaseshift_max,
-            oref_predicted_path=oref_predicted_path
+            oref_predicted_path=oref_predicted_path,
         )
 
     @staticmethod

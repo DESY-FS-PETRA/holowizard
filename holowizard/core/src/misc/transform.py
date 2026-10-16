@@ -4,6 +4,7 @@ from torch.nn.functional import pad
 import torchvision.transforms as ttf
 from torchvision.transforms import InterpolationMode
 
+
 def crop_center(img, crop: tuple):
     cropx = crop[0]
     cropy = crop[1]
@@ -39,15 +40,13 @@ def resize_arrays_to_size(new_size, **kwargs):
     for key, value in kwargs.items():
         if value is not None:
             if torch.is_complex(value):
-                resized_arrays[key]=(
-                resizer(value.real[None, None, :, :])[0, 0, :, :]
-                + 1j * resizer(value.imag[None, None, :, :])[0, 0, :, :]
+                resized_arrays[key] = (
+                    resizer(value.real[None, None, :, :])[0, 0, :, :]
+                    + 1j * resizer(value.imag[None, None, :, :])[0, 0, :, :]
                 )
             else:
-                resized_arrays[key]=(
-                resizer(value[None, None, :, :])[0, 0, :, :]
-                )
+                resized_arrays[key] = resizer(value[None, None, :, :])[0, 0, :, :]
         else:
-            resized_arrays[key]=None
+            resized_arrays[key] = None
 
     return resized_arrays

@@ -8,9 +8,15 @@ from holowizard.core.src.methods.preprocessing.process_padding_options import (
 )
 
 from holowizard.core.src.methods.reconstruction.utils.logging import log_preprocessed_params
-from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage import ControllerProjectionMultistage
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage import (
+    ControllerProjectionMultistage,
+)
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (
+    ContextProjectionMultistage,
+)
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
+    ContextProjectionSingleStage,
+)
 from holowizard.core.src.misc.transform import resize_arrays_to_size
 
 from holowizard.core.src.misc.memory import memory_breakdown
@@ -19,7 +25,7 @@ from holowizard.core.src.misc.memory import memory_breakdown
 class ControllerProjectionMultistageLazy(ControllerProjectionMultistage):
     def __init__(self):
         return super().__init__()
-    
+
     def set_stage(self, context_multi_stage: ContextProjectionMultistage, stage_index, verbose=True):
         self.check_successfull_initialization(context_multi_stage)
         self.check_valid_stage_index(context_multi_stage, stage_index)
@@ -51,8 +57,8 @@ class ControllerProjectionMultistageLazy(ControllerProjectionMultistage):
 
         self.rescale_arrays(context_multi_stage)
 
-        #print("debug")
-        #memory_breakdown(context_multi_stage.current_projection_singlestage)
+        # print("debug")
+        # memory_breakdown(context_multi_stage.current_projection_singlestage)
 
         self.update_propagator(context_multi_stage)
 
@@ -61,9 +67,14 @@ class ControllerProjectionMultistageLazy(ControllerProjectionMultistage):
                 context_multi_stage.current_projection_singlestage.beam_setup,
                 context_multi_stage.current_projection_singlestage.data_dimensions,
             )
-    
+
     def init_arrays(self, context_multi_stage: ContextProjectionMultistage):
-        self.init_arrays_for_shape(context_multi_stage, context_multi_stage.reco_params.data_dimensions.fov_size, init_nesterov_vt=False, init_probe_refractive=False)
+        self.init_arrays_for_shape(
+            context_multi_stage,
+            context_multi_stage.reco_params.data_dimensions.fov_size,
+            init_nesterov_vt=False,
+            init_probe_refractive=False,
+        )
 
     def rescale_arrays(self, context_multi_stage: ContextProjectionMultistage):
 
@@ -77,10 +88,11 @@ class ControllerProjectionMultistageLazy(ControllerProjectionMultistage):
             context_multi_stage.reco_params.data_dimensions,
             context_multi_stage.current_projection_singlestage.options.padding,
         )
- 
-        resized_arrays = resize_arrays_to_size(context_multi_stage.current_projection_singlestage.data_dimensions.fov_size,
-            oref_predicted = context_multi_stage.current_projection_singlestage.oref_predicted,
-            nesterov_vt = context_multi_stage.current_projection_singlestage.nesterov_vt,
+
+        resized_arrays = resize_arrays_to_size(
+            context_multi_stage.current_projection_singlestage.data_dimensions.fov_size,
+            oref_predicted=context_multi_stage.current_projection_singlestage.oref_predicted,
+            nesterov_vt=context_multi_stage.current_projection_singlestage.nesterov_vt,
         )
 
         context_multi_stage.current_projection_singlestage.oref_predicted = resized_arrays["oref_predicted"]

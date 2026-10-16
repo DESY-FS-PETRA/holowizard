@@ -16,8 +16,12 @@ from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.visualization.viewer.viewer import Viewer
 from holowizard.core.src.methods.reconstruction.algorithms.asrm.utils.logging import Logger, log_preprocessed_params
 from holowizard.core.src.misc.transform import resize_arrays_to_size
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
+    ContextProjectionSingleStage,
+)
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (
+    ContextProjectionMultistage,
+)
 from holowizard.core.src.models.beam_setups.cone_beam import ConeBeam
 
 
@@ -119,7 +123,7 @@ class ControllerProjectionMultistage:
 
     def update_loss_array_and_offset(self, context_multi_stage: ContextProjectionMultistage):
         extension_size = context_multi_stage.current_projection_singlestage.options.regularization_object.iterations
-        
+
         context_multi_stage.current_projection_singlestage.se_losses_all = torch.cat(
             (
                 context_multi_stage.current_projection_singlestage.se_losses_all,
@@ -131,8 +135,9 @@ class ControllerProjectionMultistage:
             )
         )
 
-
-        context_multi_stage.current_projection_singlestage.current_iter_offset = len(context_multi_stage.current_projection_singlestage.se_losses_all ) - extension_size
+        context_multi_stage.current_projection_singlestage.current_iter_offset = (
+            len(context_multi_stage.current_projection_singlestage.se_losses_all) - extension_size
+        )
 
     def update_propagator(self, context_multi_stage: ContextProjectionMultistage):
         context_multi_stage.current_projection_singlestage.fresnel_numbers = [
@@ -145,13 +150,21 @@ class ControllerProjectionMultistage:
         ]
 
     def increment_block(self, context_multi_stage: ContextProjectionMultistage):
-        
+
         self.update_loss_array_and_offset(context_multi_stage=context_multi_stage)
 
     def init_arrays(self, context_multi_stage: ContextProjectionMultistage):
         self.init_arrays_for_shape(context_multi_stage, context_multi_stage.reco_params.data_dimensions.total_size)
 
-    def init_arrays_for_shape(self, context_multi_stage: ContextProjectionMultistage, shape, init_se_losses=True,init_oref_predicted=True, init_nesterov_vt=True, init_probe_refractive = True):
+    def init_arrays_for_shape(
+        self,
+        context_multi_stage: ContextProjectionMultistage,
+        shape,
+        init_se_losses=True,
+        init_oref_predicted=True,
+        init_nesterov_vt=True,
+        init_probe_refractive=True,
+    ):
         if context_multi_stage.current_projection_singlestage.se_losses_all is None and init_se_losses:
             context_multi_stage.current_projection_singlestage.se_losses_all = torch.empty(
                 0, device=context_multi_stage.torch_device
@@ -196,16 +209,18 @@ class ControllerProjectionMultistage:
             context_multi_stage.current_projection_singlestage.options.padding,
         )
 
-        resized_arrays = resize_arrays_to_size(context_multi_stage.current_projection_singlestage.data_dimensions.total_size,
-            oref_predicted = context_multi_stage.current_projection_singlestage.oref_predicted,
-            nesterov_vt = context_multi_stage.current_projection_singlestage.nesterov_vt,
-            probe_refractive = context_multi_stage.current_projection_singlestage.beam_setup.probe_refractive,
+        resized_arrays = resize_arrays_to_size(
+            context_multi_stage.current_projection_singlestage.data_dimensions.total_size,
+            oref_predicted=context_multi_stage.current_projection_singlestage.oref_predicted,
+            nesterov_vt=context_multi_stage.current_projection_singlestage.nesterov_vt,
+            probe_refractive=context_multi_stage.current_projection_singlestage.beam_setup.probe_refractive,
         )
 
         context_multi_stage.current_projection_singlestage.oref_predicted = resized_arrays["oref_predicted"]
         context_multi_stage.current_projection_singlestage.nesterov_vt = resized_arrays["nesterov_vt"]
-        context_multi_stage.current_projection_singlestage.beam_setup.probe_refractive = resized_arrays["probe_refractive"]
-
+        context_multi_stage.current_projection_singlestage.beam_setup.probe_refractive = resized_arrays[
+            "probe_refractive"
+        ]
 
     def set_stage(self, context_multi_stage: ContextProjectionMultistage, stage_index, verbose=True):
         self.check_successfull_initialization(context_multi_stage)
@@ -244,5 +259,5 @@ class ControllerProjectionMultistage:
                 context_multi_stage.current_projection_singlestage.data_dimensions,
             )
 
-    def prepare_next_reco_block(self,context_multi_stage:ContextProjectionMultistage):
+    def prepare_next_reco_block(self, context_multi_stage: ContextProjectionMultistage):
         self.update_loss_array_and_offset(context_multi_stage)

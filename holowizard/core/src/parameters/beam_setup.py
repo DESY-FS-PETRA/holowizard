@@ -102,7 +102,7 @@ class BeamSetup:
     @property
     def probe_refractive(self):
         return self._probe_refractive
-    
+
     @property
     def probe_path(self):
         return self._probe_path
@@ -123,8 +123,8 @@ class BeamSetup:
     def flat_field(self, flat_field) -> None:
         self._flat_field = member_value_adapter.get_array(flat_field)
 
-    #@probe.setter
-    #def probe(self, probe) -> None:
+    # @probe.setter
+    # def probe(self, probe) -> None:
     #    self._probe = member_value_adapter.get_array(probe)
 
     @probe_refractive.setter

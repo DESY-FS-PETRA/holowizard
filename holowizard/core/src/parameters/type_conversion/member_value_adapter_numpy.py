@@ -152,7 +152,7 @@ class MemberValueAdapterNumpy(MemberValueAdapterInterface):
             return str(data)
         else:
             raise TypeError("Expected string or Path but got ", type(data)).with_traceback(sys.exc_info()[2])
-        
+
     @staticmethod
     def get_path(data):
         if data is None:

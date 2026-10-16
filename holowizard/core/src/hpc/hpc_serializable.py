@@ -3,15 +3,14 @@ from typing import Any, TypeVar
 
 HPCS = TypeVar("HPCS", bound="HpcSerializable")
 
+
 class HpcSerializable(ABC):
     @property
     @abstractmethod
-    def key(self) -> str:
-        ...
+    def key(self) -> str: ...
 
     @abstractmethod
-    def to_json(self) -> dict[str, Any]:
-        ...
+    def to_json(self) -> dict[str, Any]: ...
 
     @classmethod
     @abstractmethod

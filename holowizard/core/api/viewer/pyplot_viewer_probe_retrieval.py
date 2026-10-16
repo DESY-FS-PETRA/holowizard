@@ -43,9 +43,9 @@ class PyPlotViewer(Viewer):
             pos = axs0.imshow(plot_hologram.cpu(), cmap="gray", interpolation="none")
             self.fig.colorbar(pos, ax=axs0, fraction=0.046, pad=0.04)
             axs0.set_title("Measured Hologram")
-            axs0.axhline(crossect_pos, linestyle="--", color='red')
+            axs0.axhline(crossect_pos, linestyle="--", color="red")
             axs0.tick_params(left=False, bottom=False)
-            axs6.plot(plot_hologram[crossect_pos, :].cpu(),color='red')
+            axs6.plot(plot_hologram[crossect_pos, :].cpu(), color="red")
         else:
             axs0.set_axis_off()
 
@@ -55,12 +55,12 @@ class PyPlotViewer(Viewer):
             pos = axs3.imshow(plot_hologram.cpu(), cmap="gray", interpolation="none")
             self.fig.colorbar(pos, ax=axs3, fraction=0.046, pad=0.04)
             axs3.set_title("Propagated Probe")
-            axs3.axhline(crossect_pos, linestyle="--", color='blue')
+            axs3.axhline(crossect_pos, linestyle="--", color="blue")
             axs3.tick_params(left=False, bottom=False)
 
-            axs6.plot(plot_hologram[crossect_pos, :].cpu(),color='blue')
+            axs6.plot(plot_hologram[crossect_pos, :].cpu(), color="blue")
             axs6.set_title("Propagated Probe vs Hologram [" + str(crossect_pos) + ",:]")
-                
+
         else:
             axs3.set_axis_off()
             if hologram_measured is None:

@@ -13,6 +13,7 @@ from .process_data_dimensions import process_data_dimensions
 from .process_measurement import process_measurement, process_measurement_noflipandpad
 from .process_beam_setup import process_beam_setup, process_beam_setup_noflipandpad
 
+
 def process_padding_options(
     measurements: List[Measurement],
     beam_setup: BeamSetup,
@@ -45,11 +46,13 @@ def process_padding_options_noflipandpad(
     beam_setup = deepcopy(beam_setup)
     data_dimensions = deepcopy(data_dimensions)
 
-    data_dimensions = process_data_dimensions(data_dimensions, padding_options,init_window=False)
+    data_dimensions = process_data_dimensions(data_dimensions, padding_options, init_window=False)
 
     beam_setup = process_beam_setup_noflipandpad(beam_setup, padding_options, data_dimensions)
 
     for i in range(len(measurements)):
-        measurements[i].data = process_measurement_noflipandpad(measurements[i].data, padding_options, data_dimensions, i)
+        measurements[i].data = process_measurement_noflipandpad(
+            measurements[i].data, padding_options, data_dimensions, i
+        )
 
     return measurements, beam_setup, data_dimensions

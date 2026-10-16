@@ -3,7 +3,9 @@ from typing import List
 import logging
 
 from holowizard.core.src.methods.reconstruction.algorithms.asrm.utils.logging import log_input, log_params, log_results
-from holowizard.core.src.methods.reconstruction.modules.controllers.controller_projection_multistage import ControllerProjectionMultistage
+from holowizard.core.src.methods.reconstruction.modules.controllers.controller_projection_multistage import (
+    ControllerProjectionMultistage,
+)
 from holowizard.core.src.visualization.viewer import Viewer
 from holowizard.core.src.methods.reconstruction.algorithms.asrm.reconstruct_single_stage import reconstruct_single_stage
 import holowizard.core.src

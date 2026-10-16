@@ -3,13 +3,19 @@ import torch
 import holowizard.core.src
 from holowizard.core.src.methods.reconstruction.algorithms.asrm.regularization import regularization
 from holowizard.core.src.methods.reconstruction.algorithms.asrm.gradients.analytical import get_gradient
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
+    ContextProjectionSingleStage,
+)
 from holowizard.core.src.misc.create_gaussian_filter_kernels import create_gaussian_filter_kernels
 
 if "cuda" in holowizard.core.torch_running_device_name:
-    from holowizard.core.src.models.propagators.fresnel_propagator_cupy import FresnelPropagator as FresnelPropagatorImpl
+    from holowizard.core.src.models.propagators.fresnel_propagator_cupy import (
+        FresnelPropagator as FresnelPropagatorImpl,
+    )
 else:
-    from holowizard.core.src.models.propagators.fresnel_propagator_torch import FresnelPropagator as FresnelPropagatorImpl
+    from holowizard.core.src.models.propagators.fresnel_propagator_torch import (
+        FresnelPropagator as FresnelPropagatorImpl,
+    )
 
 
 def print_infos(iteration, context: ContextProjectionSingleStage, force_update):
@@ -91,7 +97,8 @@ def reconstruct_single_stage(context: ContextProjectionSingleStage):
 
             context.nesterov_vt = (
                 context.options.nesterov_object.update_rate * context.nesterov_vt
-                + context.options.regularization_object.update_rate * grad.real + 1j* context.options.regularization_object.update_rate * grad.imag
+                + context.options.regularization_object.update_rate * grad.real
+                + 1j * context.options.regularization_object.update_rate * grad.imag
             )
 
             if context.options.regularization_object.l2_weight.imag != 0.0:

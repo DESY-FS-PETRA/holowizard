@@ -5,7 +5,8 @@ from tqdm import tqdm
 from dask.distributed import as_completed
 
 from holowizard.core.src.hpc.slurm_cluster import SlurmCluster
-from holowizard.core.src.hpc.hpc_serializable import HpcSerializable  
+from holowizard.core.src.hpc.hpc_serializable import HpcSerializable
+
 
 def broadcast_task(
     cluster: SlurmCluster,
@@ -55,10 +56,7 @@ def broadcast_task(
         except Exception as e:
             retries_by_key[key] += 1
             if retries_by_key[key] <= max_retries:
-                logging.warning(
-                    f"Task for key {key} failed with {e!r}, retrying "
-                    f"({retries_by_key[key]}/{max_retries})"
-                )
+                logging.warning(f"Task for key {key} failed with {e!r}, retrying ({retries_by_key[key]}/{max_retries})")
                 ac.add(submit(key))
             else:
                 logging.error(f"Task for key {key} failed after {max_retries} retries: {e!r}")

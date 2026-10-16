@@ -11,6 +11,7 @@ from holowizard.core.src.misc.transform import pad_to_size
 from holowizard.core.src.parameters.data_dimensions import DataDimensions
 from holowizard.core.src.parameters.padding import Padding
 
+
 def flip_and_pad(image, padding_options: Padding, data_dimensions: DataDimensions, shift_phases=False, padval=0.0):
     fov_size = data_dimensions.fov_size
 
@@ -39,7 +40,7 @@ def flip_and_pad(image, padding_options: Padding, data_dimensions: DataDimension
     if mirrored_image.shape[0] < data_dimensions.total_size[0]:
         mirrored_image = pad_to_size(mirrored_image, data_dimensions.total_size, pad_mode="constant", padval=padval)
     elif mirrored_image.shape[0] > data_dimensions.total_size[0]:
-        mirrored_image = crop_center(mirrored_image,data_dimensions.total_size)
+        mirrored_image = crop_center(mirrored_image, data_dimensions.total_size)
     else:
         pass
 
@@ -49,13 +50,7 @@ def flip_and_pad(image, padding_options: Padding, data_dimensions: DataDimension
     return mirrored_image
 
 
-def flip_and_pad_and_fade(
-    image,
-    padding_options: Padding,
-    data_dimensions: DataDimensions,
-    padval,
-    index=0
-):
+def flip_and_pad_and_fade(image, padding_options: Padding, data_dimensions: DataDimensions, padval, index=0):
     image = flip_and_pad(image, padding_options, data_dimensions, padval=padval)
 
     logging.image_debug(
@@ -73,13 +68,8 @@ def flip_and_pad_and_fade(
 
     return image
 
-def resize_and_flip_and_pad_and_fade(
-    image,
-    padding_options: Padding,
-    data_dimensions: DataDimensions,
-    padval,
-    index=0
-):
+
+def resize_and_flip_and_pad_and_fade(image, padding_options: Padding, data_dimensions: DataDimensions, padval, index=0):
     if image is None:
         return None
 
@@ -97,12 +87,6 @@ def resize_and_flip_and_pad_and_fade(
 
     logging.image_debug("image_resized_" + str(index), image.cpu().numpy())
 
-    image = flip_and_pad_and_fade(
-                image,
-                padding_options,
-                data_dimensions,
-                padval,
-                index)
-    
-    return image
+    image = flip_and_pad_and_fade(image, padding_options, data_dimensions, padval, index)
 
+    return image

@@ -15,23 +15,34 @@ import holowizard.core.src
 from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.core.src.parameters.reco_params import RecoParams
 from holowizard.core.src.visualization.viewer.viewer import Viewer
-from holowizard.core.src.methods.preprocessing.process_padding_options import process_data_dimensions 
+from holowizard.core.src.methods.preprocessing.process_padding_options import process_data_dimensions
 
 from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_set import ContextProjectionsSet
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import ContextProjectionMultistage
-from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import ContextProjectionSingleStage
-from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage_lazy import ControllerProjectionMultistageLazy as ControllerProjectionMultistage
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_multistage import (
+    ContextProjectionMultistage,
+)
+from holowizard.core.src.methods.reconstruction.modules.contexts.context_projection_singlestage import (
+    ContextProjectionSingleStage,
+)
+from holowizard.core.src.methods.reconstruction.controller.controller_projection_multistage_lazy import (
+    ControllerProjectionMultistageLazy as ControllerProjectionMultistage,
+)
 from holowizard.core.src.methods.reconstruction.controller.io.controller_bunch_io import ControllerBunchIO
-from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import ControllerSingleStageContextIO
+from holowizard.core.src.methods.reconstruction.controller.io.controller_single_stage_context_io import (
+    ControllerSingleStageContextIO,
+)
 from holowizard.core.src.methods.reconstruction.controller.dask_utils.slurm_cluster import SlurmCluster
 from holowizard.core.src.methods.reconstruction.controller.tasks.broadcast_task import broadcast_task
-from holowizard.core.src.methods.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import task_run_asrm_lazyflipandpad as task_run_asrm
+from holowizard.core.src.methods.reconstruction.controller.tasks.task_run_asrm_lazyflipandpad import (
+    task_run_asrm_lazyflipandpad as task_run_asrm,
+)
 
 from holowizard.core.src.methods.reconstruction.controller.visualization import slider_2_3d_matrices
-#from memory_profiler import profile
+# from memory_profiler import profile
+
 
 class ControllerProjectionSet:
-    def __init__(self,working_dir:Path):
+    def __init__(self, working_dir: Path):
         self.start_stage = -1
         self.working_dir = working_dir
         self.controller_projection_multistage = ControllerProjectionMultistage()
@@ -45,14 +56,13 @@ class ControllerProjectionSet:
         viewer: List[Viewer] = None,
         torch_device=None,
         cluster: SlurmCluster = None,
-        start_stage = -1,
-        min_bunch_size=6500
+        start_stage=-1,
+        min_bunch_size=6500,
     ):
         self.start_stage = start_stage
 
         if torch_device is None:
-            torch_device = holowizard.core.torch_running_device 
-
+            torch_device = holowizard.core.torch_running_device
 
         logging.info("Creating Projections context")
         context_projections = ContextProjectionsSet(
@@ -72,31 +82,29 @@ class ControllerProjectionSet:
             current_data_dimensions=None,
         )
 
-
         logging.info("Creating projection contexts")
         self.reset_projection_contexts(context_projections)
 
         logging.info("Contexts creation finished")
         return context_projections
-    
+
     def get_default_stage_context(self, context: ContextProjectionsSet):
         self.controller_bunch_io.read_bunch(context, [context.projection_contexts[0].key])
         return context.projection_contexts[0].current_projection_singlestage
-
 
     def get_stage_context(self, context: ContextProjectionsSet, key):
         for i in range(len(context.projection_contexts)):
             if context.projection_contexts[i].key == key:
                 return context.projection_contexts[i].current_projection_singlestage
 
-    def set_stage_of_projection_context(self, projection_context:ContextProjectionMultistage, keys:List[str], stage_index:int, working_dir, pbar=None):
+    def set_stage_of_projection_context(
+        self, projection_context: ContextProjectionMultistage, keys: List[str], stage_index: int, working_dir, pbar=None
+    ):
         controller = ControllerProjectionMultistage()
         controller_io = ControllerSingleStageContextIO()
         for key in keys:
             if projection_context.key == key:
-                controller.set_stage(
-                    projection_context, stage_index, verbose=False
-                )
+                controller.set_stage(projection_context, stage_index, verbose=False)
                 controller_io.define_io_paths(projection_context.current_projection_singlestage, working_dir)
                 if pbar is not None:
                     pbar.update(1)
@@ -114,7 +122,7 @@ class ControllerProjectionSet:
         processed_data_dimensions = process_data_dimensions(
             deepcopy(context.reco_params.data_dimensions),
             deepcopy(context.reco_params.reco_options[stage_index].padding),
-            init_window=False
+            init_window=False,
         )
 
         context.current_data_dimensions = processed_data_dimensions
@@ -133,19 +141,25 @@ class ControllerProjectionSet:
 
             pool = Pool()
             with tqdm(total=len(keys)) as pbar:
-                context.projection_contexts = list(pool.starmap(self.set_stage_of_projection_context,
-                                                         zip(context.projection_contexts,
-                                                             repeat(keys),
-                                                             repeat(stage_index),
-                                                             repeat(self.working_dir),
-                                                             repeat(pbar))))
+                context.projection_contexts = list(
+                    pool.starmap(
+                        self.set_stage_of_projection_context,
+                        zip(
+                            context.projection_contexts,
+                            repeat(keys),
+                            repeat(stage_index),
+                            repeat(self.working_dir),
+                            repeat(pbar),
+                        ),
+                    )
+                )
 
-            '''
+            """
             pbar = tqdm(total=len(keys))
             for projection_context in context.projection_contexts:
                 self.set_stage_of_projection_context(projection_context,keys,stage_index,self.working_dir,pbar=pbar)
 
-            '''
+            """
 
             logging.info("Write stages")
             self.controller_bunch_io.write_bunch(context, keys)
@@ -170,16 +184,12 @@ class ControllerProjectionSet:
             keys = self.controller_bunch_io.get_bunch_keys(context, i)
             if keys is None:
                 keys_intersected = selected_keys
-                selected_projection_contexts = [
-                    pc for pc in context.projection_contexts 
-                    if pc.key in keys_intersected
-                ]
+                selected_projection_contexts = [pc for pc in context.projection_contexts if pc.key in keys_intersected]
             else:
                 logging.info("Bunch " + str(i + 1) + "/" + str(num_bunches))
 
                 keys_intersected = [item for item in keys if item in selected_keys]
 
-                
                 # Skip this bunch if no keys match
                 if not keys_intersected:
                     continue
@@ -189,19 +199,23 @@ class ControllerProjectionSet:
 
                 # Filter projection contexts: must be in BOTH keys (current bunch) AND keys_intersected
                 selected_projection_contexts = [
-                    pc for pc in context.projection_contexts 
-                    if pc.key in keys_intersected and pc.key in keys
+                    pc for pc in context.projection_contexts if pc.key in keys_intersected and pc.key in keys
                 ]
 
-            
             pool = Pool()
             with tqdm(total=len(keys_intersected)) as pbar:
-                updated_contexts = list(pool.starmap(self.set_stage_of_projection_context,
-                                                zip(selected_projection_contexts,
-                                                    repeat(keys_intersected),
-                                                    repeat(stage_index),
-                                                    repeat(self.working_dir),
-                                                    repeat(pbar))))
+                updated_contexts = list(
+                    pool.starmap(
+                        self.set_stage_of_projection_context,
+                        zip(
+                            selected_projection_contexts,
+                            repeat(keys_intersected),
+                            repeat(stage_index),
+                            repeat(self.working_dir),
+                            repeat(pbar),
+                        ),
+                    )
+                )
 
             # Update the projection contexts back
             context_dict = {pc.key: pc for pc in updated_contexts}
@@ -215,8 +229,8 @@ class ControllerProjectionSet:
         single_stage_context = self.get_stage_context(context, selected_keys[0])
         context.current_data_dimensions = single_stage_context.data_dimensions
 
-        #print("projection memory")
-        #memory_breakdown(context.projection_contexts[0])
+        # print("projection memory")
+        # memory_breakdown(context.projection_contexts[0])
 
     def store_bunch_in_ram(
         self, context_projection_set: ContextProjectionsSet, single_stage_contexts: List[ContextProjectionSingleStage]
@@ -246,7 +260,18 @@ class ControllerProjectionSet:
         context_projection_set.se_losses_all = torch.cat((context_projection_set.se_losses_all, se_losses_summed))
         context_projection_set.current_iter_offset = len(context_projection_set.se_losses_all) - 1
 
-    def create_multi_stage_context(self,measurement, beam_setup, reco_options, data_dimensions, output_path, session_params, initial_guess, torch_device, progress_bar=None):
+    def create_multi_stage_context(
+        self,
+        measurement,
+        beam_setup,
+        reco_options,
+        data_dimensions,
+        output_path,
+        session_params,
+        initial_guess,
+        torch_device,
+        progress_bar=None,
+    ):
         controller = ControllerProjectionMultistage()
 
         measurements = [measurement]
@@ -260,8 +285,8 @@ class ControllerProjectionSet:
             initial_guess=initial_guess,
         )
 
-        context = controller.create_multistage_context(reco_params,torch_device=torch_device)
-        
+        context = controller.create_multistage_context(reco_params, torch_device=torch_device)
+
         if progress_bar is not None:
             progress_bar.update(1)
 
@@ -270,24 +295,28 @@ class ControllerProjectionSet:
     def reset_projection_contexts(self, context: ContextProjectionsSet):
         pool = Pool()
 
-        #memory_breakdown(context.projection_contexts)
+        # memory_breakdown(context.projection_contexts)
 
+        multi_stage_contexts = list(
+            pool.starmap(
+                self.create_multi_stage_context,
+                zip(
+                    context.reco_params.measurements,
+                    repeat(context.reco_params.beam_setup),
+                    repeat(context.reco_params.reco_options),
+                    repeat(context.reco_params.data_dimensions),
+                    repeat(context.reco_params.output_path),
+                    repeat(context.reco_params.session_params),
+                    repeat(context.reco_params.initial_guess),
+                    repeat(context.torch_device),
+                    repeat(None),
+                ),
+            )
+        )
 
-  
-        multi_stage_contexts = list(pool.starmap(self.create_multi_stage_context,
-                                        zip(context.reco_params.measurements,
-                                            repeat(context.reco_params.beam_setup),
-                                            repeat(context.reco_params.reco_options),
-                                            repeat(context.reco_params.data_dimensions),
-                                            repeat(context.reco_params.output_path),
-                                            repeat(context.reco_params.session_params),
-                                            repeat(context.reco_params.initial_guess),
-                                            repeat(context.torch_device),
-                                            repeat(None))))
+        # memory_breakdown(multi_stage_contexts[0])
 
-        #memory_breakdown(multi_stage_contexts[0])
-
-        '''
+        """
         for i in tqdm(range(len(multi_stage_contexts))):
             self.controller_projection_multistage.set_stage(
                 multi_stage_contexts[i], context.current_stage, verbose=False
@@ -297,28 +326,28 @@ class ControllerProjectionSet:
                 self.controller_single_stage_context_io.define_io_paths(multi_stage_contexts[i].current_projection_singlestage,context.dask_options.working_dir)
                 self.controller_single_stage_context_io.swap_arrays_from_ram_to_file(multi_stage_contexts[i].current_projection_singlestage)
                 #multi_stage_contexts[i].current_projection_singlestage = None
-        '''
+        """
 
         context.projection_contexts = multi_stage_contexts
         target_stage = context.current_stage
         context.current_stage = self.start_stage
 
-        self.set_stage_all(context,target_stage)
+        self.set_stage_all(context, target_stage)
 
-        #memory_breakdown(context.projection_contexts[0])
-        #print(context.projection_contexts[0].current_projection_singlestage.nesterov_vt)
-        #print(context.projection_contexts[0].current_projection_singlestage.beam_setup.probe)
+        # memory_breakdown(context.projection_contexts[0])
+        # print(context.projection_contexts[0].current_projection_singlestage.nesterov_vt)
+        # print(context.projection_contexts[0].current_projection_singlestage.beam_setup.probe)
 
     def get_current_objects(self, context: ContextProjectionsSet, indices):
         logging.info("Gathering current objects")
 
-        #objects = []
-        #for key in tqdm(keys):
+        # objects = []
+        # for key in tqdm(keys):
         #    for i in range(len(context.projection_contexts)):
         #        if context.projection_contexts[i].key == key:
         #            #self.controller_bunch_io.read_bunch(context, [key],verbose=False)
         #            path = context.projection_contexts[i].current_projection_singlestage.oref_predicted_path
-        #            objects.append(torch.load(path, map_location=holowizard.core.torch_running_device)) 
+        #            objects.append(torch.load(path, map_location=holowizard.core.torch_running_device))
         #            #self.controller_bunch_io.clean_bunch_from_ram(context, [key])
 
         def load_slice(i):
@@ -327,17 +356,19 @@ class ControllerProjectionSet:
 
         with ThreadPoolExecutor() as executor:
             objects = list(tqdm(executor.map(load_slice, indices), total=len(indices)))
-    
-        #objects = []
-        #for i in tqdm(indices):
+
+        # objects = []
+        # for i in tqdm(indices):
         #    path = context.projection_contexts[i].current_projection_singlestage.oref_predicted_path
         #    objects.append(torch.load(path, map_location=holowizard.core.torch_running_device))
-   
+
         return objects
 
     def run_object_update_for_keys(self, context: ContextProjectionsSet, keys):
         self.prepare_next_reco_block_for_keys(context, keys)
-        results = broadcast_task(context.cluster, context.projection_contexts, task_run_asrm, keys, device=context.torch_device)
+        results = broadcast_task(
+            context.cluster, context.projection_contexts, task_run_asrm, keys, device=context.torch_device
+        )
         self.store_bunch_in_ram(context, results)
         self.update_loss_array(context, results)
 
@@ -366,9 +397,9 @@ class ControllerProjectionSet:
                 if keys_to_process is None:
                     return
             logging.info("Bunch " + str(i + 1) + "/" + str(num_bunches))
-            #logging.info("Reading bunch from files")
-            #self.controller_bunch_io.read_bunch(context, keys_to_process)
+            # logging.info("Reading bunch from files")
+            # self.controller_bunch_io.read_bunch(context, keys_to_process)
             self.run_object_update_for_keys(context=context, keys=keys_to_process)
-            #logging.info("Writing bunch to files")
-            #self.controller_bunch_io.write_bunch(context, keys_to_process)
+            # logging.info("Writing bunch to files")
+            # self.controller_bunch_io.write_bunch(context, keys_to_process)
         context.cluster.stop_cluster()

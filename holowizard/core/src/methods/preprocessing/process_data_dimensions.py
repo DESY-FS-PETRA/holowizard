@@ -7,7 +7,10 @@ from holowizard.core.src.methods.preprocessing.window_2d import get_2d_window
 
 from .boundaries import Boundaries
 
-def get_window_from_padding_options(data_dimensions, padding_options, torch_device=holowizard.core.torch_running_device):
+
+def get_window_from_padding_options(
+    data_dimensions, padding_options, torch_device=holowizard.core.torch_running_device
+):
     window_width_x = (
         int(data_dimensions.fading_width[0][0] // padding_options.down_sampling_factor),
         int(data_dimensions.fading_width[0][1] // padding_options.down_sampling_factor),
@@ -18,7 +21,6 @@ def get_window_from_padding_options(data_dimensions, padding_options, torch_devi
     )
 
     boundaries = Boundaries(data_dimensions.total_size, data_dimensions.fov_size)
-
 
     if padding_options.padding_mode.value == Padding.PaddingMode.MIRROR_ALL.value:
         window = get_2d_window(
@@ -58,10 +60,16 @@ def get_window_from_padding_options(data_dimensions, padding_options, torch_devi
 
     else:
         raise RuntimeError("Padding mode not implemented")
-    
+
     return window
 
-def process_data_dimensions(data_dimensions: DataDimensions, padding_options: Padding, init_window=True, torch_device=holowizard.core.torch_running_device):
+
+def process_data_dimensions(
+    data_dimensions: DataDimensions,
+    padding_options: Padding,
+    init_window=True,
+    torch_device=holowizard.core.torch_running_device,
+):
     support_range = data_dimensions.fov_range_raw
     total_size_padded = tuple([round(x * padding_options.padding_factor) for x in data_dimensions.total_size])
 
@@ -103,11 +111,13 @@ def process_data_dimensions(data_dimensions: DataDimensions, padding_options: Pa
     ]
 
     if init_window:
-        data_dimensions.window = get_window_from_padding_options(data_dimensions,padding_options,torch_device=torch_device)
+        data_dimensions.window = get_window_from_padding_options(
+            data_dimensions, padding_options, torch_device=torch_device
+        )
 
-    #logging.image_debug(
-    #"window",
-    #data_dimensions.window.cpu().numpy(),
-    #)
+    # logging.image_debug(
+    # "window",
+    # data_dimensions.window.cpu().numpy(),
+    # )
 
     return data_dimensions

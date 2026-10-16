@@ -158,7 +158,7 @@ async def _lifespan(app: FastAPI):
         raise RuntimeError("Could not create dask options from hydra config")
     dask_options.working_dir = app.state.beamtime.log_path / dask_options.working_dir
     dask_options.python_env = sys.prefix
-    app.state.beamtime.cluster=Cluster(dask_options=dask_options)
+    app.state.beamtime.cluster = Cluster(dask_options=dask_options)
     app.state.beamtime.cluster.start_cluster()
 
     app.state.cfg = cfg
