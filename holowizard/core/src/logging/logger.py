@@ -178,7 +178,7 @@ class Logger:
 
         data_path_tiff = data_path + ".tiff"
         Logger.current_logger.log(level, data_path_tiff)
-        io.imsave(data_path_tiff, data)
+        io.imsave(data_path_tiff, data, check_contrast=False)
 
     @staticmethod
     def params_level_callback(data_name, data):
