@@ -1,4 +1,4 @@
-from holowizard.core.reconstruction.constraints.regularization import apply_filter
+from holowizard.core.src.methods.reconstruction.algorithms.asrm.regularization.regularization import apply_filter
 import torch
 import pytest
 

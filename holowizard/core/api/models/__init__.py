@@ -1,5 +1,5 @@
-from holowizard.core.models.cone_beam import ConeBeam
-from holowizard.core.models.fresnel_propagator_torch import FresnelPropagator
+from holowizard.core.src.models.beam_setups.cone_beam import ConeBeam
+from holowizard.core.src.models.propagators.fresnel_propagator_torch import FresnelPropagator
 
 __all__ = [
     "ConeBeam",

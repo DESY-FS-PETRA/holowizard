@@ -1,6 +1,6 @@
 from holowizard.core.src.parameters.beam_setup import BeamSetup
 from holowizard.core.src.parameters.measurement import Measurement
-from holowizard.core.models.cone_beam import ConeBeam
+from holowizard.core.src.models.beam_setups.cone_beam import ConeBeam
 
 
 def test_z01_calculation():
