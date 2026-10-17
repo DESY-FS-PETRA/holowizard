@@ -18,7 +18,8 @@ from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster
 from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
-from holowizard.pipe.server.routes import dashboard, overview, parameter, scan
+from holowizard.pipe.server.auth import LoginRequiredMiddleware, UserStore, ensure_default_user, users_file
+from holowizard.pipe.server.routes import dashboard, login, overview, parameter, scan
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -65,6 +66,11 @@ def create_app(cfg=None, config_dir: Union[str, Path] = None) -> FastAPI:
     if cfg:
         app.state._initial_cfg = cfg
 
+    users = UserStore(users_file())
+    ensure_default_user(users)
+    app.state.users = users
+    app.add_middleware(LoginRequiredMiddleware, store=users)
+
     @app.get("/", tags=["ui"])
     async def home(request: Request):
         return RedirectResponse(url=request.url_for("overview_page"))
@@ -73,7 +79,7 @@ def create_app(cfg=None, config_dir: Union[str, Path] = None) -> FastAPI:
     async def get_config(request: Request):
         return OmegaConf.to_container(request.app.state.cfg, resolve=True)
 
-    for module in (overview, dashboard, parameter, scan):
+    for module in (login, overview, dashboard, parameter, scan):
         app.include_router(module.router)
 
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / ".." / "templates/static")), name="static")

@@ -1,0 +1,23 @@
+{# Shared macros, imported by parameter.html and parameter_form.html. #}
+{% macro render_field(value, key_path) %}
+    {% if value is mapping %}
+        <fieldset class="stage-item"><legend>{{ key_path or 'root' }}</legend>
+            {% for k,v in value.items() %}
+                {% set name = key_path ~ (key_path and '.') ~ k %}
+                {% if k in ['_target_','update_blocks'] %}
+                    <input type="hidden" name="{{ name }}" value="{{ v }}">
+                {% else %}
+                    {{ render_field(v,name) }}
+                {% endif %}
+            {% endfor %}
+        </fieldset>
+    {% elif value is iterable and not value is string %}
+        {% for item in value %}
+            {{ render_field(item, key_path ~ '[' ~ loop.index0 ~ ']') }}
+        {% endfor %}
+    {% else %}
+        <label>{{ key_path.split('.')[-1].split('[')[0].replace('_',' ').title() }}:
+            <input name="{{ key_path }}" type="text" value="{{ value }}">
+        </label><br class="stage-item">
+    {% endif %}
+{% endmacro %}

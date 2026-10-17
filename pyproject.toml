@@ -61,6 +61,7 @@ holowizard_forge_create_testconfig = "holowizard.forge.scripts.create_testconfig
 holowizard_livereco_server_start = "holowizard.livereco.server.main:main"
 holowizard_core_create_examples = "holowizard.core.scripts.create_examples:main"
 holowizard_pipe_start = "holowizard.pipe.scripts.holopipe:main"
+holowizard_pipe_users = "holowizard.pipe.server.auth:main"
 holowizard_pipe_reconstruct_scan = "holowizard.pipe.script.reco:main"
 
 [project.optional-dependencies]
