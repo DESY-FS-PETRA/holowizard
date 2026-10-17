@@ -228,6 +228,12 @@
             margin-bottom: 0.5rem;
         }
 
+        .stage-fixed {
+            font-size: 12px;
+            color: #888;
+            padding: 6px 0;
+        }
+
         .stage-card label {
             font-size: 13px;
             font-weight: 500;
@@ -325,7 +331,6 @@
             <div class="field">
                 <label for="stage-select">Stage</label>
                 <select id="stage-select">
-                    <option value="find_focus">Find Focus</option>
                     <option value="reconstruction">Reconstruction</option>
                 </select>
             </div>
@@ -440,10 +445,7 @@
                     <input type="checkbox" name="stages" value="find_focus" checked id="chk-focus">
                     <label for="chk-focus">Find Focus</label>
                 </div>
-                <select id="find_focus-select" name="find_focus_option">
-                    <option value="">— option —</option>
-                    <option value="custom">Custom</option>
-                </select>
+                <div class="stage-fixed" title="Find focus always uses find_focus/defaults.yaml">defaults.yaml</div>
             </div>
             <div class="stage-card">
                 <div class="stage-header">
@@ -513,7 +515,7 @@
         'stage-select', 'parameter-select', 'scan-select', 'img-select',
         'energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp',
         'vmin', 'vmax', 'chk-focus', 'chk-reco', 'chk-tomo',
-        'find_focus-select', 'reconstruction-select'
+        'reconstruction-select'
     ];
     let restoring = false;
     let saveTimer = null;
@@ -694,7 +696,7 @@
                 .forEach(id => { if (id in f && qs(id)) setField(qs(id), f[id]); });
             toggleGeomControls();
 
-            for (const [id, stage] of [['find_focus-select', 'find_focus'], ['reconstruction-select', 'reconstruction']]) {
+            for (const [id, stage] of [['reconstruction-select', 'reconstruction']]) {
                 const sel = qs(id), v = f[id];
                 if (!sel || !v) continue;
                 if (!hasOption(sel, v)) await loadStageOptions(sel, stage);
@@ -739,6 +741,10 @@
                 qs('live-preview').style.display = 'block';
             } else {
                 const json_data = JSON.parse(data);
+                if (json_data.error) {
+                    alert(json_data.error);
+                    return;
+                }
                 const z01 = parseFloat(json_data.z01);
                 const z02 = parseFloat(json_data.z02);
                 const fig = json_data.data;
@@ -782,7 +788,6 @@
     });
 
     const reconSelect = qs('reconstruction-select');
-    const focusSelect = qs('find_focus-select');
     const stageOptionsLoaded = {};
     async function loadStageOptions(select, stage) {
         if (stageOptionsLoaded[stage]) return;
@@ -800,7 +805,6 @@
         }
     }
     if (reconSelect) reconSelect.addEventListener('mousedown', () => loadStageOptions(reconSelect, 'reconstruction'), { once: true });
-    if (focusSelect) focusSelect.addEventListener('mousedown', () => loadStageOptions(focusSelect, 'find_focus'), { once: true });
 
 
     const btn = document.getElementById('logo-btn');

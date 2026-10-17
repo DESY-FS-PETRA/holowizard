@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import tifffile
-from fastapi import APIRouter, FastAPI, HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from PIL import Image
 
@@ -119,63 +119,62 @@ _render_large = lru_cache(maxsize=64)(_render_png)
 THUMB_MAX_SIZE = 256
 
 
-def register_overview_routes(app: FastAPI):
-    api = APIRouter(prefix="/api/overview", tags=["overview"])
+router = APIRouter(tags=["overview"])
 
-    def _raw() -> Path:
-        return Path(app.state.beamtime.path_raw)
 
-    def _scan_dir(name: str) -> Path:
-        if not name.startswith(DIR_PREFIX) or name != Path(name).name:
-            raise HTTPException(status_code=400, detail=f"Invalid directory name: {name!r}")
-        path = _raw() / name
-        if not path.is_dir():
-            raise HTTPException(status_code=404, detail=f"Directory not found: {name}")
-        return path
+def _scan_dir(raw: Path, name: str) -> Path:
+    if not name.startswith(DIR_PREFIX) or name != Path(name).name:
+        raise HTTPException(status_code=400, detail=f"Invalid directory name: {name!r}")
+    path = raw / name
+    if not path.is_dir():
+        raise HTTPException(status_code=404, detail=f"Directory not found: {name}")
+    return path
 
-    @api.get("/dirs")
-    async def overview_dirs():
-        raw = _raw()
-        if not raw.is_dir():
-            raise HTTPException(status_code=404, detail=f"Raw folder not found: {raw}")
-        return {"path": str(raw), "dirs": await run_in_threadpool(list_scan_dirs, raw)}
 
-    @api.get("/dirs/{name}")
-    async def overview_dir(name: str):
-        summary = await run_in_threadpool(_dir_summary, _scan_dir(name))
-        if summary is None:
-            raise HTTPException(status_code=404, detail=f"Directory not readable: {name}")
-        return summary
+@router.get("/api/overview/dirs")
+async def overview_dirs(request: Request):
+    raw = Path(request.app.state.beamtime.path_raw)
+    if not raw.is_dir():
+        raise HTTPException(status_code=404, detail=f"Raw folder not found: {raw}")
+    return {"path": str(raw), "dirs": await run_in_threadpool(list_scan_dirs, raw)}
 
-    @api.get("/image/{name}/{file}")
-    async def overview_image(name: str, file: str, size: int = Query(256, ge=32, le=MAX_IMAGE_SIZE)):
-        if file != Path(file).name or not file.lower().endswith(TIFF_SUFFIXES):
-            raise HTTPException(status_code=400, detail=f"Invalid file name: {file!r}")
-        path = _scan_dir(name) / file
-        try:
-            mtime_ns = path.stat().st_mtime_ns
-        except OSError:
-            raise HTTPException(status_code=404, detail=f"Image not found: {file}")
-        try:
-            png, factor, lo, hi = await run_in_threadpool(
-                _render_thumb if size <= THUMB_MAX_SIZE else _render_large, str(path), mtime_ns, size
-            )
-        except Exception as e:
-            # Most likely a file that is still being written; the client retries later.
-            raise HTTPException(status_code=503, detail=f"Could not read {file}: {e}")
-        return Response(
-            content=png,
-            media_type="image/png",
-            headers={
-                "Cache-Control": "max-age=3600",
-                "X-Downsample": str(factor),
-                "X-Range": f"{lo:g},{hi:g}",
-                "Access-Control-Expose-Headers": "X-Downsample, X-Range",
-            },
+
+@router.get("/api/overview/dirs/{name}")
+async def overview_dir(name: str, request: Request):
+    summary = await run_in_threadpool(_dir_summary, _scan_dir(Path(request.app.state.beamtime.path_raw), name))
+    if summary is None:
+        raise HTTPException(status_code=404, detail=f"Directory not readable: {name}")
+    return summary
+
+
+@router.get("/api/overview/image/{name}/{file}")
+async def overview_image(name: str, file: str, request: Request, size: int = Query(256, ge=32, le=MAX_IMAGE_SIZE)):
+    if file != Path(file).name or not file.lower().endswith(TIFF_SUFFIXES):
+        raise HTTPException(status_code=400, detail=f"Invalid file name: {file!r}")
+    path = _scan_dir(Path(request.app.state.beamtime.path_raw), name) / file
+    try:
+        mtime_ns = path.stat().st_mtime_ns
+    except OSError:
+        raise HTTPException(status_code=404, detail=f"Image not found: {file}")
+    try:
+        png, factor, lo, hi = await run_in_threadpool(
+            _render_thumb if size <= THUMB_MAX_SIZE else _render_large, str(path), mtime_ns, size
         )
+    except Exception as e:
+        # Most likely a file that is still being written; the client retries later.
+        raise HTTPException(status_code=503, detail=f"Could not read {file}: {e}")
+    return Response(
+        content=png,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "max-age=3600",
+            "X-Downsample": str(factor),
+            "X-Range": f"{lo:g},{hi:g}",
+            "Access-Control-Expose-Headers": "X-Downsample, X-Range",
+        },
+    )
 
-    @app.get("/overview", tags=["ui"])
-    async def overview_page(request: Request):
-        return app.state.templates.TemplateResponse("overview.html", {"request": request, "prefix": DIR_PREFIX})
 
-    app.include_router(api)
+@router.get("/overview")
+async def overview_page(request: Request):
+    return request.app.state.templates.TemplateResponse("overview.html", {"request": request, "prefix": DIR_PREFIX})
