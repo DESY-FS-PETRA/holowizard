@@ -280,13 +280,24 @@
             margin: 0.75rem 0;
         }
 
+        /* Geometry row: everything sits on the line of the holder input; its label stays above it. */
         .geom-row {
-            display: grid;
-            grid-template-columns: auto 1fr auto auto;
-            gap: 0.75rem;
-            align-items: center;
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            flex-wrap: wrap;
             margin-bottom: 0.75rem;
         }
+        .geom-row .checkbox-label,
+        .geom-row input[type="number"],
+        .geom-row .btn {
+            height: 32px;
+        }
+        .geom-row .holder-field { flex: 1; min-width: 100px; }
+        .checkbox-label:has(input:disabled) { color: #aaa; cursor: default; }
+        .checkbox-label input:disabled { cursor: default; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn:disabled:hover { background: #fff; }
 
         #preview-image, #loss-image {
             border-radius: 8px;
@@ -427,11 +438,11 @@
             </div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <div class="geom-row">
             <label class="checkbox-label">
                 <input type="checkbox" id="use-p05"> Use P05 geometry
             </label>
-            <div class="field" style="flex:1;min-width:100px;">
+            <div class="field holder-field">
                 <label for="holder">Holder (mm)</label>
                 <input id="holder" name="holder" type="number" step="1" min="0" disabled>
             </div>
