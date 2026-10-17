@@ -104,7 +104,7 @@ def _render_png(path: str, mtime_ns: int, size: int) -> Tuple[bytes, int, float,
     with tifffile.TiffFile(path) as tif:
         arr = tif.pages[0].asarray()
     small, factor = _downsample(arr, size)
-    # Same orientation as the image preview on the parameter tuning page.
+    # Same orientation as the image preview on the phase retrieval page.
     small = np.rot90(small)
     lo, hi = np.percentile(small, [1, 99])
     scaled = np.clip((small - lo) / max(hi - lo, 1e-6), 0, 1)

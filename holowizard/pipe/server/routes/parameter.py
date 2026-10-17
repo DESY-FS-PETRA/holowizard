@@ -1,4 +1,4 @@
-"""Parameter tuning page (parameter.html, parameter_form.html): parameter sets, live preview and scan submission."""
+"""Phase retrieval page (parameter.html, parameter_form.html): parameter sets, live preview and scan submission."""
 
 import asyncio
 import json
