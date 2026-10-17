@@ -46,6 +46,7 @@ from holowizard.pipe.scan import P05Scan as Scan
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.scan.p05_scan import P05Geometry
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
+from holowizard.pipe.server.overview import register_overview_routes
 import plotly.express as px
 import json
 
@@ -188,6 +189,7 @@ def create_app(cfg=None, config_dir: Union[str, Path] = None) -> FastAPI:
     if cfg:
         app.state._initial_cfg = cfg
     _register_routes(app)
+    register_overview_routes(app)
 
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / ".." / "templates/static")), name="static")
 
@@ -359,7 +361,7 @@ def _register_routes(app: FastAPI):
     # UI routes
     @ui.get("/")
     async def home(request: Request):
-        return RedirectResponse(url=request.url_for("parameter_form"))
+        return RedirectResponse(url=request.url_for("overview_page"))
 
     @ui.get("/dashboard")
     async def dashboard(request: Request):

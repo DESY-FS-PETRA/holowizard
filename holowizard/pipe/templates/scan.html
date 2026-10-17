@@ -41,7 +41,7 @@
       {% endif %}
   {% endfor %}
   <h1>Scan Report: {{ scan.name }}</h1>
-  <p><a href="/dashboard">← Back to Dashboard</a></p>
+  <p><a href="/dashboard">← Back to Worker Status</a></p>
 <span class="citation-label">Please cite:</span>
     {% for task, info in citations.items() %}
     {% if task in scan.config.scan.tasks %}

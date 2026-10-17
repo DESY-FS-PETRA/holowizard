@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="static/logo.png">
+    <title>Raw Data Overview</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --border-radius-md: 6px;
+            --border-radius-lg: 10px;
+            --color-background-secondary: #f5f4f1;
+            --color-border-primary: rgba(0,0,0,0.3);
+            --color-border-secondary: rgba(0,0,0,0.15);
+            --color-border-tertiary: rgba(0,0,0,0.08);
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #555;
+            --color-text-tertiary: #888;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+        h1 { font-size: 18px; font-weight: 500; }
+
+        .topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{border-color:var(--color-border-primary)}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+
+        .toolbar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+            margin-bottom: 1.25rem; color: #555; font-size: 12px;
+        }
+        .toolbar .path { font-family: ui-monospace, monospace; color: #888; }
+        .toolbar .spacer { flex: 1; }
+        input[type="text"], select {
+            padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
+        }
+        input[type="text"]:focus, select:focus { border-color: rgba(0,0,0,0.35); background: #fff; }
+        .btn {
+            padding: 6px 12px; font-size: 13px; font-weight: 500; border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18); background: #fff; color: #1a1a1a; cursor: pointer;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:disabled { opacity: 0.4; cursor: default; }
+        .btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #28a745; display: inline-block; }
+        .status-dot.error { background: #d9534f; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 1rem;
+        }
+        .tile {
+            background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px;
+            padding: 0.75rem; cursor: pointer; transition: box-shadow 0.12s, border-color 0.12s;
+        }
+        .tile:hover { border-color: rgba(0,0,0,0.3); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .tile.new { animation: flash 2s ease-out; }
+        @keyframes flash { from { box-shadow: 0 0 0 3px rgba(40,167,69,0.5); } to { box-shadow: none; } }
+        .tile-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .tile-name { font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tile-meta { margin-left: auto; font-size: 11px; color: #888; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .thumb { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .thumb-img {
+            aspect-ratio: 1; width: 100%; background: #ecebe7; border-radius: 4px;
+            object-fit: contain; display: block;
+        }
+        .thumb-label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .empty { color: #888; padding: 2rem; text-align: center; grid-column: 1 / -1; }
+
+        /* Popup */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200;
+            display: none; align-items: center; justify-content: center; padding: 2vh 2vw;
+        }
+        .modal-bg.open { display: flex; }
+        .modal {
+            background: #fff; border-radius: 12px; width: min(1200px, 100%); height: 100%;
+            display: flex; flex-direction: column; padding: 0.75rem 1rem; gap: 0.5rem;
+        }
+        .modal-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .modal-head h2 { font-size: 16px; font-weight: 500; }
+        .modal-head .spacer { flex: 1; }
+        .controls { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 12px; color: #555; }
+        .controls input[type="range"] { flex: 1; min-width: 200px; accent-color: #1a1a1a; }
+        .file-name { font-family: ui-monospace, monospace; font-size: 12px; min-width: 16ch; }
+        .counter { font-variant-numeric: tabular-nums; color: #888; min-width: 10ch; text-align: right; }
+        #viewer { flex: 1; min-height: 0; position: relative; }
+        #viewer-msg {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            color: #888; pointer-events: none;
+        }
+        label.check { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .hint { font-size: 11px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="nav-wrap">
+    <button class="logo-btn" id="logo-btn" aria-label="Menu">
+      <img src="static/logo.png" alt="Logo" style="width:100%; height:100%; object-fit:contain; display:block;">
+    </button>
+    <div class="nav-menu" id="nav-menu">
+      <div class="nav-section">Navigation</div>
+      <a class="nav-item" href="/parameter">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Parameter tuning
+      </a>
+      <a class="nav-item" href="/dashboard">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="2" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="8" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="8" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.2"/></svg>
+        Worker Status
+      </a>
+      <a class="nav-item" href="/overview">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="3" width="10" height="8" rx="0.8" stroke="currentColor" stroke-width="1.2"/><path d="M2 9l3-3 3 3 2-2 2 2" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        Raw data overview
+      </a>
+    </div>
+  </div>
+  <h1>Raw Data Overview</h1>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="filter" placeholder="Filter {{ prefix }}…" autocomplete="off">
+    <select id="sort">
+        <option value="desc">Newest first</option>
+        <option value="asc">Oldest first</option>
+    </select>
+    <span id="count"></span>
+    <span class="spacer"></span>
+    <span class="path" id="raw-path"></span>
+    <span class="status-dot" id="status-dot" title="Live"></span>
+</div>
+
+<div class="grid" id="grid"><div class="empty">Loading…</div></div>
+
+<div class="modal-bg" id="modal-bg">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head">
+            <h2 id="modal-title"></h2>
+            <span class="controls" id="prefix-filter"></span>
+            <span class="spacer"></span>
+            <label class="controls">Resolution
+                <select id="resolution">
+                    <option value="512">512</option>
+                    <option value="1024" selected>1024</option>
+                    <option value="2048">full</option>
+                </select>
+            </label>
+            <label class="controls check" title="Jump to newest image when new files arrive">
+                <input type="checkbox" id="follow"> follow new
+            </label>
+            <button class="btn" id="close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="controls">
+            <button class="btn" id="first-btn" title="First (Home)">⏮</button>
+            <button class="btn" id="prev-btn" title="Previous (←)">◀</button>
+            <input type="range" id="slider" min="0" max="0" value="0">
+            <button class="btn" id="next-btn" title="Next (→)">▶</button>
+            <button class="btn" id="last-btn" title="Last (End)">⏭</button>
+            <button class="btn" id="play-btn" title="Play (space)">Play</button>
+            <span class="file-name" id="file-name"></span>
+            <span class="counter" id="counter"></span>
+        </div>
+        <div id="viewer"><div id="viewer-msg"></div></div>
+        <div class="hint">← → / mouse wheel on slider: step · PgUp/PgDn: ±10 · Home/End · space: play · Esc: close · drag in image to zoom, double-click to reset</div>
+    </div>
+</div>
+
+<script>
+const qs = id => document.getElementById(id);
+const POLL_MS = 5000;
+const enc = encodeURIComponent;
+const imageUrl = (dir, file, size) => `/api/overview/image/${enc(dir)}/${enc(file)}?size=${size}`;
+
+/* ---------- Tile grid ---------- */
+const tiles = new Map();          // name -> {el, data}
+let dirs = [];
+let firstLoad = true;
+
+function fmtTime(t) {
+    const d = new Date(t * 1000);
+    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function setThumb(img, dir, file) {
+    // Only reload when the selected file changed (or a previous load failed).
+    if (img.dataset.file === (file || '') && !img.dataset.failed) return;
+    img.dataset.file = file || '';
+    delete img.dataset.failed;
+    if (file) {
+        img.src = imageUrl(dir, file, 256);
+        img.title = file;
+    } else {
+        img.removeAttribute('src');
+        img.title = 'no image';
+    }
+}
+
+function buildTile(d) {
+    const el = document.createElement('div');
+    el.className = 'tile';
+    el.innerHTML = `
+        <div class="tile-head">
+            <span class="tile-name"></span>
+            <span class="tile-meta"></span>
+        </div>
+        <div class="thumbs">
+            ${d.thumbs.map(t => `
+                <div class="thumb">
+                    <img class="thumb-img" loading="lazy" alt="">
+                    <div class="thumb-label"></div>
+                </div>`).join('')}
+        </div>`;
+    el.querySelector('.tile-name').textContent = d.name;
+    el.querySelectorAll('.thumb-img').forEach(img => {
+        img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
+    });
+    el.addEventListener('click', () => openViewer(d.name));
+    return el;
+}
+
+function updateTile(el, d) {
+    el.querySelector('.tile-meta').textContent =
+        `${d.n_img} img · ${d.n_ref} ref · ${fmtTime(d.mtime)}`;
+    const imgs = el.querySelectorAll('.thumb-img');
+    const labels = el.querySelectorAll('.thumb-label');
+    d.thumbs.forEach((t, i) => {
+        setThumb(imgs[i], d.name, t.file);
+        labels[i].textContent = t.file || `no ${t.label.split(' ')[0]}`;
+        labels[i].title = t.label;
+    });
+}
+
+function renderGrid() {
+    const grid = qs('grid');
+    const filter = qs('filter').value.trim().toLowerCase();
+    const ordered = qs('sort').value === 'desc' ? [...dirs].reverse() : dirs;
+    const visible = ordered.filter(d => d.name.toLowerCase().includes(filter));
+
+    const names = new Set(dirs.map(d => d.name));
+    for (const [name, t] of tiles) {
+        if (!names.has(name)) { t.el.remove(); tiles.delete(name); }
+    }
+    grid.querySelector('.empty')?.remove();
+
+    let prev = null;
+    for (const d of visible) {
+        let t = tiles.get(d.name);
+        if (!t) {
+            t = { el: buildTile(d) };
+            if (!firstLoad) t.el.classList.add('new');
+            tiles.set(d.name, t);
+        }
+        t.data = d;
+        updateTile(t.el, d);
+        // Keep DOM order in sync without rebuilding (preserves loaded thumbnails).
+        const expected = prev ? prev.nextSibling : grid.firstChild;
+        if (expected !== t.el) grid.insertBefore(t.el, expected);
+        prev = t.el;
+    }
+    // Detach tiles hidden by the filter.
+    for (const [name, t] of tiles) {
+        if (!visible.includes(t.data) && t.el.parentNode) t.el.remove();
+    }
+    if (!visible.length) {
+        grid.insertAdjacentHTML('beforeend',
+            `<div class="empty">${dirs.length ? 'No directory matches the filter.' : 'No {{ prefix }}* directories yet.'}</div>`);
+    }
+    qs('count').textContent = `${visible.length} / ${dirs.length} directories`;
+}
+
+async function pollDirs() {
+    try {
+        const res = await fetch('/api/overview/dirs');
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        const body = await res.json();
+        dirs = body.dirs;
+        qs('raw-path').textContent = body.path;
+        qs('status-dot').classList.remove('error');
+        qs('status-dot').title = 'Live – updated ' + new Date().toLocaleTimeString();
+        renderGrid();
+        firstLoad = false;
+    } catch (e) {
+        qs('status-dot').classList.add('error');
+        qs('status-dot').title = 'Update failed: ' + e.message;
+        if (firstLoad) qs('grid').innerHTML = `<div class="empty">Could not load directories: ${e.message}</div>`;
+    } finally {
+        setTimeout(pollDirs, POLL_MS);
+    }
+}
+
+qs('filter').addEventListener('input', renderGrid);
+qs('sort').addEventListener('change', renderGrid);
+
+/* ---------- Popup viewer ---------- */
+const viewer = {
+    dir: null,
+    allFiles: [],
+    files: [],
+    prefix: 'all',
+    index: 0,
+    token: 0,
+    pollTimer: null,
+    playTimer: null,
+    cache: new Map(),   // url -> Promise<{src, factor}>
+};
+const CACHE_MAX = 60;
+
+function fetchImage(url) {
+    if (viewer.cache.has(url)) {
+        const p = viewer.cache.get(url);
+        viewer.cache.delete(url);           // move to the end (LRU)
+        viewer.cache.set(url, p);
+        return p;
+    }
+    const p = fetch(url).then(async res => {
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+        const factor = parseFloat(res.headers.get('X-Downsample')) || 1;
+        const blob = await res.blob();
+        const src = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = reject;
+            r.readAsDataURL(blob);
+        });
+        return { src, factor };
+    });
+    p.catch(() => viewer.cache.delete(url));
+    viewer.cache.set(url, p);
+    while (viewer.cache.size > CACHE_MAX) viewer.cache.delete(viewer.cache.keys().next().value);
+    return p;
+}
+
+function prefixOf(f) {
+    const m = f.match(/^([A-Za-z]+)_/);
+    return m ? m[1] : 'other';
+}
+
+function renderPrefixFilter() {
+    const counts = {};
+    viewer.allFiles.forEach(f => { const p = prefixOf(f); counts[p] = (counts[p] || 0) + 1; });
+    const opts = ['all', ...Object.keys(counts).sort((a, b) => (a === 'img' ? -1 : b === 'img' ? 1 : a.localeCompare(b)))];
+    const box = qs('prefix-filter');
+    box.innerHTML = '';
+    for (const p of opts) {
+        const b = document.createElement('button');
+        b.className = 'btn' + (p === viewer.prefix ? ' active' : '');
+        b.textContent = p === 'all' ? `all (${viewer.allFiles.length})` : `${p} (${counts[p]})`;
+        b.onclick = () => setPrefix(p);
+        box.appendChild(b);
+    }
+}
+
+function applyFiles(allFiles, keepFile) {
+    viewer.allFiles = allFiles;
+    viewer.files = viewer.prefix === 'all' ? allFiles : allFiles.filter(f => prefixOf(f) === viewer.prefix);
+    const slider = qs('slider');
+    slider.max = Math.max(0, viewer.files.length - 1);
+    const i = keepFile ? viewer.files.indexOf(keepFile) : -1;
+    viewer.index = i >= 0 ? i : Math.min(viewer.index, Math.max(0, viewer.files.length - 1));
+    renderPrefixFilter();
+}
+
+function setPrefix(p) {
+    const current = viewer.files[viewer.index];
+    viewer.prefix = p;
+    applyFiles(viewer.allFiles, current);
+    show(viewer.index);
+}
+
+async function loadFileList() {
+    const res = await fetch(`/api/overview/dirs/${enc(viewer.dir)}`);
+    if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    return (await res.json()).files;
+}
+
+async function openViewer(dir) {
+    viewer.dir = dir;
+    viewer.prefix = 'img';
+    viewer.index = 0;
+    viewer.cache.clear();
+    qs('modal-title').textContent = dir;
+    qs('modal-bg').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    Plotly.purge(qs('viewer'));
+    message('Loading…');
+    try {
+        const files = await loadFileList();
+        if (!files.some(f => prefixOf(f) === 'img')) viewer.prefix = 'all';
+        applyFiles(files, null);
+        show(0);
+    } catch (e) {
+        message('Could not load directory: ' + e.message);
+    }
+    viewer.pollTimer = setInterval(refreshViewerFiles, POLL_MS);
+}
+
+async function refreshViewerFiles() {
+    if (!viewer.dir) return;
+    try {
+        const files = await loadFileList();
+        if (files.length === viewer.allFiles.length) return;
+        const current = viewer.files[viewer.index];
+        const wasLast = viewer.index === viewer.files.length - 1;
+        applyFiles(files, current);
+        if (qs('follow').checked || (wasLast && viewer.playTimer)) {
+            show(viewer.files.length - 1);
+        } else {
+            updateCounter();
+        }
+    } catch (e) { /* keep showing what we have */ }
+}
+
+function closeViewer() {
+    viewer.dir = null;
+    clearInterval(viewer.pollTimer);
+    stopPlay();
+    viewer.cache.clear();
+    qs('modal-bg').classList.remove('open');
+    document.body.style.overflow = '';
+    Plotly.purge(qs('viewer'));
+}
+
+function message(text) {
+    qs('viewer-msg').textContent = text || '';
+}
+
+function updateCounter() {
+    const n = viewer.files.length;
+    qs('slider').value = viewer.index;
+    qs('file-name').textContent = n ? viewer.files[viewer.index] : '';
+    qs('counter').textContent = n ? `${viewer.index + 1} / ${n}` : '0 / 0';
+    qs('prev-btn').disabled = qs('first-btn').disabled = viewer.index <= 0;
+    qs('next-btn').disabled = qs('last-btn').disabled = viewer.index >= n - 1;
+}
+
+async function show(index) {
+    const n = viewer.files.length;
+    if (!n) { updateCounter(); message('No images in this selection.'); return; }
+    viewer.index = Math.max(0, Math.min(n - 1, index));
+    updateCounter();
+    const dir = viewer.dir, file = viewer.files[viewer.index];
+    const size = qs('resolution').value;
+    const token = ++viewer.token;
+    try {
+        const { src, factor } = await fetchImage(imageUrl(dir, file, size));
+        if (token !== viewer.token) return;   // a newer request superseded this one
+        message('');
+        const trace = { type: 'image', source: src, dx: factor, dy: factor, x0: 0, y0: 0, hoverinfo: 'x+y', name: file };
+        const layout = {
+            margin: { l: 40, r: 10, t: 10, b: 30 },
+            xaxis: { constrain: 'domain', showgrid: false },
+            yaxis: { scaleanchor: 'x', autorange: 'reversed', constrain: 'domain', showgrid: false },
+            uirevision: dir,                  // keep zoom while scrolling through the stack
+            dragmode: 'zoom',
+            paper_bgcolor: '#fff',
+        };
+        Plotly.react(qs('viewer'), [trace], layout, { responsive: true, displaylogo: false });
+        prefetch(dir, size);
+    } catch (e) {
+        if (token !== viewer.token) return;
+        message(`${file}: ${e.message}`);
+    }
+}
+
+function prefetch(dir, size) {
+    for (const off of [1, -1, 2, 3]) {
+        const f = viewer.files[viewer.index + off];
+        if (f) fetchImage(imageUrl(dir, f, size)).catch(() => {});
+    }
+}
+
+function step(delta) { show(viewer.index + delta); }
+
+function togglePlay() {
+    if (viewer.playTimer) { stopPlay(); return; }
+    qs('play-btn').textContent = 'Pause';
+    qs('play-btn').classList.add('active');
+    const tick = async () => {
+        if (!viewer.playTimer) return;
+        if (viewer.index < viewer.files.length - 1) await show(viewer.index + 1);
+        viewer.playTimer = setTimeout(tick, 150);
+    };
+    viewer.playTimer = setTimeout(tick, 0);
+}
+
+function stopPlay() {
+    clearTimeout(viewer.playTimer);
+    viewer.playTimer = null;
+    qs('play-btn').textContent = 'Play';
+    qs('play-btn').classList.remove('active');
+}
+
+qs('slider').addEventListener('input', e => show(parseInt(e.target.value)));
+qs('slider').addEventListener('wheel', e => { e.preventDefault(); step(e.deltaY > 0 ? 1 : -1); }, { passive: false });
+qs('prev-btn').onclick = () => step(-1);
+qs('next-btn').onclick = () => step(1);
+qs('first-btn').onclick = () => show(0);
+qs('last-btn').onclick = () => show(viewer.files.length - 1);
+qs('play-btn').onclick = togglePlay;
+qs('close-btn').onclick = closeViewer;
+qs('resolution').onchange = () => { viewer.cache.clear(); show(viewer.index); };
+qs('modal-bg').addEventListener('click', e => { if (e.target === qs('modal-bg')) closeViewer(); });
+
+document.addEventListener('keydown', e => {
+    if (!viewer.dir || e.target.tagName === 'SELECT') return;
+    const keys = {
+        ArrowRight: () => step(1), ArrowDown: () => step(1),
+        ArrowLeft: () => step(-1), ArrowUp: () => step(-1),
+        PageDown: () => step(10), PageUp: () => step(-10),
+        Home: () => show(0), End: () => show(viewer.files.length - 1),
+        ' ': togglePlay, Escape: closeViewer,
+    };
+    if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
+});
+
+/* ---------- Nav ---------- */
+const btn = qs('logo-btn');
+const menu = qs('nav-menu');
+btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+document.addEventListener('click', () => menu.classList.remove('open'));
+
+pollDirs();
+</script>
+</body>
+</html>
