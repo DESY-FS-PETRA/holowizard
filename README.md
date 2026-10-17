@@ -66,7 +66,7 @@ $ holowizard_core_create_examples <directory>
 We provide a CLI command to initialize everything:
 
 ```bash
-$ holowizard_pipe_start beamtime.name=YOUR_BEAMTIME_NAME beamtime.year=YEAR_OF_BEAMTIME
+$ holowizard_pipe_start beamtime.id=YOUR_BEAMTIME_ID beamtime.year=YEAR_OF_BEAMTIME
 ```
 
 This command sets up the pipeline. You can override any other configuration value using Hydra’s override syntax:  

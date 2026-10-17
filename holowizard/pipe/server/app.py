@@ -30,7 +30,7 @@ CONFIG_DIR = BASE_DIR / "configs"
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     cfg = getattr(app.state, "_initial_cfg", OmegaConf.load(str(app.state.config_dir / "defaults.yaml")))
-    app.state.beamtime = Beamtime(beamtime_name=cfg.beamtime.name, year=cfg.beamtime.year, cluster=None)
+    app.state.beamtime = Beamtime(beamtime_name=cfg.beamtime.id, year=cfg.beamtime.year, cluster=None)
     dask_dict = OmegaConf.to_container(cfg["dask_options"], resolve=True)
     dask_options = DaskOptions.from_dict(dask_dict)
     if dask_options is None:

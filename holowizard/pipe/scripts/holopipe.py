@@ -17,7 +17,7 @@ def main():
         cfg = compose(config_name="defaults", overrides=overrides)
 
         ## TODO soll das hier sein?
-        bm = Beamtime(beamtime_name=cfg.beamtime.name, year=cfg.beamtime.year, cluster="")
+        bm = Beamtime(beamtime_name=cfg.beamtime.id, year=cfg.beamtime.year, cluster="")
 
         destination_dir = f"{bm.path_processed}/{cfg.paths.pipe_config}"
         if os.path.exists(destination_dir):

@@ -5,7 +5,7 @@
 We provide a CLI command to initialize everything:
 
 ```bash
-holopipe beamtime.name=YOUR_BEAMTIME_NAME beamtime.year=YEAR_OF_BEAMTIME
+holopipe beamtime.id=YOUR_BEAMTIME_ID beamtime.year=YEAR_OF_BEAMTIME
 ```
 
 This command sets up the pipeline. You can override any other configuration value using Hydra’s override syntax:  
