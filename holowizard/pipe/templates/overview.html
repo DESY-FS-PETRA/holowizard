@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="static/logo.png">
-    <title>Raw Data Overview</title>
+    <title>{{ title }}</title>
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,6 +47,7 @@
         }
         .toolbar .path { font-family: ui-monospace, monospace; color: #888; }
         .toolbar .spacer { flex: 1; }
+        .toolbar-label { display: flex; align-items: center; gap: 6px; }
         input[type="text"], select {
             padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
             border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
@@ -64,7 +65,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax({{ '420px' if source == 'raw' else '330px' }}, 1fr));
             gap: 1rem;
         }
         .tile {
@@ -74,8 +75,9 @@
         .tile:hover { border-color: rgba(0,0,0,0.3); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
         .tile.new { animation: flash 2s ease-out; }
         @keyframes flash { from { box-shadow: 0 0 0 3px rgba(40,167,69,0.5); } to { box-shadow: none; } }
-        .tile-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
-        .tile-name { font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Long names (scan / save prefix) wrap; the meta text then moves to the next line. */
+        .tile-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.5rem; margin-bottom: 0.5rem; }
+        .tile-name { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; min-width: 0; }
         .tile-meta { margin-left: auto; font-size: 11px; color: #888; white-space: nowrap; font-variant-numeric: tabular-nums; }
         .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
         .thumb { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -133,6 +135,10 @@
         <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="3" width="10" height="8" rx="0.8" stroke="currentColor" stroke-width="1.2"/><path d="M2 9l3-3 3 3 2-2 2 2" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
         Raw data overview
       </a>
+      <a class="nav-item" href="/phase-overview">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="3" width="10" height="8" rx="0.8" stroke="currentColor" stroke-width="1.2"/><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        Phase retrieval overview
+      </a>
       <hr class="nav-divider">
       <a class="nav-item" href="/logout">
         <svg viewBox="0 0 14 14" fill="none"><path d="M6 2H3v10h3M9 4l3 3-3 3M12 7H6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -140,7 +146,7 @@
       </a>
     </div>
   </div>
-  <h1>Raw Data Overview</h1>
+  <h1>{{ title }}</h1>
 </div>
 
 <div class="toolbar">
@@ -149,6 +155,13 @@
         <option value="desc">Newest first</option>
         <option value="asc">Oldest first</option>
     </select>
+    {% if source == 'phase' %}
+    <label class="toolbar-label">Save prefix
+        <select id="save-prefix">
+            <option value="">All prefixes</option>
+        </select>
+    </label>
+    {% endif %}
     <span id="count"></span>
     <span class="spacer"></span>
     <span class="path" id="raw-path"></span>
@@ -194,7 +207,10 @@
 const qs = id => document.getElementById(id);
 const POLL_MS = 5000;
 const enc = encodeURIComponent;
-const imageUrl = (dir, file, size) => `/api/overview/image/${enc(dir)}/${enc(file)}?size=${size}`;
+// Which overview this is ("raw" or "phase"); data set names may contain a "/" (scan/save prefix).
+const API = `/api/overview/${ {{ source | tojson }} }`;
+const imageUrl = (dir, file, size) => `${API}/image?dataset=${enc(dir)}&file=${enc(file)}&size=${size}`;
+const displayName = name => name.replace('/', ' / ');
 
 /* ---------- Tile grid ---------- */
 const tiles = new Map();          // name -> {el, data}
@@ -228,14 +244,14 @@ function buildTile(d) {
             <span class="tile-name"></span>
             <span class="tile-meta"></span>
         </div>
-        <div class="thumbs">
+        <div class="thumbs" style="grid-template-columns: repeat(${d.thumbs.length}, 1fr);">
             ${d.thumbs.map(t => `
                 <div class="thumb">
                     <img class="thumb-img" loading="lazy" alt="">
                     <div class="thumb-label"></div>
                 </div>`).join('')}
         </div>`;
-    el.querySelector('.tile-name').textContent = d.name;
+    el.querySelector('.tile-name').textContent = displayName(d.name);
     el.querySelectorAll('.thumb-img').forEach(img => {
         img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
     });
@@ -245,7 +261,7 @@ function buildTile(d) {
 
 function updateTile(el, d) {
     el.querySelector('.tile-meta').textContent =
-        `${d.n_img} img · ${d.n_ref} ref · ${fmtTime(d.mtime)}`;
+        `${d.meta} · ${fmtTime(d.mtime)}`;
     const imgs = el.querySelectorAll('.thumb-img');
     const labels = el.querySelectorAll('.thumb-label');
     d.thumbs.forEach((t, i) => {
@@ -259,7 +275,9 @@ function renderGrid() {
     const grid = qs('grid');
     const filter = qs('filter').value.trim().toLowerCase();
     const ordered = qs('sort').value === 'desc' ? [...dirs].reverse() : dirs;
-    const visible = ordered.filter(d => d.name.toLowerCase().includes(filter));
+    const savePrefix = selectedSavePrefix();
+    const visible = ordered.filter(d => d.name.toLowerCase().includes(filter)
+        && (!savePrefix || d.name.split('/')[1] === savePrefix));
 
     const names = new Set(dirs.map(d => d.name));
     for (const [name, t] of tiles) {
@@ -288,18 +306,19 @@ function renderGrid() {
     }
     if (!visible.length) {
         grid.insertAdjacentHTML('beforeend',
-            `<div class="empty">${dirs.length ? 'No directory matches the filter.' : 'No {{ prefix }}* directories yet.'}</div>`);
+            `<div class="empty">${dirs.length ? 'No directory matches the filter.' : {{ ('No phase retrieval results yet.' if source == 'phase' else 'No ' ~ prefix ~ '* directories yet.') | tojson }}}</div>`);
     }
-    qs('count').textContent = `${visible.length} / ${dirs.length} directories`;
+    qs('count').textContent = `${visible.length} / ${dirs.length} ${ {{ ('runs' if source == 'phase' else 'directories') | tojson }} }`;
 }
 
 async function pollDirs() {
     try {
-        const res = await fetch('/api/overview/dirs');
+        const res = await fetch(`${API}/dirs`);
         if (res.status === 401) { location.reload(); return; }   // session expired: go to the login page
         if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
         const body = await res.json();
         dirs = body.dirs;
+        updateSavePrefixes();
         qs('raw-path').textContent = body.path;
         qs('status-dot').classList.remove('error');
         qs('status-dot').title = 'Live – updated ' + new Date().toLocaleTimeString();
@@ -316,6 +335,33 @@ async function pollDirs() {
 
 qs('filter').addEventListener('input', renderGrid);
 qs('sort').addEventListener('change', renderGrid);
+
+/* ---------- Save prefix (phase retrieval overview: data sets are "<scan>/<save prefix>") ---------- */
+const SAVE_PREFIX_KEY = 'holopipe.phaseOverview.savePrefix';
+const savePrefixSelect = qs('save-prefix');
+const selectedSavePrefix = () => savePrefixSelect ? savePrefixSelect.value : '';
+function updateSavePrefixes() {
+    if (!savePrefixSelect) return;
+    const prefixes = [...new Set(dirs.map(d => d.name.split('/')[1]).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    // Rebuild only when the set of prefixes changed, so an open dropdown is not disturbed by the refresh.
+    const key = prefixes.join('\n');
+    if (savePrefixSelect.dataset.prefixes === key) return;
+    let wanted = savePrefixSelect.value;
+    if (savePrefixSelect.dataset.prefixes === undefined) {   // first load: restore the last choice
+        try { wanted = localStorage.getItem(SAVE_PREFIX_KEY) || ''; } catch (e) { /* storage unavailable */ }
+    }
+    savePrefixSelect.dataset.prefixes = key;
+    savePrefixSelect.innerHTML = '<option value="">All prefixes</option>' +
+        prefixes.map(p => `<option value="${p.replace(/"/g, '&quot;')}">${p.replace(/</g, '&lt;')}</option>`).join('');
+    savePrefixSelect.value = prefixes.includes(wanted) ? wanted : '';
+}
+if (savePrefixSelect) {
+    savePrefixSelect.addEventListener('change', () => {
+        try { localStorage.setItem(SAVE_PREFIX_KEY, savePrefixSelect.value); } catch (e) { /* storage unavailable */ }
+        renderGrid();
+    });
+}
 
 /* ---------- Popup viewer ---------- */
 const viewer = {
@@ -394,7 +440,7 @@ function setPrefix(p) {
 }
 
 async function loadFileList() {
-    const res = await fetch(`/api/overview/dirs/${enc(viewer.dir)}`);
+    const res = await fetch(`${API}/files?dataset=${enc(viewer.dir)}`);
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     return (await res.json()).files;
 }
@@ -404,7 +450,7 @@ async function openViewer(dir) {
     viewer.prefix = 'img';
     viewer.index = 0;
     viewer.cache.clear();
-    qs('modal-title').textContent = dir;
+    qs('modal-title').textContent = displayName(dir);
     qs('modal-bg').classList.add('open');
     document.body.style.overflow = 'hidden';
     Plotly.purge(qs('viewer'));

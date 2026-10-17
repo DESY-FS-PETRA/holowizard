@@ -1,18 +1,24 @@
-"""Overview of the raw ``nano*`` scan directories of a beamtime.
+"""Overview pages (overview.html) of the beamtime's ``nano*`` data sets.
 
-Serves a tile grid (one tile per directory with thumbnails of the first ref_ image
-and the first, middle and last img_ image) and a per-directory image browser.
-Directory listings are cached per directory mtime, so polling stays cheap while
-new directories and images are written.
+Two overviews share the tile grid and the image browser:
+
+* ``raw``: the scan directories in ``path_raw``; each tile shows the first ref_ image and the first,
+  middle and last img_ image.
+* ``phase``: the phase retrieval results in ``path_processed/<scan>/<save prefix>/phase_retrieval``,
+  one tile per reconstruction run; each tile shows the first, middle and last image.
+
+Directory listings are cached per directory mtime, so polling stays cheap while new data sets and
+images are written.
 """
 
 import io
 import os
 import re
 import threading
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import tifffile
@@ -22,15 +28,35 @@ from PIL import Image
 
 DIR_PREFIX = "nano"
 TIFF_SUFFIXES = (".tif", ".tiff")
-IMAGE_PREFIXES = ("ref_", "img_")
 MAX_IMAGE_SIZE = 4096
+PHASE_SUBDIR = "phase_retrieval"
 
-_listing_cache: Dict[str, Tuple[int, Dict[str, Any]]] = {}
+_listing_cache: Dict[str, Tuple[int, Any]] = {}
 _listing_lock = threading.Lock()
 
 
 def _natural_key(name: str):
     return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", name)]
+
+
+def _cached_by_mtime(path: Path, compute: Callable[[Path], Any]) -> Optional[Any]:
+    """``compute(path)``, recomputed only when the directory mtime changed; None if unreadable."""
+    try:
+        mtime_ns = path.stat().st_mtime_ns
+    except OSError:
+        return None
+    key = f"{compute.__name__}:{path}"
+    with _listing_lock:
+        cached = _listing_cache.get(key)
+    if cached and cached[0] == mtime_ns:
+        return cached[1]
+    try:
+        value = compute(path)
+    except OSError:
+        return None
+    with _listing_lock:
+        _listing_cache[key] = (mtime_ns, value)
+    return value
 
 
 def _list_tiffs(path: Path) -> List[str]:
@@ -39,54 +65,100 @@ def _list_tiffs(path: Path) -> List[str]:
     return sorted(names, key=_natural_key)
 
 
-def _summarize_dir(path: Path, mtime_ns: int) -> Dict[str, Any]:
-    files = _list_tiffs(path)
+def _list_subdirs(path: Path) -> List[str]:
+    with os.scandir(path) as it:
+        return sorted((e.name for e in it if e.is_dir()), key=_natural_key)
+
+
+def _scan_dirs(root: Path) -> List[str]:
+    return [d for d in _cached_by_mtime(root, _list_subdirs) or [] if d.startswith(DIR_PREFIX)]
+
+
+def _first_middle_last(files: List[str], what: str) -> List[Dict[str, Optional[str]]]:
+    return [
+        {"label": f"{what} first", "file": files[0] if files else None},
+        {"label": f"{what} middle", "file": files[len(files) // 2] if files else None},
+        {"label": f"{what} last", "file": files[-1] if files else None},
+    ]
+
+
+# --- Data set types ---
+@dataclass
+class OverviewSource:
+    key: str
+    title: str
+    root: Callable[[Any], Path]  # beamtime -> root folder
+    datasets: Callable[[Path], List[str]]  # root -> data set ids, e.g. "nano123" or "nano123/holopipe"
+    folder: Callable[[Path, str], Path]  # root, data set id -> folder with the TIFFs
+    summarize: Callable[[List[str]], Tuple[str, List[Dict[str, Optional[str]]]]]  # files -> (meta, thumbnails)
+    valid_id: Callable[[str], bool]
+
+
+def _raw_summary(files):
     imgs = [f for f in files if f.startswith("img_")]
     refs = [f for f in files if f.startswith("ref_")]
-    thumbs = [
-        {"label": "ref first", "file": refs[0] if refs else None},
-        {"label": "img first", "file": imgs[0] if imgs else None},
-        {"label": "img middle", "file": imgs[len(imgs) // 2] if imgs else None},
-        {"label": "img last", "file": imgs[-1] if imgs else None},
-    ]
-    return {
-        "name": path.name,
-        "mtime": mtime_ns / 1e9,
-        "n_img": len(imgs),
-        "n_ref": len(refs),
-        "n_files": len(files),
-        "thumbs": thumbs,
-        "files": files,
-    }
+    thumbs = [{"label": "ref first", "file": refs[0] if refs else None}] + _first_middle_last(imgs, "img")
+    return f"{len(imgs)} img · {len(refs)} ref", thumbs
 
 
-def _dir_summary(path: Path) -> Optional[Dict[str, Any]]:
-    """Summary of one directory, re-listed only when the directory mtime changed."""
-    try:
-        mtime_ns = path.stat().st_mtime_ns
-    except OSError:
+def _phase_datasets(root: Path) -> List[str]:
+    ids = []
+    for scan in _scan_dirs(root):
+        for run in _cached_by_mtime(root / scan, _list_subdirs) or []:
+            if (root / scan / run / PHASE_SUBDIR).is_dir():
+                ids.append(f"{scan}/{run}")
+    return ids
+
+
+def _phase_summary(files):
+    return f"{len(files)} images", _first_middle_last(files, "image")
+
+
+def _safe_parts(dataset: str, n: int) -> bool:
+    parts = dataset.split("/")
+    return len(parts) == n and parts[0].startswith(DIR_PREFIX) and all(p and p not in (".", "..") for p in parts)
+
+
+SOURCES = {
+    "raw": OverviewSource(
+        key="raw",
+        title="Raw Data Overview",
+        root=lambda bt: Path(bt.path_raw),
+        datasets=_scan_dirs,
+        folder=lambda root, ds: root / ds,
+        summarize=_raw_summary,
+        valid_id=lambda ds: _safe_parts(ds, 1),
+    ),
+    "phase": OverviewSource(
+        key="phase",
+        title="Phase Retrieval Overview",
+        root=lambda bt: Path(bt.path_processed),
+        datasets=_phase_datasets,
+        folder=lambda root, ds: root / ds / PHASE_SUBDIR,
+        summarize=_phase_summary,
+        valid_id=lambda ds: _safe_parts(ds, 2),
+    ),
+}
+
+
+def _dataset_summary(source: OverviewSource, root: Path, dataset: str, with_files: bool = False) -> Optional[Dict]:
+    folder = source.folder(root, dataset)
+    files = _cached_by_mtime(folder, _list_tiffs)
+    if files is None:
         return None
-    key = str(path)
-    with _listing_lock:
-        cached = _listing_cache.get(key)
-    if cached and cached[0] == mtime_ns:
-        return cached[1]
-    try:
-        summary = _summarize_dir(path, mtime_ns)
-    except OSError:
-        return None
-    with _listing_lock:
-        _listing_cache[key] = (mtime_ns, summary)
+    meta, thumbs = source.summarize(files)
+    summary = {"name": dataset, "mtime": folder.stat().st_mtime, "meta": meta, "thumbs": thumbs}
+    if with_files:
+        summary["files"] = files
     return summary
 
 
-def list_scan_dirs(raw: Path) -> List[Dict[str, Any]]:
-    with os.scandir(raw) as it:
-        dirs = [Path(e.path) for e in it if e.name.startswith(DIR_PREFIX) and e.is_dir()]
-    summaries = (_dir_summary(d) for d in sorted(dirs, key=lambda p: _natural_key(p.name)))
-    return [{k: v for k, v in s.items() if k != "files"} for s in summaries if s is not None]
+def list_datasets(source: OverviewSource, root: Path) -> List[Dict[str, Any]]:
+    summaries = (_dataset_summary(source, root, ds) for ds in source.datasets(root))
+    return [s for s in summaries if s is not None]
 
 
+# --- Image rendering ---
 def _downsample(arr: np.ndarray, size: int) -> Tuple[np.ndarray, int]:
     factor = max(1, int(np.ceil(max(arr.shape) / size)))
     if factor == 1:
@@ -106,8 +178,9 @@ def _render_png(path: str, mtime_ns: int, size: int) -> Tuple[bytes, int, float,
     small, factor = _downsample(arr, size)
     # Same orientation as the image preview on the phase retrieval page.
     small = np.rot90(small)
-    lo, hi = np.percentile(small, [1, 99])
-    scaled = np.clip((small - lo) / max(hi - lo, 1e-6), 0, 1)
+    # Phase maps are float and may contain NaN; those pixels are drawn black.
+    lo, hi = np.nanpercentile(small, [1, 99]) if np.isfinite(small).any() else (0.0, 1.0)
+    scaled = np.nan_to_num(np.clip((small - lo) / max(hi - lo, 1e-12), 0, 1))
     buf = io.BytesIO()
     Image.fromarray((scaled * 255).astype(np.uint8)).save(buf, format="PNG", compress_level=1)
     return buf.getvalue(), factor, float(lo), float(hi)
@@ -119,39 +192,52 @@ _render_large = lru_cache(maxsize=64)(_render_png)
 THUMB_MAX_SIZE = 256
 
 
+# --- Routes ---
 router = APIRouter(tags=["overview"])
 
 
-def _scan_dir(raw: Path, name: str) -> Path:
-    if not name.startswith(DIR_PREFIX) or name != Path(name).name:
-        raise HTTPException(status_code=400, detail=f"Invalid directory name: {name!r}")
-    path = raw / name
-    if not path.is_dir():
-        raise HTTPException(status_code=404, detail=f"Directory not found: {name}")
-    return path
+def _source(source: str) -> OverviewSource:
+    if source not in SOURCES:
+        raise HTTPException(status_code=404, detail=f"Unknown overview: {source!r}")
+    return SOURCES[source]
 
 
-@router.get("/api/overview/dirs")
-async def overview_dirs(request: Request):
-    raw = Path(request.app.state.beamtime.path_raw)
-    if not raw.is_dir():
-        raise HTTPException(status_code=404, detail=f"Raw folder not found: {raw}")
-    return {"path": str(raw), "dirs": await run_in_threadpool(list_scan_dirs, raw)}
+def _dataset_folder(request: Request, src: OverviewSource, dataset: str) -> Path:
+    if not src.valid_id(dataset):
+        raise HTTPException(status_code=400, detail=f"Invalid data set: {dataset!r}")
+    folder = src.folder(src.root(request.app.state.beamtime), dataset)
+    if not folder.is_dir():
+        raise HTTPException(status_code=404, detail=f"Data set not found: {dataset}")
+    return folder
 
 
-@router.get("/api/overview/dirs/{name}")
-async def overview_dir(name: str, request: Request):
-    summary = await run_in_threadpool(_dir_summary, _scan_dir(Path(request.app.state.beamtime.path_raw), name))
+@router.get("/api/overview/{source}/dirs")
+async def overview_dirs(source: str, request: Request):
+    src = _source(source)
+    root = src.root(request.app.state.beamtime)
+    if not root.is_dir():
+        raise HTTPException(status_code=404, detail=f"Folder not found: {root}")
+    return {"path": str(root), "dirs": await run_in_threadpool(list_datasets, src, root)}
+
+
+@router.get("/api/overview/{source}/files")
+async def overview_files(source: str, request: Request, dataset: str):
+    src = _source(source)
+    _dataset_folder(request, src, dataset)
+    summary = await run_in_threadpool(_dataset_summary, src, src.root(request.app.state.beamtime), dataset, True)
     if summary is None:
-        raise HTTPException(status_code=404, detail=f"Directory not readable: {name}")
+        raise HTTPException(status_code=404, detail=f"Data set not readable: {dataset}")
     return summary
 
 
-@router.get("/api/overview/image/{name}/{file}")
-async def overview_image(name: str, file: str, request: Request, size: int = Query(256, ge=32, le=MAX_IMAGE_SIZE)):
+@router.get("/api/overview/{source}/image")
+async def overview_image(
+    source: str, request: Request, dataset: str, file: str, size: int = Query(256, ge=32, le=MAX_IMAGE_SIZE)
+):
+    src = _source(source)
     if file != Path(file).name or not file.lower().endswith(TIFF_SUFFIXES):
         raise HTTPException(status_code=400, detail=f"Invalid file name: {file!r}")
-    path = _scan_dir(Path(request.app.state.beamtime.path_raw), name) / file
+    path = _dataset_folder(request, src, dataset) / file
     try:
         mtime_ns = path.stat().st_mtime_ns
     except OSError:
@@ -175,6 +261,18 @@ async def overview_image(name: str, file: str, request: Request, size: int = Que
     )
 
 
+def _overview_page(request: Request, source: str):
+    src = SOURCES[source]
+    return request.app.state.templates.TemplateResponse(
+        "overview.html", {"request": request, "prefix": DIR_PREFIX, "source": src.key, "title": src.title}
+    )
+
+
 @router.get("/overview")
 async def overview_page(request: Request):
-    return request.app.state.templates.TemplateResponse("overview.html", {"request": request, "prefix": DIR_PREFIX})
+    return _overview_page(request, "raw")
+
+
+@router.get("/phase-overview")
+async def phase_overview_page(request: Request):
+    return _overview_page(request, "phase")
