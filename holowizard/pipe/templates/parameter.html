@@ -47,7 +47,9 @@
 
         .layout {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            /* Parameter form | scan controls + live preview | test image */
+            grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+            grid-template-areas: "params scan test";
             gap: 1.25rem;
             align-items: start;
         }
@@ -242,9 +244,19 @@
             background: #fff;
         }
 
-        /* "Save as" name field of the parameter form */
-        #param-set-name {
-            margin-bottom: 0.5rem;
+        /* "Save as" frame of the parameter form: name field and button in one row */
+        fieldset.save-as {
+            margin-top: 0.25rem;
+        }
+        .save-as-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .save-as-row #param-set-name {
+            flex: 1;
+            min-width: 0;
+            margin-bottom: 0;
         }
 
         .stages-grid {
@@ -298,6 +310,17 @@
         .checkbox-label input:disabled { cursor: default; }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn:disabled:hover { background: #fff; }
+
+        .col-params { grid-area: params; }
+        .col-scan { grid-area: scan; display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+        .col-test { grid-area: test; min-width: 0; }
+        /* Narrow windows: the test image moves below the scan column. */
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr);
+                grid-template-areas: "params scan" "params test";
+            }
+        }
 
         #preview-image, #loss-image {
             border-radius: 8px;
@@ -374,7 +397,7 @@
 <div class="layout">
 
     <!-- LEFT: Parameter form -->
-    <div class="panel">
+    <div class="panel col-params">
         <div class="panel-title">Reconstruction Parameters</div>
 
         <div class="field-row">
@@ -392,10 +415,10 @@
         </div>
     </div>
 
-    <!-- RIGHT: Scan controls -->
-    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+    <!-- MIDDLE: Scan controls and live preview -->
+    <div class="col-scan">
          <!-- Stages -->
-        <div class="panel">
+        <div class="panel" id="scan-panel">
         <div class="panel-title">Scan Parameters</div>
 
            <!-- Folder + Image -->
@@ -422,7 +445,7 @@
             </div>
             <div class="field">
                 <label for="prefix">Save prefix</label>
-                <input id="prefix" name="prefix" value="{{ basepath }}" autocomplete="off">
+                <input id="prefix" name="prefix" type="text" value="{{ basepath }}" autocomplete="off">
             </div>
         </div>
 
@@ -469,10 +492,18 @@
     
       </div>
 
+    <!-- Live preview: images streamed over zeromq during a test run, and the find focus loss -->
     <div class="panel">
-        <div class="panel-title">Plots</div>
+        <div class="panel-title">Live Preview</div>
+        <div id="loss-image" style="display:none;"></div>
+        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
+    </div>
+    </div>
 
-        <div class="divider"></div>
+    <!-- RIGHT: Test image -->
+    <div class="col-test">
+    <div class="panel">
+        <div class="panel-title">Test Image</div>
 
         <!-- Preview image (Plotly) -->
         <div id="preview-image" style="display:none;"></div>
@@ -488,14 +519,8 @@
                 <input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
             </div>
         </div>
-
-        <!-- Loss / live preview -->
-        <div id="loss-image" style="display:none;"></div>
-        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
-
-        </div>
-
-      </div>
+    </div>
+    </div>
 </div>
 
 <script>
@@ -580,8 +605,24 @@
         qs('form-container').innerHTML = await res.text();
         qs('stage-hidden').value = STAGE;
         formKey = `${STAGE}/${qs('parameter-select').value}`;
+        syncPanelHeights();
         scheduleSave();
     };
+
+    // The parameter panel (with all stages collapsed) and the scan parameter panel get the same height.
+    // Measured only in that default state, so expanding a stage lets the parameter panel grow on its own.
+    const syncPanelHeights = () => {
+        if (document.querySelector('details.stage-top[open]')) return;
+        const panels = [document.querySelector('.col-params'), qs('scan-panel')];
+        panels.forEach(p => { p.style.minHeight = ''; });
+        const height = Math.max(...panels.map(p => p.offsetHeight));
+        panels.forEach(p => { p.style.minHeight = `${height}px`; });
+    };
+    let panelResizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(panelResizeTimer);
+        panelResizeTimer = setTimeout(syncPanelHeights, 150);
+    });
 
     // Every edit of the parameter form goes into the user's own custom_<user>.yaml, which becomes the selected parameter set.
     const CUSTOM_SET = {{ custom_set | tojson }};
@@ -627,12 +668,43 @@
         qs('loss-image').style.display = 'none';
     };
 
+    // Fit the test image plot to its column: small margins, thin colour bar, height from the image aspect ratio.
+    const IMG_MARGIN = { l: 42, r: 8, t: 8, b: 28 };
+    const COLORBAR_SPACE = 58;   // colour bar plus its tick labels
+    const imageShape = z => Array.isArray(z) ? [z.length, (z[0] || []).length]
+        : (z && z.shape ? String(z.shape).split(',').map(Number) : [1, 1]);
+    const imageHeight = (el, rows, cols) => {
+        const plotWidth = Math.max(100, el.clientWidth - IMG_MARGIN.l - IMG_MARGIN.r - COLORBAR_SPACE);
+        return Math.round(plotWidth * rows / cols) + IMG_MARGIN.t + IMG_MARGIN.b;
+    };
+    const tightImageLayout = (el, fig) => {
+        const [rows, cols] = imageShape(fig.data[0] && fig.data[0].z);
+        el.dataset.rows = rows;
+        el.dataset.cols = cols;
+        const coloraxis = fig.layout.coloraxis || {};
+        return {
+            ...fig.layout,
+            margin: IMG_MARGIN,
+            height: imageHeight(el, rows, cols),
+            coloraxis: { ...coloraxis, colorbar: { ...(coloraxis.colorbar || {}), thickness: 12, xpad: 6 } },
+        };
+    };
+    let imageResizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(imageResizeTimer);
+        imageResizeTimer = setTimeout(() => {
+            const el = qs('preview-image');
+            if (!el.data || !el.dataset.rows) return;
+            Plotly.relayout(el, { height: imageHeight(el, +el.dataset.rows, +el.dataset.cols) });
+        }, 150);
+    });
+
     qs('img-select').onchange = async () => {
         const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
         qs('preview-image').style.display = 'block';
         resetLivePreview();
         const fig = await fetchJson(url);
-        Plotly.react(qs('preview-image'), fig.data, fig.layout);
+        Plotly.react(qs('preview-image'), fig.data, tightImageLayout(qs('preview-image'), fig), { responsive: true });
         qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
         qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
         scheduleSave();
@@ -772,7 +844,7 @@
                     console.warn('Received non-numeric data:', data);
                 }
                 scheduleSave();
-                Plotly.react(qs('loss-image'), fig.data, fig.layout);
+                Plotly.react(qs('loss-image'), fig.data, fig.layout, { responsive: true });
                 qs('loss-image').style.display = 'block';
             }
         };

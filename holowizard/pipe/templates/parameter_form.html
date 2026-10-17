@@ -2,7 +2,11 @@
   {% from "_macros.html" import render_field %}
   {{ render_field(scans, '') }}
     <input type="hidden" name="stage" id="stage-hidden" value="reconstruction">
-    <label for="param-set-name">Save as:</label>
-    <input type="text" id="param-set-name" name="param_set_name" required><br>
-  <input type="submit" value="Save">
+    <fieldset class="save-as">
+      <legend>Save as</legend>
+      <div class="save-as-row">
+        <input type="text" id="param-set-name" name="param_set_name" placeholder="Name of the parameter set" aria-label="Name of the parameter set" required>
+        <input type="submit" value="Save">
+      </div>
+    </fieldset>
 </form>
