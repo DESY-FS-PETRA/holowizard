@@ -47,9 +47,11 @@
 
         .layout {
             display: grid;
-            /* Parameter form | scan controls + live preview | test image */
+            /* Parameter form | scan controls | test image; the live preview spans below the last two.
+               The flexible second row takes any extra height of an expanded parameter form. */
             grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
-            grid-template-areas: "params scan test";
+            grid-template-rows: auto 1fr;
+            grid-template-areas: "params scan test" "params live live";
             gap: 1.25rem;
             align-items: start;
         }
@@ -312,13 +314,15 @@
         .btn:disabled:hover { background: #fff; }
 
         .col-params { grid-area: params; }
-        .col-scan { grid-area: scan; display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+        .col-scan { grid-area: scan; min-width: 0; }
         .col-test { grid-area: test; min-width: 0; }
-        /* Narrow windows: the test image moves below the scan column. */
+        .col-live { grid-area: live; min-width: 0; }
+        /* Narrow windows: test image and live preview move below the scan panel. */
         @media (max-width: 1200px) {
             .layout {
                 grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr);
-                grid-template-areas: "params scan" "params test";
+                grid-template-rows: auto auto 1fr;
+                grid-template-areas: "params scan" "params test" "params live";
             }
         }
 
@@ -329,9 +333,12 @@
         }
 
         #live-preview {
+            display: block;
             max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
             border-radius: 8px;
-            margin: 0.75rem 0;
+            margin: 0.75rem auto;
         }
 
         .loader {
@@ -415,10 +422,8 @@
         </div>
     </div>
 
-    <!-- MIDDLE: Scan controls and live preview -->
-    <div class="col-scan">
-         <!-- Stages -->
-        <div class="panel" id="scan-panel">
+    <!-- MIDDLE: Scan controls -->
+        <div class="panel col-scan" id="scan-panel">
         <div class="panel-title">Scan Parameters</div>
 
            <!-- Folder + Image -->
@@ -492,17 +497,8 @@
     
       </div>
 
-    <!-- Live preview: images streamed over zeromq during a test run, and the find focus loss -->
-    <div class="panel">
-        <div class="panel-title">Live Preview</div>
-        <div id="loss-image" style="display:none;"></div>
-        <img id="live-preview" style="display:none; max-width:100%;" alt="Preview">
-    </div>
-    </div>
-
     <!-- RIGHT: Test image -->
-    <div class="col-test">
-    <div class="panel">
+    <div class="panel col-test" id="test-panel">
         <div class="panel-title">Test Image</div>
 
         <!-- Preview image (Plotly) -->
@@ -520,6 +516,12 @@
             </div>
         </div>
     </div>
+
+    <!-- BOTTOM (columns 2 and 3): images streamed over zeromq during a test run, and the find focus loss -->
+    <div class="panel col-live">
+        <div class="panel-title">Live Preview</div>
+        <div id="loss-image" style="display:none;"></div>
+        <img id="live-preview" style="display:none;" alt="Preview">
     </div>
 </div>
 
@@ -609,14 +611,34 @@
         scheduleSave();
     };
 
-    // The parameter panel (with all stages collapsed) and the scan parameter panel get the same height.
-    // Measured only in that default state, so expanding a stage lets the parameter panel grow on its own.
+    // The first row (parameter panel with all stages collapsed, scan parameters, test image) gets one height.
+    // It is measured only in that default state, so expanding a stage lets the parameter panel grow on its own.
+    // The test image plot is fitted into that height.
+    let panelHeight = null;
+    const narrowLayout = window.matchMedia('(max-width: 1200px)');
     const syncPanelHeights = () => {
-        if (document.querySelector('details.stage-top[open]')) return;
         const panels = [document.querySelector('.col-params'), qs('scan-panel')];
-        panels.forEach(p => { p.style.minHeight = ''; });
-        const height = Math.max(...panels.map(p => p.offsetHeight));
-        panels.forEach(p => { p.style.minHeight = `${height}px`; });
+        if (!document.querySelector('details.stage-top[open]')) {
+            panels.forEach(p => { p.style.minHeight = ''; });
+            panelHeight = Math.max(...panels.map(p => p.offsetHeight));
+            panels.forEach(p => { p.style.minHeight = `${panelHeight}px`; });
+        }
+        fitTestPanel();
+    };
+    const fitTestPanel = () => {
+        const panel = qs('test-panel'), plot = qs('preview-image');
+        panel.style.height = '';
+        const hasPlot = plot.data && plot.style.display !== 'none';
+        if (narrowLayout.matches || !panelHeight) {
+            // Test image below the scan panel: size the plot from the column width.
+            if (hasPlot && plot.dataset.rows) Plotly.relayout(plot, { height: imageHeight(plot, +plot.dataset.rows, +plot.dataset.cols) });
+            return;
+        }
+        if (hasPlot) {
+            const chrome = panel.offsetHeight - plot.offsetHeight;   // title, v_min/v_max, paddings, margins
+            Plotly.relayout(plot, { height: Math.max(200, panelHeight - chrome) });
+        }
+        panel.style.height = `${panelHeight}px`;
     };
     let panelResizeTimer = null;
     window.addEventListener('resize', () => {
@@ -689,22 +711,13 @@
             coloraxis: { ...coloraxis, colorbar: { ...(coloraxis.colorbar || {}), thickness: 12, xpad: 6 } },
         };
     };
-    let imageResizeTimer = null;
-    window.addEventListener('resize', () => {
-        clearTimeout(imageResizeTimer);
-        imageResizeTimer = setTimeout(() => {
-            const el = qs('preview-image');
-            if (!el.data || !el.dataset.rows) return;
-            Plotly.relayout(el, { height: imageHeight(el, +el.dataset.rows, +el.dataset.cols) });
-        }, 150);
-    });
-
     qs('img-select').onchange = async () => {
         const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
         qs('preview-image').style.display = 'block';
         resetLivePreview();
         const fig = await fetchJson(url);
-        Plotly.react(qs('preview-image'), fig.data, tightImageLayout(qs('preview-image'), fig), { responsive: true });
+        await Plotly.react(qs('preview-image'), fig.data, tightImageLayout(qs('preview-image'), fig), { responsive: true });
+        fitTestPanel();
         qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
         qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
         scheduleSave();
