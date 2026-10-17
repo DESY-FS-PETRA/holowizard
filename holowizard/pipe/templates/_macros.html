@@ -1,7 +1,11 @@
 {# Shared macros, imported by parameter.html and parameter_form.html. #}
 {% macro render_field(value, key_path) %}
     {% if value is mapping %}
-        <fieldset class="stage-item"><legend>{{ key_path or 'root' }}</legend>
+        {# The top level gets no frame of its own; the frames directly below it (stages[0], stages[1], ...)
+           are collapsible and start collapsed. Inputs in a collapsed frame still belong to the form. #}
+        {% set top = key_path and '.' not in key_path %}
+        {% if top %}<details class="stage-top"><summary>{{ key_path }}</summary>
+        {% elif key_path %}<fieldset class="stage-item"><legend>{{ key_path }}</legend>{% endif %}
             {% for k,v in value.items() %}
                 {% set name = key_path ~ (key_path and '.') ~ k %}
                 {% if k in ['_target_','update_blocks'] %}
@@ -10,7 +14,7 @@
                     {{ render_field(v,name) }}
                 {% endif %}
             {% endfor %}
-        </fieldset>
+        {% if top %}</details>{% elif key_path %}</fieldset>{% endif %}
     {% elif value is iterable and not value is string %}
         {% for item in value %}
             {{ render_field(item, key_path ~ '[' ~ loop.index0 ~ ']') }}

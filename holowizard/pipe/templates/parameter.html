@@ -207,6 +207,33 @@
             margin-bottom: 6px;
         }
 
+        details.stage-top {
+            border: 0.5px solid rgba(0,0,0,0.2);
+            border-radius: 8px;
+            background: #f8f7f4;
+            padding: 0.5rem 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        details.stage-top > summary {
+            font-size: 12px;
+            font-weight: 600;
+            color: #444;
+            text-transform: capitalize;
+            cursor: pointer;
+            padding: 2px 0;
+        }
+        details.stage-top[open] > summary {
+            margin-bottom: 0.6rem;
+        }
+        details.stage-top fieldset {
+            background: #fff;
+        }
+
+        /* "Save as" name field of the parameter form */
+        #param-set-name {
+            margin-bottom: 0.5rem;
+        }
+
         .stages-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
