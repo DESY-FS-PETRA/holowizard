@@ -147,7 +147,15 @@
         }
         .btn-danger:hover { background: #faece7; }
 
-        input[type="submit"], input[type="button"] {
+        .btn-success {
+            background: #eaf4ed;
+            color: #1f6b3a;
+            border-color: rgba(31,107,58,0.35);
+        }
+        .btn-success:hover { background: #dbeee1; }
+
+        /* Plain form buttons (e.g. "Save"); buttons with the .btn classes are styled above. */
+        input[type="submit"]:not(.btn), input[type="button"]:not(.btn) {
             padding: 7px 14px;
             font-size: 13px;
             font-weight: 500;
@@ -157,16 +165,6 @@
             color: #1a1a1a;
             cursor: pointer;
         }
-        #optimize-btn {
-            background: #1a1a1a;
-            color: #fff;
-            border-color: #1a1a1a;
-        }
-        #stop-btn {
-            color: #993c1d;
-            border-color: rgba(153,60,29,0.3);
-        }
-        #stop-btn:hover { background: #faece7; }
 
         .checkbox-label {
             display: flex;
@@ -381,7 +379,7 @@
                 <select id="scan-select"></select>
             </div>
             <div class="field">
-                <label for="img-select">Image</label>
+                <label for="img-select">Test Image</label>
                 <select id="img-select"></select>
             </div>
         </div>
@@ -393,7 +391,7 @@
                 <input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off">
             </div>
             <div class="field">
-                <label for="a0">a₀</label>
+                <label for="a0">A₀</label>
                 <input id="a0" name="a0" type="number" step="any" value="1.0">
             </div>
             <div class="field">
@@ -438,19 +436,8 @@
 
         <div class="panel-title">Pipeline Submission</div>
 
-        <div class="stages-grid" id="stages">
-            <div class="stage-card">
-                <div class="stage-header">
-                    <label for="reconstruction-select">Phase Retrieval</label>
-                </div>
-                <select id="reconstruction-select" name="reconstruction_method">
-                    <option value="">— option —</option>
-                </select>
-            </div>
-        </div>
-
-        <div style="margin-top:0.75rem;">
-            <input id="submit-btn" type="button" value="Submit Phase Retrieval" class="btn btn-primary" style="width:100%;">
+        <div>
+            <input id="submit-btn" type="button" value="Submit Phase Retrieval" class="btn btn-success" style="width:100%;">
         </div>
     
       </div>
@@ -498,8 +485,7 @@
     const PERSISTED_IDS = [
         'parameter-select', 'scan-select', 'img-select',
         'energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp',
-        'vmin', 'vmax',
-        'reconstruction-select'
+        'vmin', 'vmax'
     ];
     let restoring = false;
     let saveTimer = null;
@@ -587,8 +573,6 @@
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(getFormData()), keepalive
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-            // The submission dropdown only knows the custom set if its options were already loaded.
-            if (stageOptionsLoaded.reconstruction) addOption(qs('reconstruction-select'), CUSTOM_SET);
         } catch (err) {
             console.error(`Could not save ${CUSTOM_SET}:`, err);
         }
@@ -648,11 +632,6 @@
         img_name: qs('img-select').value,
         energy: +qs('energy').value,
         base_dir: qs('prefix').value
-    });
-    // "Submit Phase Retrieval" only runs phase retrieval (after flatfield); the server enforces this as well.
-    const retrieveStages = () => ({
-        stages: ['reconstruction'],
-        options: { reconstruction: qs('reconstruction-select').value },
     });
 
     const toggleGeomControls = () => {
@@ -715,13 +694,6 @@
             ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp']
                 .forEach(id => { if (id in f && qs(id)) setField(qs(id), f[id]); });
             toggleGeomControls();
-
-            for (const [id, stage] of [['reconstruction-select', 'reconstruction']]) {
-                const sel = qs(id), v = f[id];
-                if (!sel || !v) continue;
-                if (!hasOption(sel, v)) await loadStageOptions(sel, stage);
-                if (hasOption(sel, v)) sel.value = v;
-            }
 
             restorePrefs = {
                 'parameter-select': f['parameter-select'],
@@ -798,31 +770,14 @@
             resetLivePreview();
         };
         qs('submit-btn').onclick = async () => {
+            // Phase retrieval (after flatfield) with the parameters of the form on the left.
             await flushCustom();
-            const data = {...retrieveReco(), ...retrieveStages()};
-            const res = await fetch('api/submit_scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
-            alert(res.ok ? 'Submitted!' : 'Submit failed');
+            const res = await fetch('api/submit_scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(retrieveReco()) });
+            const detail = res.ok ? '' : ((await res.json().catch(() => ({}))).detail || res.statusText);
+            alert(res.ok ? 'Submitted!' : `Submit failed: ${detail}`);
         };
     });
 
-    const reconSelect = qs('reconstruction-select');
-    const stageOptionsLoaded = {};
-    async function loadStageOptions(select, stage) {
-        if (stageOptionsLoaded[stage]) return;
-        stageOptionsLoaded[stage] = true;
-        try {
-            const opts = await fetchJson(endpoints.stage(stage));
-            opts.forEach(o => {
-                const opt = document.createElement('option');
-                opt.value = o;
-                opt.textContent = o;
-                select.appendChild(opt);
-            });
-        } catch(err) {
-            console.error('Error loading options for', stage, err);
-        }
-    }
-    if (reconSelect) reconSelect.addEventListener('mousedown', () => loadStageOptions(reconSelect, 'reconstruction'), { once: true });
 
 
     const btn = document.getElementById('logo-btn');

@@ -7,7 +7,7 @@ import re
 import threading
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import plotly.express as px
@@ -27,7 +27,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
 from omegaconf import OmegaConf
 from plotly.utils import PlotlyJSONEncoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from starlette.datastructures import UploadFile
 
 from holowizard.pipe.scan import P05Scan as Scan
@@ -37,7 +37,7 @@ UI_STATE_FILE = "ui_state.json"
 # Stages whose config is fixed and not selectable in the UI.
 FIXED_STAGE_CONFIGS = {"find_focus": "defaults.yaml"}
 # Tasks run by "Submit Phase Retrieval"; flatfield is always run first by the beamtime.
-SUBMIT_STAGES = ["reconstruction"]
+SUBMIT_TASKS = ["flatfield", "reconstruction"]
 # Every edit made in the reconstruction parameter form goes into the parameter set of the logged-in user.
 # Everyone can load it, only its user can write it.
 CUSTOM_PREFIX = "custom_"
@@ -62,8 +62,6 @@ class ScanConfig(BaseModel):
     a0: Optional[float] = None
     energy: Optional[float] = None
     base_dir: Optional[Path] = None
-    stages: List[str] = Field(default_factory=list)
-    options: Dict[str, Any] = Field(default_factory=dict)
     form_data: Optional[Dict[str, Any]] = None
 
 
@@ -153,13 +151,12 @@ async def submit_scan(cfg_in: ScanConfig, bg: BackgroundTasks, request: Request)
     state = request.app.state
     cfg = state.cfg.copy()
     energy = cfg_in.energy or state.cfg.scan.energy
-    cfg.scan.tasks = ["flatfield"] + SUBMIT_STAGES
-    for stage in SUBMIT_STAGES:
-        opt = cfg_in.options.get(stage) or ""
-        try:
-            setattr(cfg, stage, load_stage_config(state.config_dir, stage, opt))
-        except Exception:
-            raise HTTPException(status_code=400, detail=f"Please set config for stage: '{stage}'")
+    cfg.scan.tasks = SUBMIT_TASKS
+    # The reconstruction always uses the parameters of the form on the phase retrieval page.
+    reconstruction = dict_from_form(cfg_in.form_data or {})
+    if not reconstruction["stages"]:
+        raise HTTPException(status_code=400, detail="No reconstruction parameters; choose a parameter set first")
+    cfg.reconstruction = reconstruction
 
     if cfg_in.base_dir is not None:
         cfg.paths.base_dir = cfg_in.base_dir
