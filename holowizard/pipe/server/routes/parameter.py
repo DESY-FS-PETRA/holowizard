@@ -201,8 +201,14 @@ async def submit_scan(cfg_in: ScanConfig, bg: BackgroundTasks, request: Request)
         a0=cfg_in.a0,
         log_path=state.beamtime.log_path,
     )
-    bg.add_task(state.beamtime.new_scan, scan)
+    bg.add_task(_run_with_cluster, state.cluster, state.beamtime.new_scan, scan)
     return JSONResponse({"status": "submitted"})
+
+
+def _run_with_cluster(cluster, func, *args, **kwargs):
+    """Run ``func`` while holding the SLURM workers (they are started first if needed)."""
+    with cluster.lease():
+        return func(*args, **kwargs)
 
 
 @router.post("/api/compute_z_params")
@@ -430,10 +436,12 @@ def _cancel_run(beamtime, run: PreviewRun):
         run.task.cancel()
 
 
-async def _execute_preview(beamtime, preview: UserPreview, run: PreviewRun, data: Dict[str, Any]):
+async def _execute_preview(beamtime, cluster, preview: UserPreview, run: PreviewRun, data: Dict[str, Any]):
     # run the heavy lift in a thread, get a result back
     try:
         result = await asyncio.to_thread(
+            _run_with_cluster,
+            cluster,
             beamtime.phase_retrieval_single_holo,
             run.scan,
             run.session,
@@ -536,7 +544,7 @@ async def websocket_preview(ws: WebSocket):
             for c in list(preview.connections):
                 if c is not conn:
                     await c.send({"running": True, "find_focus": run.find_focus})
-            run.task = asyncio.create_task(_execute_preview(beamtime, preview, run, data))
+            run.task = asyncio.create_task(_execute_preview(beamtime, state.cluster, preview, run, data))
 
     except WebSocketDisconnect:
         pass

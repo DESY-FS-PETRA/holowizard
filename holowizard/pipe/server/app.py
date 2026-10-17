@@ -20,6 +20,7 @@ from holowizard.core.src.hpc.slurm_cluster import SlurmCluster as Cluster
 from holowizard.core.src.parameters.dask_options import DaskOptions
 from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
+from holowizard.pipe.server.cluster_manager import OnDemandCluster
 from holowizard.pipe.server.auth import LoginRequiredMiddleware, UserStore, ensure_default_user, users_file
 from holowizard.pipe.server.routes import dashboard, login, overview, parameter, scan
 
@@ -57,7 +58,9 @@ async def _lifespan(app: FastAPI):
     dask_options.working_dir = app.state.beamtime.log_path / dask_options.working_dir
     dask_options.python_env = sys.prefix
     app.state.beamtime.cluster = Cluster(dask_options=dask_options)
-    app.state.beamtime.cluster.start_cluster()
+    # SLURM workers are started when work arrives and stopped again when idle.
+    idle_minutes = OmegaConf.select(cfg, "server.cluster_idle_minutes", default=10)
+    app.state.cluster = OnDemandCluster(app.state.beamtime.cluster, idle_seconds=float(idle_minutes) * 60)
 
     app.state.cfg = cfg
     templates = Jinja2Templates(directory=str(BASE_DIR / ".." / "templates"))
@@ -66,6 +69,7 @@ async def _lifespan(app: FastAPI):
     broker_thread.start()
     app.state.templates = templates
     yield
+    app.state.cluster.shutdown()
     del app.state.beamtime
 
 

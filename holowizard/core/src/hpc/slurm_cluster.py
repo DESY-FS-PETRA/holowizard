@@ -19,6 +19,7 @@ class SlurmCluster:
         self.env = sys.prefix
         self.scheduler = None
         self.client_scheduler = None
+        self.cluster = None
         self.worker_thread = None
         self.stop_event = None
 
@@ -97,15 +98,21 @@ class SlurmCluster:
     def maintain_workers(self) -> None:
         while not self.stop_event.is_set():
             time.sleep(self.dask_options.check_interval)
-            if self.cluster is None:
+            # Read once: the cluster may be stopped (set to None) from another thread at any time.
+            cluster = self.cluster
+            if cluster is None:
                 logging.info("No active cluster")
                 continue
 
             scale_up_to = self.dask_options.num_worker
-            worker_count = len(self.client_scheduler.scheduler_info()["workers"])
-            logging.info(f"{worker_count} workers connected.")
-            logging.info(f"Scaling up workers to {scale_up_to}.")
-            self.cluster.scale(jobs=scale_up_to)
+            try:
+                worker_count = len(self.client_scheduler.scheduler_info()["workers"])
+                logging.info(f"{worker_count} workers connected.")
+                logging.info(f"Scaling up workers to {scale_up_to}.")
+                cluster.scale(jobs=scale_up_to)
+            except Exception as e:
+                # Keep the thread alive; it is only started once per SlurmCluster.
+                logging.warning(f"Could not maintain workers: {e}")
 
     def stop_cluster(self) -> None:
         # if self.client_cluster:

@@ -43,6 +43,7 @@ def _progress(state):
     return {
         "progress": prog,
         "num_workers": len(state.beamtime.cluster.client_scheduler.nthreads()),
+        "cluster": state.cluster.status(),
     }
 
 
