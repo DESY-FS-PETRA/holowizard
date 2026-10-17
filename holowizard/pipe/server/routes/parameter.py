@@ -6,6 +6,7 @@ import os
 import re
 import threading
 import uuid
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -97,19 +98,44 @@ def dict_from_form(form: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
-def process_image(path: Path):
-    with tifffile.TiffFile(str(path)) as tif:
+# The test image plot is at most a few hundred pixels wide, so it is sent downsampled to this size.
+PREVIEW_IMAGE_SIZE = 768
+
+
+def _block_mean(arr: np.ndarray, factor: int) -> np.ndarray:
+    if factor == 1:
+        return arr
+    h, w = (arr.shape[0] // factor) * factor, (arr.shape[1] // factor) * factor
+    small = arr[:h, :w].reshape(h // factor, factor, w // factor, factor).mean(axis=(1, 3))
+    return np.rint(small).astype(arr.dtype) if np.issubdtype(arr.dtype, np.integer) else small.astype(np.float32)
+
+
+@lru_cache(maxsize=32)
+def _image_figure(path: str, mtime_ns: int) -> Dict[str, Any]:
+    """Plotly figure of a TIFF, downsampled for display; ``mtime_ns`` is only part of the cache key."""
+    with tifffile.TiffFile(path) as tif:
         arr = tif.pages[0].asarray()
-    low5, high95 = np.percentile(arr.flatten(), [5, 95])
+    # Contrast limits from the full-resolution image, so they do not depend on the downsampling.
+    low5, high95 = np.percentile(arr, [5, 95])
+    img = np.rot90(arr)
+    factor = max(1, -(-max(img.shape) // PREVIEW_IMAGE_SIZE))
+    small = _block_mean(img, factor)
+    # Axes in full-resolution pixel coordinates (centre of each block).
+    offset = (factor - 1) / 2
     fig = px.imshow(
-        img=np.rot90(arr),
+        img=small,
+        x=np.arange(small.shape[1]) * factor + offset,
+        y=np.arange(small.shape[0]) * factor + offset,
         color_continuous_scale="gray",
         origin="upper",
         zmin=low5,
         zmax=high95,
     )
-    fig_json = fig.to_dict()
-    return fig_json
+    return fig.to_dict()
+
+
+def process_image(path: Path):
+    return _image_figure(str(path), path.stat().st_mtime_ns)
 
 
 def load_yaml(path: Path) -> Dict[str, Any]:
@@ -339,23 +365,98 @@ async def get_image(scan: str, img: str, request: Request):
 
 
 # --- Live preview websocket ---
-async def worker(ws, beamtime, scan, session, data):
+# A preview run belongs to the logged-in user, not to one websocket connection: reloading the page (or a
+# second tab) reattaches to the running preview. A run without any connected page is cancelled after
+# PREVIEW_GRACE_SECONDS; "Stop" or starting a new preview cancels it right away.
+PREVIEW_GRACE_SECONDS = 60
+
+
+class PreviewRun:
+    def __init__(self, session: str, scan, find_focus: bool):
+        self.session = session
+        self.scan = scan
+        self.find_focus = find_focus
+        self.task: Optional[asyncio.Task] = None
+        self.pending_message: Optional[Dict[str, Any]] = None  # result that finished while no page was connected
+
+    @property
+    def running(self) -> bool:
+        return self.task is not None and not self.task.done()
+
+
+class PreviewConnection:
+    def __init__(self, ws: WebSocket, sub: zmq.asyncio.Socket):
+        self.ws = ws
+        self.sub = sub
+        self.topic: Optional[str] = None
+
+    def subscribe(self, topic: Optional[str]):
+        if self.topic:
+            self.sub.setsockopt(zmq.UNSUBSCRIBE, self.topic.encode())
+        if topic:
+            self.sub.setsockopt(zmq.SUBSCRIBE, topic.encode())
+        self.topic = topic
+
+    async def send(self, message: Dict[str, Any]) -> bool:
+        try:
+            await self.ws.send_text(json.dumps(message, cls=PlotlyJSONEncoder))
+            return True
+        except Exception:
+            return False
+
+
+class UserPreview:
+    def __init__(self):
+        self.run: Optional[PreviewRun] = None
+        self.connections: set = set()
+        self.cancel_timer: Optional[asyncio.Task] = None
+
+    async def broadcast(self, message: Dict[str, Any]) -> bool:
+        """Send to every connected page of the user; True if at least one received it."""
+        results = [await c.send(message) for c in list(self.connections)]
+        return any(results)
+
+
+_user_previews: Dict[str, UserPreview] = {}
+
+
+def _cancel_run(beamtime, run: PreviewRun):
+    run.scan.cancelled = True
+    try:
+        beamtime.cancel_task(run.session)
+    except Exception as e:
+        print(f"cancel_task failed for {run.session}: {e}")
+    if run.task is not None and not run.task.done():
+        run.task.cancel()
+
+
+async def _execute_preview(beamtime, preview: UserPreview, run: PreviewRun, data: Dict[str, Any]):
     # run the heavy lift in a thread, get a result back
     try:
         result = await asyncio.to_thread(
             beamtime.phase_retrieval_single_holo,
-            scan,
-            session,
+            run.scan,
+            run.session,
             img_name=data["img_name"],
-            find_focus=data.get("find_focus", False),
+            find_focus=run.find_focus,
         )
     except asyncio.CancelledError:
         return
-    if result:
-        ret = dict(
-            z01=result.get("z01"),
-        )
-        await ws.send_text(json.dumps(ret, cls=PlotlyJSONEncoder))
+    except Exception as e:
+        message = {"error": f"Preview failed: {e}"}
+    else:
+        if not result:
+            return
+        message = {"z01": result.get("z01")}
+    if preview.run is run and not await preview.broadcast(message):
+        run.pending_message = message
+
+
+async def _cancel_when_abandoned(beamtime, preview: UserPreview, run: PreviewRun):
+    await asyncio.sleep(PREVIEW_GRACE_SECONDS)
+    if not preview.connections and preview.run is run:
+        _cancel_run(beamtime, run)
+        preview.run = None
 
 
 @router.websocket("/ws/preview")
@@ -364,47 +465,40 @@ async def websocket_preview(ws: WebSocket):
     state = ws.app.state
     beamtime = state.beamtime
     beamtime.cluster.min_worker = 1
+    user = getattr(ws.state, "user", None) or "anonymous"
+    preview = _user_previews.setdefault(user, UserPreview())
 
-    current_session: Optional[str] = None
-    current_task: Optional[asyncio.Task] = None
-    current_scan: Optional[Scan] = None
-
-    def _switch_subscription(new_session: str):
-        nonlocal current_session, sub
-        if current_session:
-            sub.setsockopt(zmq.UNSUBSCRIBE, current_session.encode())
-        sub.setsockopt(zmq.SUBSCRIBE, new_session.encode())
-        current_session = new_session
-
-    # session = str(uuid.uuid4())
     ctx = zmq.asyncio.Context.instance()
     sub = ctx.socket(zmq.SUB)
     sub.connect(f"tcp://{os.getenv('HNAME')}:{os.getenv('PUB_PORT', '6001')}")
-    # sub.setsockopt(zmq.SUBSCRIBE, session.encode())
+    conn = PreviewConnection(ws, sub)
+    preview.connections.add(conn)
     forward = asyncio.create_task(_forward_zmq(ws, sub))
+
+    # Reattach to a preview of this user that is still running (e.g. after a page reload).
+    if preview.cancel_timer is not None:
+        preview.cancel_timer.cancel()
+        preview.cancel_timer = None
+    run = preview.run
+    if run is not None:
+        conn.subscribe(run.session)
+        if run.running:
+            await conn.send({"running": True, "find_focus": run.find_focus})
+        if run.pending_message is not None and await conn.send(run.pending_message):
+            run.pending_message = None
+
     cfg = state.cfg
     try:
         while True:
             data = await ws.receive_json()
 
             if data.get("action") == "cancel_preview":
-                if current_scan is not None:
-                    current_scan.cancelled = True
-                if current_session:
-                    try:
-                        beamtime.cancel_task(current_session)
-                    except Exception as e:
-                        print(f"cancel_task failed for {current_session}: {e}")
-                if current_task is not None:
-                    current_task.cancel()
-                    current_task = None
-                _switch_subscription("noop-" + uuid.uuid4().hex)
-                current_scan = None
-
-                try:
-                    await ws.send_text(json.dumps({"stopped": True}))
-                except Exception:
-                    pass
+                if preview.run is not None:
+                    _cancel_run(beamtime, preview.run)
+                    preview.run = None
+                for c in preview.connections:
+                    c.subscribe(None)
+                await preview.broadcast({"stopped": True})
                 continue
 
             form = dict_from_form(data.get("form_data", {}))
@@ -412,13 +506,14 @@ async def websocket_preview(ws: WebSocket):
             try:
                 cfg.find_focus = load_stage_config(state.config_dir, "find_focus", FIXED_STAGE_CONFIGS["find_focus"])
             except Exception as e:
-                await ws.send_text(json.dumps({"error": f"Could not load find focus config: {e}"}))
+                await conn.send({"error": f"Could not load find focus config: {e}"})
                 continue
             cfg.paths.base_dir = data.get("base_dir", cfg.paths.base_dir)
 
-            run_session = str(uuid.uuid4())
-            _switch_subscription(run_session)
+            if preview.run is not None and preview.run.running:
+                _cancel_run(beamtime, preview.run)
 
+            run_session = str(uuid.uuid4())
             scan = Scan(
                 name=data["scan_name"],
                 holder=0,
@@ -433,23 +528,26 @@ async def websocket_preview(ws: WebSocket):
             )
             scan.key = run_session
 
-            current_scan = scan
-            current_task = asyncio.create_task(worker(ws, beamtime, scan, run_session, data))
+            run = PreviewRun(run_session, scan, bool(data.get("find_focus", False)))
+            preview.run = run
+            for c in preview.connections:
+                c.subscribe(run_session)
+            # Other open pages of this user show that a preview is running.
+            for c in list(preview.connections):
+                if c is not conn:
+                    await c.send({"running": True, "find_focus": run.find_focus})
+            run.task = asyncio.create_task(_execute_preview(beamtime, preview, run, data))
 
     except WebSocketDisconnect:
+        pass
+    finally:
         forward.cancel()
         sub.close()
-        if current_scan is not None:
-            current_scan.cancelled = True
-        if current_task is not None:
-            current_task.cancel()
-        if current_session:
-            try:
-                beamtime.cancel_task(current_session)
-            except Exception:
-                pass
-    finally:
-        beamtime.cluster.min_worker = 0
+        preview.connections.discard(conn)
+        if not preview.connections and preview.run is not None and preview.run.running:
+            preview.cancel_timer = asyncio.create_task(_cancel_when_abandoned(beamtime, preview, preview.run))
+        if not preview.connections:
+            beamtime.cluster.min_worker = 0
 
 
 async def _forward_zmq(ws: WebSocket, sock: zmq.asyncio.Socket):
@@ -457,5 +555,5 @@ async def _forward_zmq(ws: WebSocket, sock: zmq.asyncio.Socket):
         while True:
             _, frame = await sock.recv_multipart()
             await ws.send_bytes(frame)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, asyncio.CancelledError, RuntimeError, zmq.ZMQError):
         pass

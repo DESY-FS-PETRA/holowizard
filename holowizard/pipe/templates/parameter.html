@@ -831,50 +831,69 @@
     document.addEventListener('DOMContentLoaded', () => {
         restoreState();
 
-        const socket = new WebSocket(`ws://${location.host}/ws/preview`);
-        socket.binaryType = 'arraybuffer';
-        socket.onmessage = e => {
-            qs('loss-image').classList.remove('loader');
+        // Live preview websocket. The server keeps a running preview across page reloads and reattaches
+        // this page to it; if the connection drops, the page reconnects automatically.
+        let socket = null;
+        const showRunning = () => {
+            qs('loss-image').style.display = 'block';
+            qs('loss-image').classList.add('loader');
+        };
+        const handleMessage = e => {
             const data = e.data;
             if (data instanceof ArrayBuffer) {
+                qs('loss-image').classList.remove('loader');
                 const blob = new Blob([data]);
                 qs('live-preview').src = URL.createObjectURL(blob);
                 qs('live-preview').style.display = 'block';
+                return;
+            }
+            const json_data = JSON.parse(data);
+            if (json_data.running) { showRunning(); return; }
+            qs('loss-image').classList.remove('loader');
+            if (json_data.stopped) return;
+            if (json_data.error) {
+                alert(json_data.error);
+                return;
+            }
+            const z01 = parseFloat(json_data.z01);
+            const z02 = parseFloat(json_data.z02);
+            if (!isNaN(z01)) {
+                qs('z01').value = z01.toFixed(3);
+            } else if (!isNaN(z02)) {
+                qs('z02').value = z02.toFixed(3);
             } else {
-                const json_data = JSON.parse(data);
-                if (json_data.error) {
-                    alert(json_data.error);
-                    return;
-                }
-                const z01 = parseFloat(json_data.z01);
-                const z02 = parseFloat(json_data.z02);
-                const fig = json_data.data;
-                if (!isNaN(z01)) {
-                    qs('z01').value = z01.toFixed(3);
-                } else if (!isNaN(z02)) {
-                    qs('z02').value = z02.toFixed(3);
-                } else {
-                    console.warn('Received non-numeric data:', data);
-                }
-                scheduleSave();
+                console.warn('Received non-numeric data:', data);
+            }
+            scheduleSave();
+            const fig = json_data.data;
+            if (fig) {
                 Plotly.react(qs('loss-image'), fig.data, fig.layout, { responsive: true });
                 qs('loss-image').style.display = 'block';
             }
         };
+        const connectPreview = () => {
+            socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/preview`);
+            socket.binaryType = 'arraybuffer';
+            socket.onmessage = handleMessage;
+            socket.onclose = () => setTimeout(connectPreview, 2000);
+        };
+        const sendPreview = message => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                alert('No connection to the server, reconnecting. Please try again in a moment.');
+                return false;
+            }
+            socket.send(JSON.stringify(message));
+            return true;
+        };
+        connectPreview();
 
         qs('optimize-btn').onclick = () => {
             resetLivePreview();
-            socket.send(JSON.stringify(retrieveReco()));
-            qs('loss-image').style.display = 'block';
-            qs('loss-image').classList.add('loader');
+            if (sendPreview(retrieveReco())) showRunning();
         };
         qs('find-focus-btn').onclick = () => {
             resetLivePreview();
-            const data = retrieveReco();
-            data.find_focus = true;
-            socket.send(JSON.stringify(data));
-            qs('loss-image').style.display = 'block';
-            qs('loss-image').classList.add('loader');
+            if (sendPreview({ ...retrieveReco(), find_focus: true })) showRunning();
         };
         qs('stop-btn').onclick = () => {
             try { socket.send(JSON.stringify({ action: 'cancel_preview' })); } catch (_) {}
