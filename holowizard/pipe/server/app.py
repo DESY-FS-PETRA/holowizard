@@ -1,8 +1,10 @@
 import os
+import shutil
 import sys
 import threading
 from pathlib import Path
 from typing import Union
+from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
 # Import for side effects: initializes server env vars and writes .env.
@@ -23,14 +25,31 @@ from holowizard.pipe.server.routes import dashboard, login, overview, parameter,
 
 
 BASE_DIR = Path(__file__).resolve().parent
-CONFIG_DIR = BASE_DIR / "configs"
+# Shipped configs; copied into the beamtime's own config folder on startup.
+CONFIG_SOURCE = BASE_DIR.parent / "scripts" / "config"
+# Configs that are only needed to start the server, not offered in the UI.
+STARTUP_ONLY_CONFIGS = ("dask_options.yaml", "beamtime.yaml", "server.yaml")
+
+
+def _sync_config_dir(source: Path, destination: Path):
+    """Refresh the shipped configs, keeping files created from the UI (custom and saved parameter sets)."""
+    destination.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source, destination, dirs_exist_ok=True)
+    for name in STARTUP_ONLY_CONFIGS:
+        (destination / name).unlink(missing_ok=True)
 
 
 # --- Lifespan & App Factory ---
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    cfg = getattr(app.state, "_initial_cfg", OmegaConf.load(str(app.state.config_dir / "defaults.yaml")))
+    source = app.state.config_source
+    cfg = getattr(app.state, "_initial_cfg", None)
+    if cfg is None:
+        with initialize_config_dir(version_base="1.2", config_dir=str(source)):
+            cfg = compose(config_name="defaults")
     app.state.beamtime = Beamtime(beamtime_name=cfg.beamtime.id, year=cfg.beamtime.year, cluster=None)
+    app.state.config_dir = app.state.beamtime.log_path / cfg.paths.pipe_config
+    _sync_config_dir(source, app.state.config_dir)
     dask_dict = OmegaConf.to_container(cfg["dask_options"], resolve=True)
     dask_options = DaskOptions.from_dict(dask_dict)
     if dask_options is None:
@@ -60,9 +79,14 @@ def run_broker():
 
 
 # create_app factory
-def create_app(cfg=None, config_dir: Union[str, Path] = None) -> FastAPI:
+def create_app(cfg=None, config_source: Union[str, Path] = None) -> FastAPI:
+    """Create the server app.
+
+    ``config_source`` is the folder with the shipped configs (default: ``scripts/config``). On startup it is
+    copied into ``<beamtime log_path>/<paths.pipe_config>``, which is the folder the UI reads and writes.
+    """
     app = FastAPI(lifespan=_lifespan)
-    app.state.config_dir = Path(config_dir) if config_dir else CONFIG_DIR
+    app.state.config_source = Path(config_source) if config_source else CONFIG_SOURCE
     if cfg:
         app.state._initial_cfg = cfg
 

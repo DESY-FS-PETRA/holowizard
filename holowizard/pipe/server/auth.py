@@ -20,6 +20,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import sys
 import threading
@@ -33,6 +34,8 @@ SESSION_COOKIE = "holopipe_session"
 SESSION_MAX_AGE = 7 * 24 * 3600
 PBKDF2_ITERATIONS = 600_000
 PUBLIC_PATHS = ("/login", "/logout", "/static/")
+# User names end up in file names (custom_<user>.yaml), so keep them simple.
+USERNAME = re.compile(r"[A-Za-z0-9_-]{1,64}")
 
 
 def users_file() -> Path:
@@ -259,6 +262,8 @@ def main(argv=None):
     if args.cmd == "list":
         print("\n".join(sorted(users)) or "no users")
     elif args.cmd == "add":
+        if not USERNAME.fullmatch(args.user):
+            sys.exit("Use only letters, digits, '_' and '-' in user names (at most 64 characters).")
         if args.user in users:
             sys.exit(f"User {args.user!r} exists, use 'passwd' to change the password.")
         store.set_password(args.user, _ask_password())

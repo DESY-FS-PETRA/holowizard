@@ -228,12 +228,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .stage-fixed {
-            font-size: 12px;
-            color: #888;
-            padding: 6px 0;
-        }
-
         .stage-card label {
             font-size: 13px;
             font-weight: 500;
@@ -330,17 +324,11 @@
 
     <!-- LEFT: Parameter form -->
     <div class="panel">
-        <div class="panel-title">Stage &amp; Parameters</div>
+        <div class="panel-title">Reconstruction Parameters</div>
 
         <div class="field-row">
             <div class="field">
-                <label for="stage-select">Stage</label>
-                <select id="stage-select">
-                    <option value="reconstruction">Reconstruction</option>
-                </select>
-            </div>
-            <div class="field">
-                <label for="parameter-select">Base Parameters</label>
+                <label for="parameter-select">Parameter Set</label>
                 <select id="parameter-select"></select>
             </div>
         </div>
@@ -426,31 +414,16 @@
         <div class="stages-grid" id="stages">
             <div class="stage-card">
                 <div class="stage-header">
-                    <input type="checkbox" name="stages" value="find_focus" checked id="chk-focus">
-                    <label for="chk-focus">Find Focus</label>
-                </div>
-                <div class="stage-fixed" title="Find focus always uses find_focus/defaults.yaml">defaults.yaml</div>
-            </div>
-            <div class="stage-card">
-                <div class="stage-header">
-                    <input type="checkbox" name="stages" value="reconstruction" checked id="chk-reco">
-                    <label for="chk-reco">Phase Retrieval</label>
+                    <label for="reconstruction-select">Phase Retrieval</label>
                 </div>
                 <select id="reconstruction-select" name="reconstruction_method">
                     <option value="">— option —</option>
-                    <option value="custom">Custom</option>
                 </select>
-            </div>
-            <div class="stage-card">
-                <div class="stage-header">
-                    <input type="checkbox" name="stages" value="tomography" checked id="chk-tomo">
-                    <label for="chk-tomo">Tomography</label>
-                </div>
             </div>
         </div>
 
         <div style="margin-top:0.75rem;">
-            <input id="submit-btn" type="button" value="Submit All" class="btn btn-primary" style="width:100%;">
+            <input id="submit-btn" type="button" value="Submit Phase Retrieval" class="btn btn-primary" style="width:100%;">
         </div>
     
       </div>
@@ -496,9 +469,9 @@
     // --- Persisted UI state (stored server-side next to the beamtime log path) ---
     const STATE_URL = '/api/ui_state/parameter';
     const PERSISTED_IDS = [
-        'stage-select', 'parameter-select', 'scan-select', 'img-select',
+        'parameter-select', 'scan-select', 'img-select',
         'energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp',
-        'vmin', 'vmax', 'chk-focus', 'chk-reco', 'chk-tomo',
+        'vmin', 'vmax',
         'reconstruction-select'
     ];
     let restoring = false;
@@ -555,18 +528,54 @@
         return sel.onchange();
     };
 
-    qs('stage-select').onchange = async () => {
-        const opts = await fetchJson(endpoints.stage(qs('stage-select').value));
+    // Parameter sets are always those of the reconstruction stage.
+    const STAGE = 'reconstruction';
+    const loadParameterSets = async () => {
+        const opts = await fetchJson(endpoints.stage(STAGE));
         await fill(qs('parameter-select'), opts);
     };
     qs('parameter-select').onchange = async () => {
         const url = endpoints.parameter(qs('parameter-select').value);
-        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dropdown: qs('stage-select').value}) });
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dropdown: STAGE}) });
         qs('form-container').innerHTML = await res.text();
-        qs('stage-hidden').value = qs('stage-select').value;
-        formKey = `${qs('stage-select').value}/${qs('parameter-select').value}`;
+        qs('stage-hidden').value = STAGE;
+        formKey = `${STAGE}/${qs('parameter-select').value}`;
         scheduleSave();
     };
+
+    // Every edit of the parameter form goes into the user's own custom_<user>.yaml, which becomes the selected parameter set.
+    const CUSTOM_SET = {{ custom_set | tojson }};
+    let customTimer = null;
+    const addOption = (sel, value) => {
+        if (hasOption(sel, value)) return;
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = value;
+        sel.appendChild(opt);
+    };
+    const saveCustom = async (keepalive = false) => {
+        clearTimeout(customTimer);
+        customTimer = null;
+        try {
+            const res = await fetch('/api/parameter_sets/custom', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(getFormData()), keepalive
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+            // The submission dropdown only knows the custom set if its options were already loaded.
+            if (stageOptionsLoaded.reconstruction) addOption(qs('reconstruction-select'), CUSTOM_SET);
+        } catch (err) {
+            console.error(`Could not save ${CUSTOM_SET}:`, err);
+        }
+    };
+    const flushCustom = () => customTimer ? saveCustom() : Promise.resolve();
+    qs('form-container').addEventListener('input', e => {
+        if (restoring || !e.target.closest('form') || e.target.name === 'param_set_name') return;
+        addOption(qs('parameter-select'), CUSTOM_SET);
+        qs('parameter-select').value = CUSTOM_SET;
+        formKey = `${STAGE}/${CUSTOM_SET}`;
+        clearTimeout(customTimer);
+        customTimer = setTimeout(saveCustom, 600);
+    });
+    window.addEventListener('pagehide', () => { if (customTimer) saveCustom(true); });
 
     qs('scan-select').onchange = async () => {
         const opts = await fetchJson(endpoints.folder(qs('scan-select').value));
@@ -613,11 +622,11 @@
         energy: +qs('energy').value,
         base_dir: qs('prefix').value
     });
-    const retrieveStages = () => {
-        const stages = Array.from(document.querySelectorAll('input[name="stages"]:checked')).map(cb => cb.value);
-        const options = Object.fromEntries(stages.map(s => [s, qs(`${s}-select`) ? qs(`${s}-select`).value : null]));
-        return {stages, options};
-    };
+    // "Submit Phase Retrieval" only runs phase retrieval (after flatfield); the server enforces this as well.
+    const retrieveStages = () => ({
+        stages: ['reconstruction'],
+        options: { reconstruction: qs('reconstruction-select').value },
+    });
 
     const toggleGeomControls = () => {
         const on = qs('use-p05').checked;
@@ -676,7 +685,7 @@
         const f = state.fields || {};
         restoring = true;
         try {
-            ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp', 'chk-focus', 'chk-reco', 'chk-tomo']
+            ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp']
                 .forEach(id => { if (id in f && qs(id)) setField(qs(id), f[id]); });
             toggleGeomControls();
 
@@ -687,9 +696,6 @@
                 if (hasOption(sel, v)) sel.value = v;
             }
 
-            if (f['stage-select'] && hasOption(qs('stage-select'), f['stage-select'])) {
-                qs('stage-select').value = f['stage-select'];
-            }
             restorePrefs = {
                 'parameter-select': f['parameter-select'],
                 'scan-select': f['scan-select'],
@@ -697,7 +703,7 @@
             };
 
             const results = await Promise.allSettled([
-                qs('stage-select').onchange().then(() => applyFormData(state)),
+                loadParameterSets().then(() => applyFormData(state)),
                 fetchJson(endpoints.folder('')).then(folders => fill(qs('scan-select'), folders)).then(() => {
                     if ('vmin' in f) qs('vmin').value = f.vmin;
                     if ('vmax' in f) qs('vmax').value = f.vmax;
@@ -765,6 +771,7 @@
             resetLivePreview();
         };
         qs('submit-btn').onclick = async () => {
+            await flushCustom();
             const data = {...retrieveReco(), ...retrieveStages()};
             const res = await fetch('api/submit_scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
             alert(res.ok ? 'Submitted!' : 'Submit failed');

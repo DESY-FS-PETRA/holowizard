@@ -3,9 +3,8 @@ import uvicorn
 from hydra import initialize_config_dir, compose
 import os
 from holowizard.pipe.server.app import create_app
-from holowizard.pipe.beamtime import P05Beamtime as Beamtime
+from holowizard.pipe.server.config import first_free_port
 import socket
-import shutil
 
 
 def main():
@@ -16,22 +15,16 @@ def main():
         overrides = sys.argv[1:]
         cfg = compose(config_name="defaults", overrides=overrides)
 
-        ## TODO soll das hier sein?
-        bm = Beamtime(beamtime_name=cfg.beamtime.id, year=cfg.beamtime.year, cluster="")
-
-        destination_dir = f"{bm.path_processed}/{cfg.paths.pipe_config}"
-        if os.path.exists(destination_dir):
-            shutil.rmtree(destination_dir)
-        os.makedirs(destination_dir, exist_ok=True)
-        shutil.copytree(config_dir, destination_dir, dirs_exist_ok=True)
-        os.remove(os.path.join(destination_dir, "dask_options.yaml"))  # Remove cluster config if it exists
-        os.remove(os.path.join(destination_dir, "beamtime.yaml"))  # Remove beamtime config if it exists
-
-        app = create_app(cfg, destination_dir)
+        # The server copies config_dir into the beamtime's config folder on startup.
+        app = create_app(cfg, config_dir)
 
         hostname = socket.gethostname()
         ip_address = socket.gethostbyname(hostname)
-        uvicorn.run(app, host=ip_address, port=0)
+        port = first_free_port(ip_address, cfg.server.port, cfg.server.port_attempts)
+        if port != cfg.server.port:
+            print(f"Port {cfg.server.port} is in use, using port {port} instead.", flush=True)
+        print(f"Server: http://{hostname}:{port}/", flush=True)
+        uvicorn.run(app, host=ip_address, port=port)
 
 
 if __name__ == "__main__":

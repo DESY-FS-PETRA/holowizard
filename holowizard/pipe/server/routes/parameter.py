@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import re
 import threading
 import uuid
 from pathlib import Path
@@ -35,6 +36,18 @@ from holowizard.pipe.scan.p05_scan import P05Geometry
 UI_STATE_FILE = "ui_state.json"
 # Stages whose config is fixed and not selectable in the UI.
 FIXED_STAGE_CONFIGS = {"find_focus": "defaults.yaml"}
+# Tasks run by "Submit Phase Retrieval"; flatfield is always run first by the beamtime.
+SUBMIT_STAGES = ["reconstruction"]
+# Every edit made in the reconstruction parameter form goes into the parameter set of the logged-in user.
+# Everyone can load it, only its user can write it.
+CUSTOM_PREFIX = "custom_"
+PARAMETER_SET_NAME = re.compile(r"[A-Za-z0-9_-]+")
+
+
+def custom_set_name(user: str) -> str:
+    return f"{CUSTOM_PREFIX}{user}.yaml"
+
+
 _ui_state_lock = threading.Lock()
 
 router = APIRouter(tags=["parameter"])
@@ -140,19 +153,13 @@ async def submit_scan(cfg_in: ScanConfig, bg: BackgroundTasks, request: Request)
     state = request.app.state
     cfg = state.cfg.copy()
     energy = cfg_in.energy or state.cfg.scan.energy
-    if cfg_in.stages:
-        cfg.scan.tasks = ["flatfield"] + cfg_in.stages
-    for stage in cfg_in.stages:
-        if stage == "tomography":
-            continue
-        opt = FIXED_STAGE_CONFIGS.get(stage) or cfg_in.options.get(stage, stage or "wire.yaml")
-        if opt == "custom":
-            setattr(cfg, stage, dict_from_form(cfg_in.form_data or {}))
-        else:
-            try:
-                setattr(cfg, stage, load_stage_config(state.config_dir, stage, opt))
-            except Exception:
-                raise HTTPException(status_code=400, detail=f"Please set config for stage: '{stage}'")
+    cfg.scan.tasks = ["flatfield"] + SUBMIT_STAGES
+    for stage in SUBMIT_STAGES:
+        opt = cfg_in.options.get(stage) or ""
+        try:
+            setattr(cfg, stage, load_stage_config(state.config_dir, stage, opt))
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"Please set config for stage: '{stage}'")
 
     if cfg_in.base_dir is not None:
         cfg.paths.base_dir = cfg_in.base_dir
@@ -218,6 +225,22 @@ def api_compute_z_params(req: GeometryRequest, request: Request):
         raise HTTPException(status_code=400, detail=f"Invalid z01/z02 returned: {z01}, {z02}")
 
 
+@router.post("/api/parameter_sets/custom")
+async def save_custom_parameters(form_data: Dict[str, str], request: Request):
+    name = custom_set_name(request.state.user)
+    out = request.app.state.config_dir / "reconstruction" / name
+    data = dict_from_form(form_data)
+
+    def _write():
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tmp = out.with_name(f".{out.name}.{uuid.uuid4().hex}.tmp")
+        tmp.write_text(yaml.safe_dump(data, default_flow_style=False, sort_keys=False), encoding="utf-8")
+        os.replace(tmp, out)
+
+    await run_in_threadpool(_write)
+    return {"name": name}
+
+
 @router.get("/api/ui_state/{page}")
 async def get_ui_state(page: str, request: Request):
     state = await run_in_threadpool(_read_ui_state, _ui_state_path(request.app.state))
@@ -248,6 +271,7 @@ async def parameter_form(request: Request):
             "z02": cfg.z02,
             "energy": cfg.energy,
             "basepath": state.cfg.paths.base_dir,
+            "custom_set": custom_set_name(request.state.user),
         },
     )
 
@@ -270,7 +294,12 @@ async def save_tuning(request: Request):
     if stage in FIXED_STAGE_CONFIGS:
         raise HTTPException(status_code=400, detail=f"Parameters of stage '{stage}' are fixed and cannot be saved")
     name: UploadFile | str = form.get("param_set_name", "unnamed")
-    out = request.app.state.config_dir / stage / f"{name.split('.')[0]}.yaml"
+    stem = name.split(".")[0]
+    if not PARAMETER_SET_NAME.fullmatch(stem):
+        raise HTTPException(status_code=400, detail="Use only letters, digits, '_' and '-' in the name")
+    if stem.startswith(CUSTOM_PREFIX) and f"{stem}.yaml" != custom_set_name(request.state.user):
+        raise HTTPException(status_code=403, detail=f"'{stem}' belongs to another user")
+    out = request.app.state.config_dir / stage / f"{stem}.yaml"
     out.parent.mkdir(parents=True, exist_ok=True)
     yaml.safe_dump(data, out.open("w"), default_flow_style=False)
     return RedirectResponse(url="/parameter", status_code=303)
