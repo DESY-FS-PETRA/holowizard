@@ -10,6 +10,20 @@ def find_free_port(host: str = "127.0.0.1") -> int:
         return sock.getsockname()[1]
 
 
+def first_free_port(host: str, port: int, attempts: int = 1) -> int:
+    """First port in ``port .. port + attempts - 1`` that can be bound on ``host``."""
+    for candidate in range(port, port + attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            # Same option as uvicorn, so ports in TIME_WAIT count as free, but listening ones do not.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                sock.bind((host, candidate))
+            except OSError:
+                continue
+            return candidate
+    raise RuntimeError(f"No free port in {port}-{port + attempts - 1} on {host}")
+
+
 # --- Environment & Config ---
 HOSTNAME = socket.gethostname()
 sub_port = find_free_port()

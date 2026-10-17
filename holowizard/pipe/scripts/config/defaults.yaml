@@ -3,6 +3,7 @@ defaults:
 - flatfield
 - paths
 - beamtime
+- server
 - scan
 - tomography
 - reconstruction: 

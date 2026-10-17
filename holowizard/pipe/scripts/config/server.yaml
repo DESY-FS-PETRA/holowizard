@@ -1,0 +1,4 @@
+server:
+  # Preferred port of the web server; if it is taken, the next free one of the following port_attempts is used.
+  port: 8765
+  port_attempts: 20
