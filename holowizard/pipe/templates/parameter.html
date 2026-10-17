@@ -153,6 +153,21 @@
             border-color: rgba(31,107,58,0.35);
         }
         .btn-success:hover { background: #dbeee1; }
+        .btn-success:focus-visible { outline: 2px solid rgba(31,107,58,0.45); outline-offset: 2px; }
+        .btn:focus-visible { outline: 2px solid rgba(0,0,0,0.25); outline-offset: 2px; }
+
+        .submit-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            font-weight: 600;
+        }
+        .btn-submit svg { width: 14px; height: 14px; flex-shrink: 0; }
 
         /* Plain form buttons (e.g. "Save"); buttons with the .btn classes are styled above. */
         input[type="submit"]:not(.btn), input[type="button"]:not(.btn) {
@@ -434,10 +449,11 @@
         </div>
 
 
-        <div class="panel-title">Pipeline Submission</div>
-
-        <div>
-            <input id="submit-btn" type="button" value="Submit Phase Retrieval" class="btn btn-success" style="width:100%;">
+        <div class="submit-row">
+            <button id="submit-btn" type="button" class="btn btn-success btn-submit">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8.5 14 2l-3.5 12-2.7-4.6L2 8.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.8 9.4 14 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                Submit Phase Retrieval
+            </button>
         </div>
     
       </div>
