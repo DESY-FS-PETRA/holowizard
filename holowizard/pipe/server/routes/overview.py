@@ -6,6 +6,8 @@ Two overviews share the tile grid and the image browser:
   middle and last img_ image.
 * ``phase``: the phase retrieval results in ``path_processed/<scan>/<save prefix>/phase_retrieval``,
   one tile per reconstruction run; each tile shows the first, middle and last image.
+* ``tomo``: the tomographic reconstructions in ``path_processed/<scan>/recon_dir/<version>``, one tile
+  per version that contains TIFF slices; each tile shows the first, middle and last slice.
 
 Directory listings are cached per directory mtime, so polling stays cheap while new data sets and
 images are written.
@@ -30,6 +32,7 @@ DIR_PREFIX = "nano"
 TIFF_SUFFIXES = (".tif", ".tiff")
 MAX_IMAGE_SIZE = 4096
 PHASE_SUBDIR = "phase_retrieval"
+RECON_SUBDIR = "recon_dir"
 
 _listing_cache: Dict[str, Tuple[int, Any]] = {}
 _listing_lock = threading.Lock()
@@ -92,6 +95,9 @@ class OverviewSource:
     folder: Callable[[Path, str], Path]  # root, data set id -> folder with the TIFFs
     summarize: Callable[[List[str]], Tuple[str, List[Dict[str, Optional[str]]]]]  # files -> (meta, thumbnails)
     valid_id: Callable[[str], bool]
+    unit: str  # what one tile is, for the counter ("3 / 5 runs")
+    empty_text: str  # shown when there are no data sets yet
+    rotate: bool = True  # detector images are shown rotated by 90 degrees, like the test image preview
 
 
 def _raw_summary(files):
@@ -114,6 +120,21 @@ def _phase_summary(files):
     return f"{len(files)} images", _first_middle_last(files, "image")
 
 
+def _tomo_datasets(root: Path) -> List[str]:
+    ids = []
+    for scan in _scan_dirs(root):
+        recon = root / scan / RECON_SUBDIR
+        for version in _cached_by_mtime(recon, _list_subdirs) or []:
+            # recon_dir also holds folders without slices (e.g. Figures, FSC).
+            if _cached_by_mtime(recon / version, _list_tiffs):
+                ids.append(f"{scan}/{version}")
+    return ids
+
+
+def _tomo_summary(files):
+    return f"{len(files)} slices", _first_middle_last(files, "slice")
+
+
 def _safe_parts(dataset: str, n: int) -> bool:
     parts = dataset.split("/")
     return len(parts) == n and parts[0].startswith(DIR_PREFIX) and all(p and p not in (".", "..") for p in parts)
@@ -128,6 +149,8 @@ SOURCES = {
         folder=lambda root, ds: root / ds,
         summarize=_raw_summary,
         valid_id=lambda ds: _safe_parts(ds, 1),
+        unit="directories",
+        empty_text=f"No {DIR_PREFIX}* directories yet.",
     ),
     "phase": OverviewSource(
         key="phase",
@@ -137,6 +160,20 @@ SOURCES = {
         folder=lambda root, ds: root / ds / PHASE_SUBDIR,
         summarize=_phase_summary,
         valid_id=lambda ds: _safe_parts(ds, 2),
+        unit="runs",
+        empty_text="No phase retrieval results yet.",
+    ),
+    "tomo": OverviewSource(
+        key="tomo",
+        title="Tomogram Overview",
+        root=lambda bt: Path(bt.path_processed),
+        datasets=_tomo_datasets,
+        folder=lambda root, ds: root / ds.split("/")[0] / RECON_SUBDIR / ds.split("/")[1],
+        summarize=_tomo_summary,
+        valid_id=lambda ds: _safe_parts(ds, 2),
+        unit="reconstructions",
+        empty_text="No tomographic reconstructions yet.",
+        rotate=False,
     ),
 }
 
@@ -168,7 +205,7 @@ def _downsample(arr: np.ndarray, size: int) -> Tuple[np.ndarray, int]:
     return arr.reshape(h // factor, factor, w // factor, factor).mean(axis=(1, 3)), factor
 
 
-def _render_png(path: str, mtime_ns: int, size: int) -> Tuple[bytes, int, float, float]:
+def _render_png(path: str, mtime_ns: int, size: int, rotate: bool = True) -> Tuple[bytes, int, float, float]:
     """Downsampled, percentile-scaled 8 bit PNG of the first page of a TIFF.
 
     ``mtime_ns`` is only part of the cache key, so rewritten files are re-rendered.
@@ -177,7 +214,8 @@ def _render_png(path: str, mtime_ns: int, size: int) -> Tuple[bytes, int, float,
         arr = tif.pages[0].asarray()
     small, factor = _downsample(arr, size)
     # Same orientation as the image preview on the phase retrieval page.
-    small = np.rot90(small)
+    if rotate:
+        small = np.rot90(small)
     # Phase maps are float and may contain NaN; those pixels are drawn black.
     lo, hi = np.nanpercentile(small, [1, 99]) if np.isfinite(small).any() else (0.0, 1.0)
     scaled = np.nan_to_num(np.clip((small - lo) / max(hi - lo, 1e-12), 0, 1))
@@ -244,7 +282,7 @@ async def overview_image(
         raise HTTPException(status_code=404, detail=f"Image not found: {file}")
     try:
         png, factor, lo, hi = await run_in_threadpool(
-            _render_thumb if size <= THUMB_MAX_SIZE else _render_large, str(path), mtime_ns, size
+            _render_thumb if size <= THUMB_MAX_SIZE else _render_large, str(path), mtime_ns, size, src.rotate
         )
     except Exception as e:
         # Most likely a file that is still being written; the client retries later.
@@ -264,7 +302,15 @@ async def overview_image(
 def _overview_page(request: Request, source: str):
     src = SOURCES[source]
     return request.app.state.templates.TemplateResponse(
-        "overview.html", {"request": request, "prefix": DIR_PREFIX, "source": src.key, "title": src.title}
+        "overview.html",
+        {
+            "request": request,
+            "prefix": DIR_PREFIX,
+            "source": src.key,
+            "title": src.title,
+            "unit": src.unit,
+            "empty_text": src.empty_text,
+        },
     )
 
 
@@ -276,3 +322,8 @@ async def overview_page(request: Request):
 @router.get("/phase-overview")
 async def phase_overview_page(request: Request):
     return _overview_page(request, "phase")
+
+
+@router.get("/tomo-overview")
+async def tomo_overview_page(request: Request):
+    return _overview_page(request, "tomo")
