@@ -141,6 +141,11 @@
 </div>
 
 <div class="toolbar">
+    <label class="toolbar-label">View
+        <select id="view">
+            {% for key, label in views.items() %}<option value="{{ key }}"{% if key == source %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </label>
     <input type="text" id="filter" placeholder="Filter {{ prefix }}…" autocomplete="off">
     <select id="sort">
         <option value="desc">Newest first</option>
@@ -408,6 +413,8 @@ async function pollDirs() {
 }
 
 qs('filter').addEventListener('input', renderGrid);
+// One overview page; each view is rendered by the server (/overview?view=...).
+qs('view').addEventListener('change', e => { location.href = `/overview?view=${enc(e.target.value)}`; });
 qs('sort').addEventListener('change', renderGrid);
 
 /* ---------- Save prefix (phase retrieval overview: data sets are "<scan>/<save prefix>") ---------- */

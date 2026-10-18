@@ -28,6 +28,7 @@ import numpy as np
 import tifffile
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import RedirectResponse
 from PIL import Image
 
 DIR_PREFIX = "nano"
@@ -351,6 +352,10 @@ async def overview_image(
     )
 
 
+# Views of the single overview page, in the order of its "View" dropdown; "raw" is the default.
+VIEWS = {"raw": "Raw data", "phase": "Phase retrieval", "tomo": "Tomograms", "summary": "Summary"}
+
+
 def _overview_page(request: Request, source: str):
     if source == "summary":
         title, unit, empty_text = "Summary Overview", "scans", f"No {DIR_PREFIX}* scans yet."
@@ -366,25 +371,29 @@ def _overview_page(request: Request, source: str):
             "title": title,
             "unit": unit,
             "empty_text": empty_text,
+            "views": VIEWS,
         },
     )
 
 
 @router.get("/overview")
-async def overview_page(request: Request):
-    return _overview_page(request, "raw")
+async def overview_page(request: Request, view: str = "raw"):
+    if view not in VIEWS:
+        return RedirectResponse(url=str(request.url_for("overview_page")))
+    return _overview_page(request, view)
 
 
+# Former separate overview pages, kept so that bookmarks keep working.
 @router.get("/phase-overview")
 async def phase_overview_page(request: Request):
-    return _overview_page(request, "phase")
+    return RedirectResponse(url=f"{request.url_for('overview_page')}?view=phase")
 
 
 @router.get("/tomo-overview")
 async def tomo_overview_page(request: Request):
-    return _overview_page(request, "tomo")
+    return RedirectResponse(url=f"{request.url_for('overview_page')}?view=tomo")
 
 
 @router.get("/summary-overview")
 async def summary_overview_page(request: Request):
-    return _overview_page(request, "summary")
+    return RedirectResponse(url=f"{request.url_for('overview_page')}?view=summary")
