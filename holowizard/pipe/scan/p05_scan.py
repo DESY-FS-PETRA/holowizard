@@ -179,7 +179,8 @@ def load_motor_log(scan_path):
         "Rotation Stage Position",
     ]
     df = pd.read_csv(filename, comment="#", sep="\s+", names=columns)
-    df = df[df["Image Identifier"] == "img"]
+    # Projections are labelled "img" (older scans) or "img_y0", "img_y1", ... (newer scans).
+    df = df[df["Image Identifier"].astype(str).str.fullmatch(r"img(_y\d+)?")]
     df["Rotation Stage Position"] = df["Rotation Stage Position"].astype(float)
     return motor_pos, df["Rotation Stage Position"].to_numpy() * np.pi / 180
 

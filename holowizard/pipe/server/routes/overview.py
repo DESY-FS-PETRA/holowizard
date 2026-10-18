@@ -164,6 +164,9 @@ SOURCES = {
         valid_id=lambda ds: _safe_parts(ds, 2),
         unit="runs",
         empty_text="No phase retrieval results yet.",
+        # The phase retrieval stores its images already rotated by 90 degrees relative to the raw images,
+        # i.e. in the orientation in which the raw overview shows the raw images.
+        rotate=False,
     ),
     "tomo": OverviewSource(
         key="tomo",
@@ -186,7 +189,7 @@ def _dataset_summary(source: OverviewSource, root: Path, dataset: str, with_file
     if files is None:
         return None
     meta, thumbs = source.summarize(files)
-    summary = {"name": dataset, "mtime": folder.stat().st_mtime, "meta": meta, "thumbs": thumbs}
+    summary = {"name": dataset, "mtime": folder.stat().st_mtime, "meta": meta, "thumbs": thumbs, "count": len(files)}
     if with_files:
         summary["files"] = files
     return summary
@@ -310,7 +313,12 @@ async def overview_files(source: str, request: Request, dataset: str):
 
 @router.get("/api/overview/{source}/image")
 async def overview_image(
-    source: str, request: Request, dataset: str, file: str, size: int = Query(256, ge=32, le=MAX_IMAGE_SIZE)
+    source: str,
+    request: Request,
+    dataset: str,
+    file: str,
+    size: int = Query(256, ge=32, le=MAX_IMAGE_SIZE),
+    rotate: Optional[bool] = None,  # default: as configured for the data type
 ):
     src = _source(source)
     if file != Path(file).name or not file.lower().endswith(TIFF_SUFFIXES):
@@ -322,7 +330,11 @@ async def overview_image(
         raise HTTPException(status_code=404, detail=f"Image not found: {file}")
     try:
         png, factor, lo, hi = await run_in_threadpool(
-            _render_thumb if size <= THUMB_MAX_SIZE else _render_large, str(path), mtime_ns, size, src.rotate
+            _render_thumb if size <= THUMB_MAX_SIZE else _render_large,
+            str(path),
+            mtime_ns,
+            size,
+            src.rotate if rotate is None else rotate,
         )
     except Exception as e:
         # Most likely a file that is still being written; the client retries later.
