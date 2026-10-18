@@ -406,6 +406,7 @@ class CenterScan:
         self.status, self.message = "checking", "Checking projections…"
         self.check_count = 0
         self.read_count = 0
+        self.settings: Dict[str, Any] = {}  # request settings, to restore the page after a reload
         self.images: Dict[float, bytes] = {}
         self.sino: Optional[np.ndarray] = None
         self.contrast: Optional[Tuple[float, float]] = None
@@ -473,6 +474,8 @@ class CenterScan:
     def state(self) -> Dict[str, Any]:
         return {
             "id": self.id,
+            "dataset": self.dataset,
+            "settings": self.settings,
             "status": self.status,
             "message": self.message,
             "checked": self.check_count,
@@ -573,6 +576,13 @@ async def start_center_scan(req: ScanRequest, request: Request):
     job = CenterScan(
         beamtime, req.dataset, files, angles, raw_scan, row, centers, (info["rows"], info["cols"]), req.filters
     )
+    job.settings = {
+        "slice": row,
+        "center": float(guess),
+        "range": float(req.range),
+        "step": float(req.step),
+        "filters": req.filters.model_dump(),
+    }
     user = getattr(request.state, "user", None) or "anonymous"
     with _jobs_lock:
         # A new scan of the same user replaces the previous one.
@@ -582,6 +592,14 @@ async def start_center_scan(req: ScanRequest, request: Request):
         _jobs[job.id] = job
         _user_jobs[user] = job.id
     return job.state()
+
+
+@router.get("/api/rotation/current")
+async def current_center_scan(request: Request):
+    """The latest series of this user (kept in server memory), to restore the page after a reload; or null."""
+    user = getattr(request.state, "user", None) or "anonymous"
+    job = _jobs.get(_user_jobs.get(user, ""))
+    return job.state() if job is not None and job.status != "cancelled" else None
 
 
 def _job(job_id: str) -> CenterScan:

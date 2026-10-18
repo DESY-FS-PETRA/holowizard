@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <title>Tomography</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --border-radius-md: 6px;
+            --border-radius-lg: 10px;
+            --color-background-secondary: #f5f4f1;
+            --color-border-primary: rgba(0,0,0,0.3);
+            --color-border-secondary: rgba(0,0,0,0.15);
+            --color-border-tertiary: rgba(0,0,0,0.08);
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #555;
+            --color-text-tertiary: #888;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+        h1 { font-size: 18px; font-weight: 500; }
+        .topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{border-color:var(--color-border-primary)}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;white-space:nowrap;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.25rem;
+            min-width: 0;
+        }
+        .panel-title {
+            font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888;
+            margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+        .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.9rem; }
+        .field-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+        label, .field-label { font-size: 12px; font-weight: 500; color: #555; }
+        select, input[type="number"] {
+            width: 100%; padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
+        }
+        select:focus, input[type="number"]:focus { border-color: rgba(0,0,0,0.35); background: #fff; }
+        input[type="range"] { width: 100%; accent-color: #1a1a1a; }
+        .slider-row { display: flex; align-items: center; gap: 0.6rem; }
+        .slider-row input[type="number"] { width: 6.5rem; flex-shrink: 0; }
+        .hint { font-size: 11px; color: #888; }
+        .info { font-size: 12px; color: #555; margin: -0.4rem 0 0.9rem; }
+        .saved { font-size: 12px; color: #1f6b3a; background: #eaf4ed; border-radius: 6px; padding: 6px 10px; margin-bottom: 0.9rem; overflow-wrap: anywhere; }
+        .saved.none { color: #888; background: #f5f4f1; }
+
+        .filters { border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 0.6rem 0.75rem 0.4rem; margin-bottom: 0.9rem; }
+        .filters legend { font-size: 11px; font-weight: 500; color: #888; padding: 0 4px; }
+        /* Normal text flow, so long filter descriptions wrap naturally after the checkbox. */
+        .filter { display: block; font-size: 12px; font-weight: 400; color: #333; margin-bottom: 0.45rem; line-height: 1.9; padding-left: 20px; text-indent: -20px; }
+        .filter input[type="checkbox"] { accent-color: #1a1a1a; vertical-align: middle; margin: 0 6px 0 0; width: 14px; }
+        .filter input[type="number"] { width: 4.2rem; padding: 1px 6px; font-size: 12px; text-indent: 0; display: inline-block; vertical-align: middle; }
+        .removed { font-size: 12px; color: #555; margin-top: 0.3rem; }
+
+        .btn {
+            padding: 7px 14px; font-size: 13px; font-weight: 500; border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18); background: #fff; color: #1a1a1a; cursor: pointer;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn:disabled:hover { background: #fff; }
+        .btn:focus-visible { outline: 2px solid rgba(0,0,0,0.25); outline-offset: 2px; }
+        .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .btn-primary:hover { background: #333; }
+        .btn-success { background: #eaf4ed; color: #1f6b3a; border-color: rgba(31,107,58,0.35); font-weight: 600; }
+        .btn-success:hover { background: #dbeee1; }
+        .btn-success:disabled:hover { background: #eaf4ed; }
+
+        .progress { height: 4px; background: #ecebe7; border-radius: 2px; overflow: hidden; margin: 0.4rem 0 0.2rem; }
+        .progress > div { height: 100%; width: 0; background: #1a1a1a; transition: width 0.2s; }
+        .status { font-size: 12px; color: #555; min-height: 1.2em; }
+        .status.error { color: #993c1d; }
+
+        .center-bar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .center-bar input[type="range"] { flex: 1; min-width: 200px; }
+        .center-value { font-variant-numeric: tabular-nums; min-width: 13ch; font-size: 13px; }
+        .center-value strong { font-size: 15px; }
+        #viewer { width: 100%; aspect-ratio: 1; max-height: 78vh; position: relative; }
+        #viewer-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #888; pointer-events: none; text-align: center; padding: 1rem; }
+        /* First, middle and last projection of the run, oriented as in the overviews (phase images are shown
+           as stored, which matches the raw data overview), with the test slice (a stored row) marked. */
+        .run-thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: -0.3rem 0 0.9rem; }
+        .run-thumbs:empty { display: none; }
+        .run-thumb { min-width: 0; }
+        .run-thumb .frame { position: relative; aspect-ratio: 1; background: #ecebe7; border-radius: 4px; overflow: hidden; }
+        .run-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        /* Rotation axis: the projections are shown as stored, where the axis is vertical (the center is a column). */
+        .run-thumb .center-line { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid #e0533d; pointer-events: none; }
+        .run-thumb .label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .action-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .action-row #save-btn { margin-left: auto; }   /* "Save center" at the right edge */
+        .result-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    
+        /* Tomography page */
+        .center-box { font-size: 12px; border-radius: 6px; padding: 6px 10px; margin-bottom: 0.9rem; overflow-wrap: anywhere; }
+        .center-box.ok { color: #1f6b3a; background: #eaf4ed; }
+        .center-box.missing { color: #8a4b0f; background: #fbf0e3; }
+        .center-box a { color: inherit; }
+        input[type="text"] {
+            width: 100%; padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
+        }
+        input[type="text"]:focus { border-color: rgba(0,0,0,0.35); background: #fff; }
+        .field-row.two { grid-template-columns: repeat(2, 1fr); }
+        .estimate { font-size: 12px; color: #555; margin: -0.4rem 0 0.9rem; }
+        /* Switch between the rotation center and tomography pages (keeps the selected run) */
+        /* Switch between the rotation center and tomography pages (keeps the selected run), in the Data Set title row */
+        .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .panel-title-row .switch-btn {
+            text-decoration: none; white-space: nowrap; text-transform: none; letter-spacing: normal;
+            font-size: 12px; padding: 3px 10px; color: #1a1a1a;
+        }
+        .action-row #cancel-btn { margin-left: auto; }
+        .btn-danger { color: #993c1d; border-color: rgba(153,60,29,0.3); }
+        .btn-danger:hover { background: #faece7; }
+        .result-link { font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+  {% include "_nav.html" %}
+  <h1>Tomography</h1>
+</div>
+
+<div class="layout">
+    <!-- LEFT: data set, rotation center, filters, output -->
+    <div class="panel">
+        <div class="panel-title panel-title-row">
+            <span>Data Set</span>
+            <a class="btn switch-btn" id="switch-btn" href="/rotation-center" title="Current view: Tomography. Click to switch to Rotation Center (keeps the selected run).">Tomography</a>
+        </div>
+        <div class="field">
+            <label for="dataset">Phase retrieval run</label>
+            <select id="dataset"><option value="">Loading…</option></select>
+        </div>
+        <div class="info" id="dataset-info"></div>
+        <div class="run-thumbs" id="run-thumbs"></div>
+
+        <div class="field">
+            <label for="center">Rotation center (detector column)</label>
+            <input type="number" id="center" step="any">
+        </div>
+        <div class="center-box missing" id="center-box">Choose a run.</div>
+
+        <fieldset class="filters">
+            <legend>Leave out bad projections</legend>
+            <label class="filter"><input type="checkbox" id="f-nan" checked> phase image contains NaN</label>
+            <label class="filter"><input type="checkbox" id="f-dark" checked> dark hologram: mean &lt;
+                <input type="number" id="f-dark-factor" step="0.05" min="0" value="0.5"> × |mean of holograms|</label>
+            <label class="filter"><input type="checkbox" id="f-min" checked> phase outlier: minimum &lt;
+                <input type="number" id="f-min-factor" step="0.5" min="0" value="5"> × median of minima, or = 0</label>
+            <div class="hint">Pre-set to the filters saved with the rotation center.</div>
+        </fieldset>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="first-row">First slice</label>
+                <input type="number" id="first-row" min="0" step="1">
+            </div>
+            <div class="field">
+                <label for="last-row">Last slice</label>
+                <input type="number" id="last-row" min="0" step="1">
+            </div>
+            <div class="field">
+                <label for="binning">Binning</label>
+                <select id="binning"><option value="1">1</option><option value="2">2</option><option value="4">4</option></select>
+            </div>
+        </div>
+        <div class="field">
+            <label for="name">Output name</label>
+            <input type="text" id="name" autocomplete="off">
+        </div>
+        <div class="hint" id="output-path" style="margin:-0.5rem 0 0.5rem; overflow-wrap:anywhere;"></div>
+        <div class="estimate" id="estimate"></div>
+
+        <div class="action-row">
+            <button class="btn btn-primary" id="start-btn" disabled>Reconstruct tomogram</button>
+            <button class="btn btn-danger" id="cancel-btn" hidden>Cancel</button>
+        </div>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <div class="status" id="status"></div>
+    </div>
+
+    <!-- RIGHT: reconstructed slices -->
+    <div class="panel">
+        <div class="panel-title">Reconstructed Slices (FBP_CUDA)</div>
+        <div class="center-bar">
+            <button class="btn" id="prev-btn" title="Previous slice (←)">◀</button>
+            <input type="range" id="slice-slider" min="0" max="0" value="0" disabled>
+            <button class="btn" id="next-btn" title="Next slice (→)">▶</button>
+            <span class="center-value" id="slice-value"></span>
+        </div>
+        <div id="viewer"><div id="viewer-msg">No reconstruction yet.</div></div>
+        <div class="result-actions">
+            <span class="result-link" id="result-link"></span>
+            <span class="hint">← → / mouse wheel on the slider: step through the slices · drag in the image to zoom, double-click to reset</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const qs = id => document.getElementById(id);
+const enc = encodeURIComponent;
+const DATASET_KEY = 'holopipe.tomography.dataset';
+const state = { dataset: null, job: null, pollTimer: null, index: 0, token: 0, images: new Map() };
+
+async function api(url, opts) {
+    const res = await fetch(url, opts);
+    if (res.status === 401) { location.reload(); throw new Error('Not logged in'); }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail || res.statusText);
+    return body;
+}
+const setStatus = (text, error = false) => { qs('status').textContent = text; qs('status').classList.toggle('error', error); };
+const setProgress = frac => { qs('progress-bar').style.width = `${Math.round(100 * Math.min(1, Math.max(0, frac)))}%`; };
+const message = text => { qs('viewer-msg').textContent = text || ''; };
+const fmt = c => Number.isInteger(c) ? String(c) : c.toFixed(2).replace(/0+$/, '');
+const fmtTime = s => s == null ? '' : s >= 3600 ? `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min` : s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`;
+const running = () => state.job && ['checking', 'reconstructing'].includes(state.job.status);
+
+/* ---------- Data sets ---------- */
+async function loadDatasets() {
+    try {
+        const { datasets } = await api('/api/rotation/datasets');
+        const sel = qs('dataset');
+        sel.innerHTML = '<option value="">Choose a run…</option>' + datasets.map(d =>
+            `<option value="${d.name.replace(/"/g, '&quot;')}">${d.name.replace('/', ' / ').replace(/</g, '&lt;')} (${d.meta})</option>`).join('');
+        const current = await api('/api/tomography/current');
+        // A run passed by the rotation center page wins over the running job and the last choice.
+        let wanted = datasetFromUrl || (current ? current.dataset : '');
+        if (!wanted) { try { wanted = localStorage.getItem(DATASET_KEY) || ''; } catch (e) { /* storage unavailable */ } }
+        if (datasets.some(d => d.name === wanted)) { sel.value = wanted; await selectDataset(); }
+        if (current && (!datasetFromUrl || current.dataset === datasetFromUrl)) attachJob(current);
+    } catch (e) {
+        setStatus('Could not load the runs: ' + e.message, true);
+    }
+}
+
+// Switch button to the other tool page, taking the selected run along (?dataset=...).
+const SWITCH_TARGET = '/rotation-center';
+const datasetFromUrl = new URLSearchParams(location.search).get('dataset') || '';
+function updateSwitch() {
+    const name = qs('dataset').value;
+    qs('switch-btn').href = name ? `${SWITCH_TARGET}?dataset=${encodeURIComponent(name)}` : SWITCH_TARGET;
+}
+
+async function selectDataset() {
+    const name = qs('dataset').value;
+    updateSwitch();
+    try { localStorage.setItem(DATASET_KEY, name); } catch (e) { /* storage unavailable */ }
+    qs('run-thumbs').innerHTML = '';
+    if (!name) { state.dataset = null; qs('dataset-info').textContent = ''; updateForm(); return; }
+    try {
+        const info = await api(`/api/rotation/dataset?dataset=${enc(name)}`);
+        state.dataset = info;
+        qs('dataset-info').textContent = `${info.projections} projections · ${info.angle_range_deg.toFixed(1)}° · ${info.cols} × ${info.rows} px`;
+        const saved = info.saved;
+        qs('center').value = saved ? saved.rotation_center : info.default_center;
+        const f = (saved && saved.filters) || {};
+        qs('f-nan').checked = f.nan ?? true;
+        qs('f-dark').checked = f.dark ?? true;
+        qs('f-dark-factor').value = f.dark_factor ?? 0.5;
+        qs('f-min').checked = f.phase_min ?? true;
+        qs('f-min-factor').value = f.min_factor ?? 5;
+        qs('first-row').value = 0; qs('last-row').value = info.rows - 1;
+        qs('first-row').max = qs('last-row').max = info.rows - 1;
+        qs('name').value = defaultName();
+        loadThumbs(name);
+        updateForm();
+    } catch (e) {
+        state.dataset = null; setStatus(e.message, true); updateForm();
+    }
+}
+
+function defaultName() {
+    if (!state.dataset) return '';
+    const prefix = state.dataset.dataset.split('/')[1];
+    const center = parseFloat(qs('center').value);
+    const bin = parseInt(qs('binning').value);
+    return `${prefix}_FBP_CUDA_c${isNaN(center) ? 'x' : fmt(center)}${bin > 1 ? `_bin${bin}` : ''}`;
+}
+
+function updateForm() {
+    const info = state.dataset;
+    const box = qs('center-box');
+    if (!info) {
+        box.className = 'center-box missing'; box.textContent = 'Choose a run.';
+        qs('estimate').textContent = ''; qs('start-btn').disabled = true; return;
+    }
+    const saved = info.saved, center = parseFloat(qs('center').value);
+    if (saved && Math.abs(saved.rotation_center - center) < 1e-9) {
+        box.className = 'center-box ok';
+        box.textContent = `Rotation center from the rotation center page: ${fmt(saved.rotation_center)}` +
+            (saved.saved_by ? ` (saved by ${saved.saved_by}${saved.saved_at ? `, ${saved.saved_at.replace('T', ' ')}` : ''})` : '') + '.';
+    } else {
+        box.className = 'center-box missing';
+        box.innerHTML = saved
+            ? `Changed from the saved rotation center (${fmt(saved.rotation_center)}).`
+            : `No rotation center saved for this run yet – <a href="/rotation-center?dataset=${enc(info.dataset)}">tune it on the rotation center page</a>, or enter one here.`;
+    }
+    const [scan, prefix] = info.dataset.split('/');
+    const name = qs('name').value.trim() || '…';
+    qs('output-path').textContent = `Stored in ${scan}/${prefix}/tomograms/${name}.`;
+    const bin = parseInt(qs('binning').value);
+    const first = parseInt(qs('first-row').value), last = parseInt(qs('last-row').value);
+    const slices = Math.floor((last - first + 1) / bin);
+    const width = Math.floor(info.cols / bin);
+    if (slices > 0) {
+        const bytes = slices * width * width * 4;
+        const size = bytes < 1e9 ? `${Math.max(1, Math.round(bytes / 1e6))} MB` : `${(bytes / 1e9).toFixed(1)} GB`;
+        qs('estimate').textContent = `${slices} slices of ${width} × ${width} px (float32) ≈ ${size}.`;
+    } else {
+        qs('estimate').textContent = 'Check the slice range.';
+    }
+    qs('start-btn').disabled = running() || !(slices > 0) || isNaN(center) || !qs('name').value.trim();
+}
+
+/* ---------- Thumbnails (as in the phase retrieval overview), with the slice range marked ---------- */
+async function loadThumbs(name) {
+    const box = qs('run-thumbs');
+    try {
+        const run = await api(`/api/overview/phase/files?dataset=${enc(name)}`);
+        if (qs('dataset').value !== name) return;
+        box.innerHTML = run.thumbs.filter(t => t.file).map(t => `
+            <div class="run-thumb" title="${t.label}: ${t.file}">
+                <div class="frame" style="aspect-ratio: ${state.dataset ? `${state.dataset.cols} / ${state.dataset.rows}` : '1'};">
+                    <img alt="" src="/api/overview/phase/image?dataset=${enc(name)}&file=${enc(t.file)}&size=256&v=2">
+                    <div class="center-line"></div>
+                </div>
+                <div class="label">${t.file}</div>
+            </div>`).join('');
+        updateCenterLines();
+    } catch (e) { box.innerHTML = ''; }
+}
+function updateCenterLines() {
+    // Vertical line at the rotation center (detector column, pixel centres) used for the reconstruction.
+    if (!state.dataset) return;
+    const center = parseFloat(qs('center').value);
+    document.querySelectorAll('#run-thumbs .center-line').forEach(l => {
+        l.hidden = isNaN(center);
+        l.style.left = `${100 * Math.min(1, Math.max(0, (center + 0.5) / state.dataset.cols))}%`;
+    });
+}
+
+/* ---------- Reconstruction job ---------- */
+async function start() {
+    const body = {
+        dataset: state.dataset.dataset,
+        center: parseFloat(qs('center').value),
+        name: qs('name').value.trim(),
+        first_row: parseInt(qs('first-row').value),
+        last_row: parseInt(qs('last-row').value),
+        binning: parseInt(qs('binning').value),
+        filters: {
+            nan: qs('f-nan').checked, dark: qs('f-dark').checked, dark_factor: parseFloat(qs('f-dark-factor').value) || 0.5,
+            phase_min: qs('f-min').checked, min_factor: parseFloat(qs('f-min-factor').value) || 5, neighbours: false,
+        },
+    };
+    qs('start-btn').disabled = true;
+    setStatus('Starting…'); setProgress(0);
+    try {
+        attachJob(await api('/api/tomography/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }));
+    } catch (e) {
+        setStatus(e.message, true); updateForm();
+    }
+}
+
+function attachJob(job) {
+    state.job = job; state.images.clear(); state.index = 0; state.shown = false;
+    Plotly.purge(qs('viewer'));
+    message('Waiting for the first slice…');
+    clearTimeout(state.pollTimer);
+    poll();
+}
+
+async function poll() {
+    const job = state.job;
+    if (!job) return;
+    try {
+        const s = await api(`/api/tomography/job/${job.id}`);
+        if (state.job !== job && state.job.id !== s.id) return;
+        Object.assign(job, s);
+        render(s);
+        if (['checking', 'reconstructing'].includes(s.status)) state.pollTimer = setTimeout(poll, 1000);
+    } catch (e) {
+        setStatus(e.message, true);
+    }
+    updateForm();
+}
+
+function removedSummary(s) {
+    const r = s.removed || {};
+    const parts = [[r.unreadable, 'unreadable'], [r.nan, 'with NaN'], [r.dark, 'dark holograms'], [r.phase_min, 'phase outliers']]
+        .filter(([n]) => n).map(([n, what]) => `${n} ${what}`);
+    return s.used ? ` Using ${s.used} of ${s.projections} projections${parts.length ? ` (left out: ${parts.join(', ')})` : ''}.` : '';
+}
+
+function render(s) {
+    const isRunning = ['checking', 'reconstructing'].includes(s.status);
+    qs('cancel-btn').hidden = !isRunning;
+    if (s.status === 'checking') {
+        setStatus(`Checking projections (once per run)… ${s.checked} / ${s.projections}`); setProgress(0.05 * s.checked / s.projections);
+    } else if (s.status === 'reconstructing') {
+        setStatus(`Reconstructing slice ${s.done} / ${s.total}` + (s.eta != null ? ` · about ${fmtTime(s.eta)} left` : '') + '.' + removedSummary(s));
+        setProgress(0.05 + 0.95 * s.done / s.total);
+    } else if (s.status === 'done') {
+        setStatus(`Done: ${s.total} slices in ${fmtTime(s.elapsed)}.` + removedSummary(s)); setProgress(1);
+    } else if (s.status === 'cancelled') {
+        setStatus(`Cancelled after ${s.done} of ${s.total} slices.`);
+    } else if (s.status === 'error') {
+        setStatus(s.message, true);
+    }
+    qs('result-link').innerHTML = s.done
+        ? `${s.output.replace(/</g, '&lt;')} · <a href="/overview?view=tomo">open in the scan overview</a>` : '';
+    // slice browser over the finished slices
+    const slider = qs('slice-slider');
+    const wasAtEnd = state.index >= Number(slider.max);
+    slider.max = Math.max(0, s.done - 1); slider.disabled = !s.done;
+    if (s.done && (!state.shown || (isRunning && wasAtEnd))) { state.shown = true; show(s.done - 1); }
+    updateSliceControls();
+}
+
+function updateSliceControls() {
+    const n = state.job ? state.job.done : 0;
+    qs('slice-slider').value = state.index;
+    qs('prev-btn').disabled = !n || state.index <= 0;
+    qs('next-btn').disabled = !n || state.index >= n - 1;
+    qs('slice-value').innerHTML = n ? `Slice <strong>${state.index}</strong> <span class="hint">of ${state.job.total}</span>` : '';
+}
+
+function sliceUrl(i) {
+    const f = `slice_${String(i).padStart(5, '0')}.tiff`;
+    return `/api/overview/tomo/image?dataset=${enc(state.job.output_dataset)}&file=${enc(f)}&size=1024&v=2`;
+}
+
+async function show(i) {
+    const job = state.job;
+    if (!job || !job.done) return;
+    state.index = Math.max(0, Math.min(job.done - 1, i));
+    updateSliceControls();
+    const token = ++state.token, url = sliceUrl(state.index);
+    try {
+        if (!state.images.has(url)) {
+            state.images.set(url, fetch(url).then(async res => {
+                if (!res.ok) throw new Error(res.statusText);
+                const blob = await res.blob();
+                return await new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(blob); });
+            }).catch(e => { state.images.delete(url); throw e; }));
+        }
+        const src = await state.images.get(url);
+        if (token !== state.token) return;
+        message('');
+        Plotly.react(qs('viewer'), [{ type: 'image', source: src, hoverinfo: 'x+y' }], {
+            margin: { l: 40, r: 10, t: 10, b: 30 },
+            xaxis: { constrain: 'domain', showgrid: false },
+            yaxis: { scaleanchor: 'x', autorange: 'reversed', constrain: 'domain', showgrid: false },
+            uirevision: job.output_dataset, dragmode: 'zoom', paper_bgcolor: '#fff',
+        }, { responsive: true, displaylogo: false });
+    } catch (e) {
+        if (token === state.token) message(`Slice ${state.index}: ${e.message}`);
+    }
+}
+
+async function cancel() {
+    if (!state.job) return;
+    try { render(await api(`/api/tomography/job/${state.job.id}/cancel`, { method: 'POST' })); } catch (e) { setStatus(e.message, true); }
+}
+
+/* ---------- Events ---------- */
+qs('dataset').addEventListener('change', selectDataset);
+qs('start-btn').addEventListener('click', start);
+qs('cancel-btn').addEventListener('click', cancel);
+['center', 'binning'].forEach(id => qs(id).addEventListener('change', () => { qs('name').value = defaultName(); updateForm(); }));
+['first-row', 'last-row'].forEach(id => qs(id).addEventListener('input', updateForm));
+qs('center').addEventListener('input', updateCenterLines);
+['name', 'f-nan', 'f-dark', 'f-dark-factor', 'f-min', 'f-min-factor'].forEach(id => qs(id).addEventListener('input', updateForm));
+qs('slice-slider').addEventListener('input', e => show(parseInt(e.target.value)));
+qs('slice-slider').addEventListener('wheel', e => { e.preventDefault(); show(state.index + (e.deltaY > 0 ? 1 : -1)); }, { passive: false });
+qs('prev-btn').addEventListener('click', () => show(state.index - 1));
+qs('next-btn').addEventListener('click', () => show(state.index + 1));
+document.addEventListener('keydown', e => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(state.index + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(state.index - 1); }
+});
+const navBtn = qs('logo-btn'), navMenu = qs('nav-menu');
+navBtn.addEventListener('click', e => { e.stopPropagation(); navMenu.classList.toggle('open'); });
+document.addEventListener('click', () => navMenu.classList.remove('open'));
+
+loadDatasets();
+</script>
+</body>
+</html>

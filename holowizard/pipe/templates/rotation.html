@@ -116,6 +116,13 @@
         .run-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
         .run-thumb .slice-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px solid #e0533d; pointer-events: none; }
         .run-thumb .label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Switch between the rotation center and tomography pages (keeps the selected run) */
+        /* Switch between the rotation center and tomography pages (keeps the selected run), in the Data Set title row */
+        .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .panel-title-row .switch-btn {
+            text-decoration: none; white-space: nowrap; text-transform: none; letter-spacing: normal;
+            font-size: 12px; padding: 3px 10px; color: #1a1a1a;
+        }
         .action-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
         .action-row #save-btn { margin-left: auto; }   /* "Save center" at the right edge */
         .result-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
@@ -131,7 +138,10 @@
 <div class="layout">
     <!-- LEFT: data set, test slice, center range -->
     <div class="panel">
-        <div class="panel-title">Data Set</div>
+        <div class="panel-title panel-title-row">
+            <span>Data Set</span>
+            <a class="btn switch-btn" id="switch-btn" href="/tomography" title="Current view: Rotation Center. Click to switch to Tomography (keeps the selected run).">Rotation Center</a>
+        </div>
         <div class="field">
             <label for="dataset">Phase retrieval run</label>
             <select id="dataset"><option value="">Loading…</option></select>
@@ -266,9 +276,15 @@ async function loadDatasets() {
         const sel = qs('dataset');
         sel.innerHTML = '<option value="">Choose a run…</option>' + datasets.map(d =>
             `<option value="${d.name.replace(/"/g, '&quot;')}">${d.name.replace('/', ' / ').replace(/</g, '&lt;')} (${d.meta})</option>`).join('');
-        let wanted = '';
-        try { wanted = localStorage.getItem(DATASET_KEY) || ''; } catch (e) { /* storage unavailable */ }
-        if (datasets.some(d => d.name === wanted)) { sel.value = wanted; selectDataset(); }
+        // The latest series of this user (still in server memory) is shown again after a page reload.
+        const current = await api('/api/rotation/current').catch(() => null);
+        let wanted = datasetFromUrl || (current ? current.dataset : '');
+        if (!wanted) { try { wanted = localStorage.getItem(DATASET_KEY) || ''; } catch (e) { /* storage unavailable */ } }
+        if (datasets.some(d => d.name === wanted)) {
+            sel.value = wanted;
+            await selectDataset();
+            if (current && current.dataset === wanted && state.dataset) restoreSeries(current);
+        }
         else message(datasets.length ? 'Choose a phase retrieval run.' : 'No phase retrieval runs with projections yet.');
     } catch (e) {
         setStatus('Could not load the runs: ' + e.message, true);
@@ -285,8 +301,17 @@ function showSaved() {
     box.title = state.dataset ? state.dataset.config_file : '';
 }
 
+// Switch button to the other tool page, taking the selected run along (?dataset=...).
+const SWITCH_TARGET = '/tomography';
+const datasetFromUrl = new URLSearchParams(location.search).get('dataset') || '';
+function updateSwitch() {
+    const name = qs('dataset').value;
+    qs('switch-btn').href = name ? `${SWITCH_TARGET}?dataset=${encodeURIComponent(name)}` : SWITCH_TARGET;
+}
+
 async function selectDataset() {
     const name = qs('dataset').value;
+    updateSwitch();
     try { localStorage.setItem(DATASET_KEY, name); } catch (e) { /* storage unavailable */ }
     stopPolling();
     state.job = null; state.centers = []; state.images.clear();
@@ -372,6 +397,33 @@ async function runScan() {
     }
 }
 
+// The center being viewed, per series, so that a page reload returns to it.
+const VIEWED_KEY = 'holopipe.rotation.viewed';
+// Show a series again (after a page reload): its settings in the form, its results in the viewer.
+function restoreSeries(job) {
+    const s = job.settings || {};
+    if (s.slice != null) { qs('slice').value = qs('slice-num').value = s.slice; updateSliceLines(); }
+    if (s.center != null) qs('guess').value = s.center;
+    if (s.range != null) qs('range').value = s.range;
+    if (s.step != null) qs('step').value = s.step;
+    const f = s.filters || {};
+    const set = (id, v) => { if (v == null) return; const el = qs(id); if (el.type === 'checkbox') el.checked = !!v; else el.value = v; };
+    set('f-nan', f.nan); set('f-dark', f.dark); set('f-dark-factor', f.dark_factor);
+    set('f-min', f.phase_min); set('f-min-factor', f.min_factor); set('f-neighbours', f.neighbours);
+    state.images.clear();
+    state.job = job;
+    state.centers = job.centers;
+    const saved = state.dataset.saved && state.dataset.saved.rotation_center;
+    let viewed = null;
+    try { const v = JSON.parse(sessionStorage.getItem(VIEWED_KEY) || 'null'); if (v && v.job === job.id) viewed = v.center; } catch (e) { /* storage unavailable */ }
+    const start = viewed != null ? viewed
+        : saved != null && saved >= job.centers[0] && saved <= job.centers[job.centers.length - 1] ? saved : s.center;
+    state.index = nearestIndex(start != null ? start : job.centers[Math.floor(job.centers.length / 2)]);
+    updateCenterControls();
+    message('Loading…');
+    poll();
+}
+
 function nearestIndex(center) {
     let best = 0;
     state.centers.forEach((c, i) => { if (Math.abs(c - center) < Math.abs(state.centers[best] - center)) best = i; });
@@ -428,6 +480,7 @@ async function show(index) {
     state.index = Math.max(0, Math.min(state.centers.length - 1, index));
     updateCenterControls();
     const job = state.job, center = state.centers[state.index], token = ++state.token;
+    try { sessionStorage.setItem(VIEWED_KEY, JSON.stringify({ job: job.id, center })); } catch (e) { /* storage unavailable */ }
     try {
         const src = await fetchImage(center);
         if (token !== state.token || job !== state.job) return;
