@@ -9,6 +9,8 @@ Two overviews share the tile grid and the image browser:
 * ``tomo``: the tomographic reconstructions in ``path_processed/<scan>/recon_dir/<version>``, one tile
   per version that contains TIFF slices; each tile shows the first, middle and last slice.
 
+A summary page combines all three per scan (raw data, phase retrieval runs, tomogram versions).
+
 Directory listings are cached per directory mtime, so polling stays cheap while new data sets and
 images are written.
 """
@@ -195,6 +197,37 @@ def list_datasets(source: OverviewSource, root: Path) -> List[Dict[str, Any]]:
     return [s for s in summaries if s is not None]
 
 
+def list_summary(beamtime) -> List[Dict[str, Any]]:
+    """Per scan: the raw data set and all phase retrieval runs and tomogram versions (newest first)."""
+    raw_src, phase_src, tomo_src = SOURCES["raw"], SOURCES["phase"], SOURCES["tomo"]
+    raw_root, processed_root = raw_src.root(beamtime), phase_src.root(beamtime)
+    raw = {d["name"]: d for d in list_datasets(raw_src, raw_root)} if raw_root.is_dir() else {}
+
+    def by_scan(src: OverviewSource) -> Dict[str, List[Dict[str, Any]]]:
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
+        if processed_root.is_dir():
+            for d in list_datasets(src, processed_root):
+                grouped.setdefault(d["name"].split("/")[0], []).append(d)
+        for runs in grouped.values():
+            runs.sort(key=lambda d: d["mtime"], reverse=True)
+        return grouped
+
+    phase, tomo = by_scan(phase_src), by_scan(tomo_src)
+    summary = []
+    for name in sorted(set(raw) | set(phase) | set(tomo), key=_natural_key):
+        parts = [raw.get(name)] + phase.get(name, []) + tomo.get(name, [])
+        summary.append(
+            {
+                "name": name,
+                "mtime": max(d["mtime"] for d in parts if d),
+                "raw": raw.get(name),
+                "phase": phase.get(name, []),
+                "tomo": tomo.get(name, []),
+            }
+        )
+    return summary
+
+
 # --- Image rendering ---
 def _downsample(arr: np.ndarray, size: int) -> Tuple[np.ndarray, int]:
     factor = max(1, int(np.ceil(max(arr.shape) / size)))
@@ -249,6 +282,13 @@ def _dataset_folder(request: Request, src: OverviewSource, dataset: str) -> Path
     return folder
 
 
+@router.get("/api/overview/summary")
+async def overview_summary(request: Request):
+    beamtime = request.app.state.beamtime
+    path = f"{SOURCES['raw'].root(beamtime)}  ·  {SOURCES['phase'].root(beamtime)}"
+    return {"path": path, "dirs": await run_in_threadpool(list_summary, beamtime)}
+
+
 @router.get("/api/overview/{source}/dirs")
 async def overview_dirs(source: str, request: Request):
     src = _source(source)
@@ -300,16 +340,20 @@ async def overview_image(
 
 
 def _overview_page(request: Request, source: str):
-    src = SOURCES[source]
+    if source == "summary":
+        title, unit, empty_text = "Summary Overview", "scans", f"No {DIR_PREFIX}* scans yet."
+    else:
+        src = SOURCES[source]
+        title, unit, empty_text = src.title, src.unit, src.empty_text
     return request.app.state.templates.TemplateResponse(
         "overview.html",
         {
             "request": request,
             "prefix": DIR_PREFIX,
-            "source": src.key,
-            "title": src.title,
-            "unit": src.unit,
-            "empty_text": src.empty_text,
+            "source": source,
+            "title": title,
+            "unit": unit,
+            "empty_text": empty_text,
         },
     )
 
@@ -327,3 +371,8 @@ async def phase_overview_page(request: Request):
 @router.get("/tomo-overview")
 async def tomo_overview_page(request: Request):
     return _overview_page(request, "tomo")
+
+
+@router.get("/summary-overview")
+async def summary_overview_page(request: Request):
+    return _overview_page(request, "summary")

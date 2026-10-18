@@ -65,7 +65,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax({{ '420px' if source == 'raw' else '330px' }}, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax({{ '420px' if source in ('raw', 'summary') else '330px' }}, 1fr));
             gap: 1rem;
         }
         .tile {
@@ -87,6 +87,25 @@
         }
         .thumb-label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .empty { color: #888; padding: 2rem; text-align: center; grid-column: 1 / -1; }
+
+        /* Summary page: three rows per scan with aligned columns (first column: ref image or row info). */
+        .tile.summary { cursor: default; }
+        .summary-row { border-radius: 6px; padding: 4px; margin: 0 -4px; cursor: pointer; }
+        .summary-row:hover { background: #f5f4f1; }
+        .summary-row.missing { cursor: default; }
+        .summary-row.missing:hover { background: none; }
+        .summary-row + .summary-row { margin-top: 4px; }
+        .row-title { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #888; margin-bottom: 2px; }
+        .summary-row .thumbs { grid-template-columns: repeat(4, 1fr); }
+        .row-info {
+            aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+            font-size: 11px; color: #555; overflow: hidden; overflow-wrap: anywhere; padding-right: 4px;
+        }
+        .row-info .run { font-weight: 500; color: #1a1a1a; }
+        .summary-row.missing .row-info { color: #aaa; }
+        /* Rows without images shrink to one line of text. */
+        .summary-row.no-images .thumb { display: none; }
+        .summary-row.no-images .row-info { aspect-ratio: auto; flex-direction: row; justify-content: flex-start; gap: 6px; grid-column: 1 / -1; padding: 2px 0; }
 
         /* Popup */
         .modal-bg {
@@ -143,6 +162,10 @@
         <svg viewBox="0 0 14 14" fill="none"><path d="M3 4.5 7 2.5l4 2v5l-4 2-4-2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M3 4.5 7 6.5l4-2M7 6.5v5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
         Tomogram overview
       </a>
+      <a class="nav-item" href="/summary-overview">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="2.6" rx="0.6" stroke="currentColor" stroke-width="1.1"/><rect x="2" y="5.7" width="10" height="2.6" rx="0.6" stroke="currentColor" stroke-width="1.1"/><rect x="2" y="9.4" width="10" height="2.6" rx="0.6" stroke="currentColor" stroke-width="1.1"/></svg>
+        Summary overview
+      </a>
       <hr class="nav-divider">
       <a class="nav-item" href="/logout">
         <svg viewBox="0 0 14 14" fill="none"><path d="M6 2H3v10h3M9 4l3 3-3 3M12 7H6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -159,10 +182,10 @@
         <option value="desc">Newest first</option>
         <option value="asc">Oldest first</option>
     </select>
-    {% if source == 'phase' %}
+    {% if source in ('phase', 'summary') %}
     <label class="toolbar-label">Save prefix
         <select id="save-prefix">
-            <option value="">All prefixes</option>
+            <option value="">{{ 'Newest run' if source == 'summary' else 'All prefixes' }}</option>
         </select>
     </label>
     {% endif %}
@@ -211,9 +234,10 @@
 const qs = id => document.getElementById(id);
 const POLL_MS = 5000;
 const enc = encodeURIComponent;
-// Which overview this is ("raw" or "phase"); data set names may contain a "/" (scan/save prefix).
-const API = `/api/overview/${ {{ source | tojson }} }`;
-const imageUrl = (dir, file, size) => `${API}/image?dataset=${enc(dir)}&file=${enc(file)}&size=${size}`;
+// Which overview this is ("raw", "phase", "tomo" or "summary"); data set names may contain a "/".
+const PAGE = {{ source | tojson }};
+const apiBase = src => `/api/overview/${src}`;
+const imageUrl = (src, dir, file, size) => `${apiBase(src)}/image?dataset=${enc(dir)}&file=${enc(file)}&size=${size}`;
 const displayName = name => name.replace('/', ' / ');
 
 /* ---------- Tile grid ---------- */
@@ -226,13 +250,14 @@ function fmtTime(t) {
     return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function setThumb(img, dir, file) {
-    // Only reload when the selected file changed (or a previous load failed).
-    if (img.dataset.file === (file || '') && !img.dataset.failed) return;
-    img.dataset.file = file || '';
+function setThumb(img, src, dir, file) {
+    // Only reload when the selected image changed (or a previous load failed).
+    const key = file ? `${src}|${dir}|${file}` : '';
+    if (img.dataset.key === key && !img.dataset.failed) return;
+    img.dataset.key = key;
     delete img.dataset.failed;
     if (file) {
-        img.src = imageUrl(dir, file, 256);
+        img.src = imageUrl(src, dir, file, 256);
         img.title = file;
     } else {
         img.removeAttribute('src');
@@ -241,6 +266,7 @@ function setThumb(img, dir, file) {
 }
 
 function buildTile(d) {
+    if (PAGE === 'summary') return buildSummaryTile(d);
     const el = document.createElement('div');
     el.className = 'tile';
     el.innerHTML = `
@@ -259,19 +285,97 @@ function buildTile(d) {
     el.querySelectorAll('.thumb-img').forEach(img => {
         img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
     });
-    el.addEventListener('click', () => openViewer(d.name));
+    el.addEventListener('click', () => openViewer(d.name, PAGE));
     return el;
 }
 
 function updateTile(el, d) {
+    if (PAGE === 'summary') return updateSummaryTile(el, d);
     el.querySelector('.tile-meta').textContent =
         `${d.meta} · ${fmtTime(d.mtime)}`;
     const imgs = el.querySelectorAll('.thumb-img');
     const labels = el.querySelectorAll('.thumb-label');
     d.thumbs.forEach((t, i) => {
-        setThumb(imgs[i], d.name, t.file);
+        setThumb(imgs[i], PAGE, d.name, t.file);
         labels[i].textContent = t.file || `no ${t.label.split(' ')[0]}`;
         labels[i].title = t.label;
+    });
+}
+
+/* ---------- Summary tiles: raw data, phase retrieval and tomogram of one scan ---------- */
+const SUMMARY_ROWS = [
+    { kind: 'raw', title: 'Raw data', missing: 'no raw data' },
+    { kind: 'phase', title: 'Phase retrieval', missing: 'no phase retrieval yet' },
+    { kind: 'tomo', title: 'Tomogram', missing: 'no tomogram yet' },
+];
+const thumbCell = () => `<div class="thumb"><img class="thumb-img" loading="lazy" alt=""><div class="thumb-label"></div></div>`;
+
+function buildSummaryTile(d) {
+    const el = document.createElement('div');
+    el.className = 'tile summary';
+    el.innerHTML = `
+        <div class="tile-head">
+            <span class="tile-name"></span>
+            <span class="tile-meta"></span>
+        </div>
+        ${SUMMARY_ROWS.map(r => `
+            <div class="summary-row" data-kind="${r.kind}">
+                <div class="row-title">${r.title}</div>
+                <div class="thumbs">
+                    ${r.kind === 'raw' ? thumbCell() : '<div class="row-info"></div>'}
+                    ${thumbCell()}${thumbCell()}${thumbCell()}
+                </div>
+            </div>`).join('')}`;
+    el.querySelector('.tile-name').textContent = d.name;
+    el.querySelectorAll('.thumb-img').forEach(img => {
+        img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
+    });
+    el.querySelectorAll('.summary-row').forEach(row => {
+        row.addEventListener('click', () => { if (row.dataset.dataset) openViewer(row.dataset.dataset, row.dataset.kind); });
+    });
+    return el;
+}
+
+// The data set shown in each row: phase retrieval run by the "Save prefix" choice (default: newest),
+// tomogram: the newest version.
+function summaryRowData(d, kind) {
+    if (kind === 'raw') return d.raw;
+    if (kind === 'tomo') return d.tomo[0] || null;
+    const prefix = selectedSavePrefix();
+    return prefix ? d.phase.find(r => r.name.split('/')[1] === prefix) || null : d.phase[0] || null;
+}
+
+function updateSummaryTile(el, d) {
+    el.querySelector('.tile-meta').textContent = fmtTime(d.mtime);
+    SUMMARY_ROWS.forEach(r => {
+        const row = el.querySelector(`.summary-row[data-kind="${r.kind}"]`);
+        const data = summaryRowData(d, r.kind);
+        row.classList.toggle('missing', !data);
+        row.classList.toggle('no-images', !(data && data.thumbs.some(t => t.file)));
+        row.dataset.dataset = data ? data.name : '';
+        row.title = data ? `Open ${displayName(data.name)}` : '';
+        const imgs = row.querySelectorAll('.thumb-img');
+        const labels = row.querySelectorAll('.thumb-label');
+        const thumbs = data ? data.thumbs : [];
+        imgs.forEach((img, i) => {
+            const t = thumbs[i];
+            setThumb(img, r.kind, data ? data.name : '', t && t.file);
+            labels[i].textContent = t && t.file ? t.file : '';
+            labels[i].title = t ? t.label : '';
+        });
+        const info = row.querySelector('.row-info');
+        if (info) {
+            if (!data) {
+                const prefix = r.kind === 'phase' && selectedSavePrefix();
+                info.textContent = prefix ? `no run "${prefix}"` : r.missing;
+            } else {
+                const others = (r.kind === 'phase' ? d.phase : d.tomo).length - 1;
+                info.innerHTML = '';
+                const span = (text, cls) => Object.assign(document.createElement('span'), { textContent: text, className: cls || '' });
+                info.append(span(data.name.split('/')[1], 'run'), span(data.meta));
+                if (others > 0) info.append(span(`+${others} more`));
+            }
+        }
     });
 }
 
@@ -279,7 +383,7 @@ function renderGrid() {
     const grid = qs('grid');
     const filter = qs('filter').value.trim().toLowerCase();
     const ordered = qs('sort').value === 'desc' ? [...dirs].reverse() : dirs;
-    const savePrefix = selectedSavePrefix();
+    const savePrefix = PAGE === 'phase' ? selectedSavePrefix() : '';
     const visible = ordered.filter(d => d.name.toLowerCase().includes(filter)
         && (!savePrefix || d.name.split('/')[1] === savePrefix));
 
@@ -317,7 +421,7 @@ function renderGrid() {
 
 async function pollDirs() {
     try {
-        const res = await fetch(`${API}/dirs`);
+        const res = await fetch(PAGE === 'summary' ? '/api/overview/summary' : `${apiBase(PAGE)}/dirs`);
         if (res.status === 401) { location.reload(); return; }   // session expired: go to the login page
         if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
         const body = await res.json();
@@ -341,12 +445,13 @@ qs('filter').addEventListener('input', renderGrid);
 qs('sort').addEventListener('change', renderGrid);
 
 /* ---------- Save prefix (phase retrieval overview: data sets are "<scan>/<save prefix>") ---------- */
-const SAVE_PREFIX_KEY = 'holopipe.phaseOverview.savePrefix';
+const SAVE_PREFIX_KEY = `holopipe.${PAGE}Overview.savePrefix`;
 const savePrefixSelect = qs('save-prefix');
 const selectedSavePrefix = () => savePrefixSelect ? savePrefixSelect.value : '';
 function updateSavePrefixes() {
     if (!savePrefixSelect) return;
-    const prefixes = [...new Set(dirs.map(d => d.name.split('/')[1]).filter(Boolean))]
+    const runNames = PAGE === 'summary' ? dirs.flatMap(d => d.phase.map(r => r.name)) : dirs.map(d => d.name);
+    const prefixes = [...new Set(runNames.map(n => n.split('/')[1]).filter(Boolean))]
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     // Rebuild only when the set of prefixes changed, so an open dropdown is not disturbed by the refresh.
     const key = prefixes.join('\n');
@@ -356,7 +461,7 @@ function updateSavePrefixes() {
         try { wanted = localStorage.getItem(SAVE_PREFIX_KEY) || ''; } catch (e) { /* storage unavailable */ }
     }
     savePrefixSelect.dataset.prefixes = key;
-    savePrefixSelect.innerHTML = '<option value="">All prefixes</option>' +
+    savePrefixSelect.innerHTML = `<option value="">${PAGE === 'summary' ? 'Newest run' : 'All prefixes'}</option>` +
         prefixes.map(p => `<option value="${p.replace(/"/g, '&quot;')}">${p.replace(/</g, '&lt;')}</option>`).join('');
     savePrefixSelect.value = prefixes.includes(wanted) ? wanted : '';
 }
@@ -370,6 +475,7 @@ if (savePrefixSelect) {
 /* ---------- Popup viewer ---------- */
 const viewer = {
     dir: null,
+    source: PAGE,
     allFiles: [],
     files: [],
     prefix: 'all',
@@ -444,17 +550,19 @@ function setPrefix(p) {
 }
 
 async function loadFileList() {
-    const res = await fetch(`${API}/files?dataset=${enc(viewer.dir)}`);
+    const res = await fetch(`${apiBase(viewer.source)}/files?dataset=${enc(viewer.dir)}`);
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     return (await res.json()).files;
 }
 
-async function openViewer(dir) {
+async function openViewer(dir, source) {
     viewer.dir = dir;
+    viewer.source = source;
     viewer.prefix = 'img';
     viewer.index = 0;
     viewer.cache.clear();
-    qs('modal-title').textContent = displayName(dir);
+    const kindLabel = { raw: 'Raw data', phase: 'Phase retrieval', tomo: 'Tomogram' }[source];
+    qs('modal-title').textContent = PAGE === 'summary' ? `${kindLabel} · ${displayName(dir)}` : displayName(dir);
     qs('modal-bg').classList.add('open');
     document.body.style.overflow = 'hidden';
     Plotly.purge(qs('viewer'));
@@ -518,7 +626,7 @@ async function show(index) {
     const size = qs('resolution').value;
     const token = ++viewer.token;
     try {
-        const { src, factor } = await fetchImage(imageUrl(dir, file, size));
+        const { src, factor } = await fetchImage(imageUrl(viewer.source, dir, file, size));
         if (token !== viewer.token) return;   // a newer request superseded this one
         message('');
         const trace = { type: 'image', source: src, dx: factor, dy: factor, x0: 0, y0: 0, hoverinfo: 'x+y', name: file };
@@ -541,7 +649,7 @@ async function show(index) {
 function prefetch(dir, size) {
     for (const off of [1, -1, 2, 3]) {
         const f = viewer.files[viewer.index + off];
-        if (f) fetchImage(imageUrl(dir, f, size)).catch(() => {});
+        if (f) fetchImage(imageUrl(viewer.source, dir, f, size)).catch(() => {});
     }
 }
 
