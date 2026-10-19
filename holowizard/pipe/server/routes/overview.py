@@ -19,6 +19,7 @@ import io
 import os
 import re
 import threading
+import time
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -196,6 +197,159 @@ def _dataset_summary(source: OverviewSource, root: Path, dataset: str, with_file
     return summary
 
 
+# --- Pixel sizes (for scale bars) ---
+# The README.html of a phase retrieval run (written by Scan.write_html) lists the detector pixel size and the
+# magnification. The effective pixel size of the raw detector is detector pixel / magnification; images with
+# fewer pixels than the raw detector (binned phase retrieval, binned tomograms) have correspondingly larger
+# pixels. Older READMEs give the detector pixel in micrometres although labelled "mm" (e.g. "6.5 mm").
+README_FILE = "README.html"
+# Results are kept until their inputs change: the keys contain the README mtime or the number of images.
+_pixel_cache: Dict[Tuple, Any] = {}
+_UNIT_UM = {"nm": 1e-3, "μm": 1.0, "µm": 1.0, "um": 1.0, "mm": 1e3, "cm": 1e4, "m": 1e6}
+
+
+def _memo(key: Tuple, compute: Callable[[], Any]) -> Any:
+    if key not in _pixel_cache:
+        try:
+            _pixel_cache[key] = compute()
+        except Exception:
+            _pixel_cache[key] = None
+    return _pixel_cache[key]
+
+
+def _mtime(path: Path) -> Optional[int]:
+    try:
+        return path.stat().st_mtime_ns
+    except OSError:
+        return None
+
+
+def _readme_value(html: str, label: str) -> Tuple[Optional[float], Optional[str]]:
+    m = re.search(re.escape(label) + r"\s*</strong>\s*([-0-9.eE+]+)\s*([^\s<]*)", html)
+    return (float(m.group(1)), m.group(2) or None) if m else (None, None)
+
+
+def _detector_pixel_nm(run_folder: Path) -> Optional[float]:
+    """Effective pixel size (nm) of the raw detector images, from the README.html of a phase retrieval run:
+    detector pixel / magnification. None if the geometry is not physical (e.g. a negative z01)."""
+    html = (run_folder / README_FILE).read_text(errors="ignore")
+    detector, unit = _readme_value(html, "Detector Pixel Size:")
+    magnification, _ = _readme_value(html, "Magnification")
+    if not detector or not magnification or detector <= 0 or magnification <= 1:
+        return None
+    if unit in _UNIT_UM:
+        detector_um = detector * _UNIT_UM[unit]
+    else:  # no or unknown unit: "6.5" means um, "0.0065" mm (detector pixels are a few um)
+        detector_um = detector if detector > 0.5 else detector * 1000
+    return detector_um * 1000 / magnification
+
+
+def _first_tiff_width(folder: Path, prefix: str = "") -> Optional[int]:
+    with os.scandir(folder) as it:
+        names = sorted(e.name for e in it if e.name.startswith(prefix) and e.name.lower().endswith(TIFF_SUFFIXES))
+    for name in names[:5]:
+        try:
+            with tifffile.TiffFile(str(folder / name)) as tif:
+                return int(tif.pages[0].shape[1])
+        except Exception:
+            continue
+    return None
+
+
+def _image_size(folder: Path) -> Optional[List[int]]:
+    with os.scandir(folder) as it:
+        names = sorted(e.name for e in it if e.name.lower().endswith(TIFF_SUFFIXES))
+    for name in names[:5]:
+        try:
+            with tifffile.TiffFile(str(folder / name)) as tif:
+                h, w = tif.pages[0].shape[:2]
+                return [int(w), int(h)]
+        except Exception:
+            continue
+    return None
+
+
+def _raw_width(beamtime, scan: str) -> Optional[int]:
+    return _memo(
+        ("raw width", str(beamtime.path_raw), scan), lambda: _first_tiff_width(Path(beamtime.path_raw) / scan, "img")
+    )
+
+
+def _phase_width(beamtime, scan: str, prefix: str) -> Optional[int]:
+    folder = Path(beamtime.path_processed) / scan / prefix / PHASE_SUBDIR
+    return _memo(("phase width", str(folder)), lambda: _first_tiff_width(folder))
+
+
+def _phase_pixel_nm(beamtime, scan: str, prefix: str) -> Optional[float]:
+    run_folder = Path(beamtime.path_processed) / scan / prefix
+    readme_mtime = _mtime(run_folder / README_FILE)
+    if readme_mtime is None:
+        return None
+
+    def compute():
+        raw_pixel = _detector_pixel_nm(run_folder)
+        raw_width, phase_width = _raw_width(beamtime, scan), _phase_width(beamtime, scan, prefix)
+        if not (raw_pixel and raw_width and phase_width):
+            return None
+        return raw_pixel * raw_width / phase_width
+
+    return _memo(("phase pixel", str(run_folder), readme_mtime), compute)
+
+
+def _tomo_pixel(beamtime, scan: str, version: str, slice_width: Optional[int]) -> Tuple[Optional[float], str]:
+    processed = Path(beamtime.path_processed)
+    params = processed / scan / RECON_SUBDIR / version / "reconstruction.yaml"
+
+    def compute():
+        import yaml
+
+        if params.exists():  # written by the tomography page
+            p = yaml.safe_load(params.read_text())
+            prefix = str(p["phase_retrieval_run"]).split("/")[1]
+            pixel = _phase_pixel_nm(beamtime, scan, prefix)
+            return (pixel * float(p.get("binning", 1)) if pixel else None), f"from {version}/reconstruction.yaml"
+        # External reconstructions: geometry of the scan's phase retrieval (preferably "holopipe").
+        runs = [r for r in ["holopipe"] + _list_subdirs(processed / scan) if _phase_pixel_nm(beamtime, scan, r)]
+        if not runs or not slice_width:
+            return None, ""
+        prefix = runs[0]
+        pixel, phase_width = _phase_pixel_nm(beamtime, scan, prefix), _phase_width(beamtime, scan, prefix)
+        # Slices are often cropped; the binning is the nearest whole number (2048 -> 1944: 1, 2048 -> 972: 2).
+        binning = max(1, round(phase_width / slice_width))
+        return pixel * binning, f"assumed from the {prefix} phase retrieval geometry, binning {binning}"
+
+    key = (
+        "tomo pixel",
+        str(processed / scan),
+        version,
+        slice_width,
+        _mtime(params),
+        _mtime(processed / scan / "holopipe" / README_FILE),
+    )
+    return _memo(key, compute) or (None, "")
+
+
+def add_pixel_sizes(beamtime, source_key: str, summaries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Add ``pixel_size_nm``, ``pixel_note`` and ``image_size`` ([width, height]) to phase / tomogram summaries."""
+    if source_key not in ("phase", "tomo"):
+        return summaries
+    src = SOURCES[source_key]
+    root = src.root(beamtime)
+    for s in summaries:
+        if s is None or not s.get("count"):
+            continue
+        scan, sub = s["name"].split("/")
+        folder = src.folder(root, s["name"])
+        size = _memo(("size", str(folder), s["count"]), lambda: _image_size(folder))
+        s["image_size"] = size
+        if source_key == "phase":
+            s["pixel_size_nm"] = _phase_pixel_nm(beamtime, scan, sub)
+            s["pixel_note"] = f"from {sub}/{README_FILE}"
+        else:
+            s["pixel_size_nm"], s["pixel_note"] = _tomo_pixel(beamtime, scan, sub, size[0] if size else None)
+    return summaries
+
+
 def list_datasets(source: OverviewSource, root: Path) -> List[Dict[str, Any]]:
     summaries = (_dataset_summary(source, root, ds) for ds in source.datasets(root))
     return [s for s in summaries if s is not None]
@@ -217,6 +371,10 @@ def list_summary(beamtime) -> List[Dict[str, Any]]:
         return grouped
 
     phase, tomo = by_scan(phase_src), by_scan(tomo_src)
+    for runs in phase.values():
+        add_pixel_sizes(beamtime, "phase", runs)
+    for versions in tomo.values():
+        add_pixel_sizes(beamtime, "tomo", versions)
     summary = []
     for name in sorted(set(raw) | set(phase) | set(tomo), key=_natural_key):
         parts = [raw.get(name)] + phase.get(name, []) + tomo.get(name, [])
@@ -299,16 +457,20 @@ async def overview_dirs(source: str, request: Request):
     root = src.root(request.app.state.beamtime)
     if not root.is_dir():
         raise HTTPException(status_code=404, detail=f"Folder not found: {root}")
-    return {"path": str(root), "dirs": await run_in_threadpool(list_datasets, src, root)}
+    beamtime = request.app.state.beamtime
+    dirs = await run_in_threadpool(lambda: add_pixel_sizes(beamtime, source, list_datasets(src, root)))
+    return {"path": str(root), "dirs": dirs}
 
 
 @router.get("/api/overview/{source}/files")
 async def overview_files(source: str, request: Request, dataset: str):
     src = _source(source)
     _dataset_folder(request, src, dataset)
-    summary = await run_in_threadpool(_dataset_summary, src, src.root(request.app.state.beamtime), dataset, True)
+    beamtime = request.app.state.beamtime
+    summary = await run_in_threadpool(_dataset_summary, src, src.root(beamtime), dataset, True)
     if summary is None:
         raise HTTPException(status_code=404, detail=f"Data set not readable: {dataset}")
+    await run_in_threadpool(add_pixel_sizes, beamtime, source, [summary])
     return summary
 
 

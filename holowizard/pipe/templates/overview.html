@@ -85,6 +85,12 @@
             aspect-ratio: 1; width: 100%; background: #ecebe7; border-radius: 4px;
             object-fit: contain; display: block;
         }
+        /* Scale bar on phase retrieval and tomogram thumbnails */
+        .thumb-frame { position: relative; }
+        .scale-bar { position: absolute; bottom: 6%; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .scale-bar .bar { width: 100%; height: 3px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+        /* Label on a translucent dark background, like the scale bar in the opened data set view */
+        .scale-bar .txt { font-size: 9px; line-height: 1; color: #fff; white-space: nowrap; background: rgba(0,0,0,0.35); padding: 1px 3px; border-radius: 2px; }
         .thumb-label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .empty { color: #888; padding: 2rem; text-align: center; grid-column: 1 / -1; }
 
@@ -221,6 +227,32 @@ function fmtTime(t) {
     return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+/* ---------- Scale bars (pixel size from the phase retrieval README.html, see the server) ---------- */
+function niceLength(x) {                 // largest 1, 2 or 5 x 10^k not above x
+    const p = Math.pow(10, Math.floor(Math.log10(x)));
+    return [5, 2, 1].map(m => m * p).find(v => v <= x) || p;
+}
+function fmtLength(nm) {
+    if (nm >= 1e6) return `${+(nm / 1e6).toPrecision(3)} mm`;
+    if (nm >= 1e3) return `${+(nm / 1e3).toPrecision(3)} µm`;
+    return `${+nm.toPrecision(3)} nm`;
+}
+function setScaleBar(frame, data, hasImage) {
+    const bar = frame && frame.querySelector('.scale-bar');
+    if (!bar) return;
+    const px = data && data.pixel_size_nm, size = data && data.image_size;
+    if (!hasImage || !px || !size) { bar.hidden = true; return; }
+    const [w, h] = size;
+    const shown = Math.min(1, w / h);          // displayed image width / frame width (object-fit: contain)
+    const field = px * w;                      // image width in nm
+    const length = niceLength(field * 0.25);
+    bar.style.width = `${100 * shown * length / field}%`;
+    bar.style.right = `${100 * ((1 - shown) / 2 + 0.05 * shown)}%`;
+    bar.querySelector('.txt').textContent = fmtLength(length);
+    bar.title = `${px.toFixed(1)} nm per pixel (${data.pixel_note || 'from the phase retrieval README.html'})`;
+    bar.hidden = false;
+}
+
 function setThumb(img, src, dir, file) {
     // Only reload when the selected image changed (or a previous load failed).
     const key = file ? `${src}|${dir}|${file}` : '';
@@ -248,7 +280,7 @@ function buildTile(d) {
         <div class="thumbs" style="grid-template-columns: repeat(${d.thumbs.length}, 1fr);">
             ${d.thumbs.map(t => `
                 <div class="thumb">
-                    <img class="thumb-img" loading="lazy" alt="">
+                    <div class="thumb-frame"><img class="thumb-img" loading="lazy" alt=""><div class="scale-bar" hidden><span class="bar"></span><span class="txt"></span></div></div>
                     <div class="thumb-label"></div>
                 </div>`).join('')}
         </div>`;
@@ -256,7 +288,7 @@ function buildTile(d) {
     el.querySelectorAll('.thumb-img').forEach(img => {
         img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
     });
-    el.addEventListener('click', () => openViewer(d.name, PAGE));
+    el.addEventListener('click', () => openViewer(d.name, PAGE, (tiles.get(d.name) || {}).data || d));
     return el;
 }
 
@@ -266,7 +298,9 @@ function updateTile(el, d) {
         `${d.meta} · ${fmtTime(d.mtime)}`;
     const imgs = el.querySelectorAll('.thumb-img');
     const labels = el.querySelectorAll('.thumb-label');
+    const frames = el.querySelectorAll('.thumb-frame');
     d.thumbs.forEach((t, i) => {
+        setScaleBar(frames[i], d, !!t.file);
         setThumb(imgs[i], PAGE, d.name, t.file);
         labels[i].textContent = t.file || `no ${t.label.split(' ')[0]}`;
         labels[i].title = t.label;
@@ -279,7 +313,7 @@ const SUMMARY_ROWS = [
     { kind: 'phase', title: 'Phase retrieval', missing: 'no phase retrieval yet' },
     { kind: 'tomo', title: 'Tomogram', missing: 'no tomogram yet' },
 ];
-const thumbCell = () => `<div class="thumb"><img class="thumb-img" loading="lazy" alt=""><div class="thumb-label"></div></div>`;
+const thumbCell = () => `<div class="thumb"><div class="thumb-frame"><img class="thumb-img" loading="lazy" alt=""><div class="scale-bar" hidden><span class="bar"></span><span class="txt"></span></div></div><div class="thumb-label"></div></div>`;
 
 function buildSummaryTile(d) {
     const el = document.createElement('div');
@@ -302,7 +336,7 @@ function buildSummaryTile(d) {
         img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
     });
     el.querySelectorAll('.summary-row').forEach(row => {
-        row.addEventListener('click', () => { if (row.dataset.dataset) openViewer(row.dataset.dataset, row.dataset.kind); });
+        row.addEventListener('click', () => { if (row.dataset.dataset) openViewer(row.dataset.dataset, row.dataset.kind, row._data); });
     });
     return el;
 }
@@ -324,12 +358,15 @@ function updateSummaryTile(el, d) {
         row.classList.toggle('missing', !data);
         row.classList.toggle('no-images', !(data && data.thumbs.some(t => t.file)));
         row.dataset.dataset = data ? data.name : '';
+        row._data = data;
         row.title = data ? `Open ${displayName(data.name)}` : '';
         const imgs = row.querySelectorAll('.thumb-img');
         const labels = row.querySelectorAll('.thumb-label');
         const thumbs = data ? data.thumbs : [];
+        const frames = row.querySelectorAll('.thumb-frame');
         imgs.forEach((img, i) => {
             const t = thumbs[i];
+            setScaleBar(frames[i], r.kind === 'raw' ? null : data, !!(t && t.file));
             setThumb(img, r.kind, data ? data.name : '', t && t.file);
             labels[i].textContent = t && t.file ? t.file : '';
             labels[i].title = t ? t.label : '';
@@ -528,9 +565,12 @@ async function loadFileList() {
     return (await res.json()).files;
 }
 
-async function openViewer(dir, source) {
+async function openViewer(dir, source, info) {
     viewer.dir = dir;
     viewer.source = source;
+    // Pixel size for the scale bar (phase retrieval and tomograms only).
+    viewer.pixel = source !== 'raw' && info && info.pixel_size_nm ? info.pixel_size_nm : null;
+    viewer.pixelNote = info && info.pixel_note;
     viewer.prefix = 'img';
     viewer.index = 0;
     viewer.cache.clear();
@@ -611,12 +651,45 @@ async function show(index) {
             dragmode: 'zoom',
             paper_bgcolor: '#fff',
         };
-        Plotly.react(qs('viewer'), [trace], layout, { responsive: true, displaylogo: false });
+        await Plotly.react(qs('viewer'), [trace], layout, { responsive: true, displaylogo: false });
+        attachScaleBarListener();
+        updateViewerScaleBar();
         prefetch(dir, size);
     } catch (e) {
         if (token !== viewer.token) return;
         message(`${file}: ${e.message}`);
     }
+}
+
+// Scale bar in the popup: in image coordinates at the bottom right of the visible region, sized to it,
+// and redrawn after zooming or panning.
+function updateViewerScaleBar() {
+    const gd = qs('viewer');
+    if (!gd._fullLayout || !gd._fullLayout.xaxis) return;
+    if (!viewer.pixel) { if ((gd.layout.shapes || []).length) Plotly.relayout(gd, { shapes: [], annotations: [] }); return; }
+    const xr = gd._fullLayout.xaxis.range, yr = gd._fullLayout.yaxis.range;
+    const visX = Math.abs(xr[1] - xr[0]), visY = Math.abs(yr[1] - yr[0]);
+    const length = niceLength(visX * viewer.pixel * 0.25), lengthPx = length / viewer.pixel;
+    const x1 = Math.max(...xr) - 0.05 * visX, x0 = x1 - lengthPx, y = Math.max(...yr) - 0.06 * visY;
+    const line = (color, width) => ({ type: 'line', xref: 'x', yref: 'y', x0, x1, y0: y, y1: y, line: { color, width } });
+    Plotly.relayout(gd, {
+        shapes: [line('rgba(0,0,0,0.6)', 6), line('#fff', 3)],
+        annotations: [{ xref: 'x', yref: 'y', x: (x0 + x1) / 2, y: y - 0.015 * visY, yanchor: 'bottom', showarrow: false,
+                        text: fmtLength(length), font: { color: '#fff', size: 12 }, bgcolor: 'rgba(0,0,0,0.35)', borderpad: 2,
+                        hovertext: `${viewer.pixel.toFixed(1)} nm per pixel (${viewer.pixelNote || ''})` }],
+    });
+}
+// Redraw the scale bar after zooming/panning. Attached on every image load, because Plotly.purge (when a
+// data set is opened or the popup closed) removes the plot's event handlers.
+function onViewerRelayout(ev) {
+    // Next frame: Plotly adjusts the ranges to the image aspect ratio after the zoom event.
+    if (Object.keys(ev || {}).some(k => k.startsWith('xaxis') || k.startsWith('yaxis') || k === 'autosize')) requestAnimationFrame(updateViewerScaleBar);
+}
+function attachScaleBarListener() {
+    const gd = qs('viewer');
+    if (!gd.on) return;
+    if (gd.removeListener) gd.removeListener('plotly_relayout', onViewerRelayout);
+    gd.on('plotly_relayout', onViewerRelayout);
 }
 
 function prefetch(dir, size) {
