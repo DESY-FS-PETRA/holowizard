@@ -21,6 +21,7 @@ from fastapi import (
     BackgroundTasks,
     HTTPException,
     Request,
+    Response,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -34,7 +35,8 @@ from starlette.datastructures import UploadFile
 from holowizard.pipe.scan import P05Scan as Scan
 from holowizard.pipe.scan.p05_scan import P05Geometry
 
-UI_STATE_FILE = "ui_state.json"
+UI_STATE_DIR = "ui_state"  # one JSON file per browser, inside beamtime.log_path
+UI_CLIENT_COOKIE = "holowizard_client_id"
 # Stages whose config is fixed and not selectable in the UI.
 FIXED_STAGE_CONFIGS = {"find_focus": "defaults.yaml"}
 # Tasks run by "Submit Phase Retrieval"; flatfield is always run first by the beamtime.
@@ -167,8 +169,13 @@ def load_stage_config(config_dir: Path, stage: str, opt: str) -> Dict[str, Any]:
     return OmegaConf.to_container(OmegaConf.load(str(config_dir / stage / opt)), resolve=True)
 
 
-def _ui_state_path(state) -> Path:
-    return Path(state.beamtime.log_path) / UI_STATE_FILE
+def _ui_state_path(request: Request, response: Response) -> Path:
+    """State file of the requesting browser; assigns a new client id cookie if it has none."""
+    client_id = request.cookies.get(UI_CLIENT_COOKIE, "")
+    if not re.fullmatch(r"[0-9a-f]{32}", client_id):
+        client_id = uuid.uuid4().hex
+        response.set_cookie(UI_CLIENT_COOKIE, client_id, max_age=10 * 365 * 24 * 3600, httponly=True, samesite="lax")
+    return Path(request.app.state.beamtime.log_path) / UI_STATE_DIR / f"{client_id}.json"
 
 
 # --- API routes ---
@@ -271,17 +278,17 @@ async def save_custom_parameters(form_data: Dict[str, str], request: Request):
 
 
 @router.get("/api/ui_state/{page}")
-async def get_ui_state(page: str, request: Request):
-    state = await run_in_threadpool(_read_ui_state, _ui_state_path(request.app.state))
+async def get_ui_state(page: str, request: Request, response: Response):
+    state = await run_in_threadpool(_read_ui_state, _ui_state_path(request, response))
     return state.get(page, {})
 
 
 @router.post("/api/ui_state/{page}")
-async def post_ui_state(page: str, page_state: Dict[str, Any], request: Request):
+async def post_ui_state(page: str, page_state: Dict[str, Any], request: Request, response: Response):
     if not page.isidentifier():
         raise HTTPException(status_code=400, detail=f"Invalid page name: {page!r}")
     try:
-        await run_in_threadpool(save_ui_state, _ui_state_path(request.app.state), page, page_state)
+        await run_in_threadpool(save_ui_state, _ui_state_path(request, response), page, page_state)
     except OSError as e:
         raise HTTPException(status_code=500, detail=f"Could not save UI state: {e}")
     return {"status": "saved"}
