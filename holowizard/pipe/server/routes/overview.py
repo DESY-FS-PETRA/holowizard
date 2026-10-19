@@ -19,7 +19,7 @@ import io
 import os
 import re
 import threading
-import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -347,6 +347,12 @@ def add_pixel_sizes(beamtime, source_key: str, summaries: List[Dict[str, Any]]) 
             s["pixel_note"] = f"from {sub}/{README_FILE}"
         else:
             s["pixel_size_nm"], s["pixel_note"] = _tomo_pixel(beamtime, scan, sub, size[0] if size else None)
+            if size:
+                w, h = size
+                s["ortho"] = {
+                    "xz": {"positions": ortho_positions(h), "size": [w, s["count"]]},
+                    "yz": {"positions": ortho_positions(w), "size": [h, s["count"]]},
+                }
     return summaries
 
 
@@ -419,6 +425,77 @@ def _render_png(path: str, mtime_ns: int, size: int, rotate: bool = True) -> Tup
     return buf.getvalue(), factor, float(lo), float(hi)
 
 
+# --- Orthogonal sections of tomograms (XZ at fixed y, YZ at fixed x) ---
+ORTHO_FRACTIONS = (0.25, 0.5, 0.75)
+_ortho_cache: Dict[Tuple, Dict[str, List[np.ndarray]]] = {}
+_ortho_locks: Dict[Tuple, threading.Lock] = {}
+_ortho_lock = threading.Lock()
+ORTHO_CACHE_SIZE = 64
+
+
+def ortho_positions(n: int) -> List[int]:
+    return [min(n - 1, int(n * f)) for f in ORTHO_FRACTIONS]
+
+
+def _ortho_sections(folder: Path, files: List[str], size: int) -> Dict[str, List[np.ndarray]]:
+    """XZ and YZ sections at 25/50/75 % of y and x, from every k-th slice (one pass; z down along the slices)."""
+    step = max(1, int(np.ceil(len(files) / size)))
+    chosen = files[::step]
+    with tifffile.TiffFile(str(folder / chosen[0])) as tif:
+        h, w = tif.pages[0].shape[:2]
+    ys, xs = ortho_positions(h), ortho_positions(w)
+
+    def read(name):
+        try:
+            try:
+                img = tifffile.memmap(str(folder / name), mode="r")
+            except Exception:  # compressed TIFF: read it completely
+                img = tifffile.imread(str(folder / name))
+            if img.shape[:2] != (h, w):
+                return None
+            return np.array(img[ys, :], dtype=np.float32), np.array(img[:, xs], dtype=np.float32).T
+        except Exception:
+            return None  # e.g. a slice that is still being written
+
+    with ThreadPoolExecutor(32) as ex:
+        parts = [r for r in ex.map(read, chosen) if r is not None]
+    if not parts:
+        raise ValueError("No readable slices")
+    rows = np.stack([r for r, _ in parts], axis=1)  # (3, z, w)
+    cols = np.stack([c for _, c in parts], axis=1)  # (3, z, h)
+
+    def shrink(a):  # along the width to at most `size` pixels (block mean)
+        f = max(1, int(np.ceil(a.shape[1] / size)))
+        n = (a.shape[1] // f) * f
+        return a[:, :n].reshape(a.shape[0], n // f, f).mean(axis=2)
+
+    return {"xz": [shrink(r) for r in rows], "yz": [shrink(c) for c in cols]}
+
+
+def ortho_png(folder: Path, files: List[str], plane: str, index: int, size: int) -> bytes:
+    key = (str(folder), len(files), files[-1] if files else "", size)
+    with _ortho_lock:
+        sections = _ortho_cache.get(key)
+        lock = _ortho_locks.setdefault(key, threading.Lock())
+    if sections is None:
+        with lock:  # the six thumbnails of a tile arrive together; compute once
+            with _ortho_lock:
+                sections = _ortho_cache.get(key)
+            if sections is None:
+                sections = _ortho_sections(folder, files, size)
+                with _ortho_lock:
+                    _ortho_cache[key] = sections
+                    while len(_ortho_cache) > ORTHO_CACHE_SIZE:
+                        _ortho_cache.pop(next(iter(_ortho_cache)))
+                    _ortho_locks.pop(key, None)
+    img = sections[plane][index]
+    lo, hi = np.nanpercentile(img, [1, 99]) if np.isfinite(img).any() else (0.0, 1.0)
+    scaled = np.nan_to_num(np.clip((img - lo) / max(hi - lo, 1e-12), 0, 1))
+    buf = io.BytesIO()
+    Image.fromarray((scaled * 255).astype(np.uint8)).save(buf, format="PNG", compress_level=1)
+    return buf.getvalue()
+
+
 # Thumbnails are small and requested on every page load, popup images are large.
 _render_thumb = lru_cache(maxsize=4096)(_render_png)
 _render_large = lru_cache(maxsize=64)(_render_png)
@@ -472,6 +549,29 @@ async def overview_files(source: str, request: Request, dataset: str):
         raise HTTPException(status_code=404, detail=f"Data set not readable: {dataset}")
     await run_in_threadpool(add_pixel_sizes, beamtime, source, [summary])
     return summary
+
+
+@router.get("/api/overview/tomo/ortho")
+async def overview_tomo_ortho(
+    request: Request,
+    dataset: str,
+    plane: str,
+    index: int = Query(..., ge=0, le=2),
+    size: int = Query(256, ge=32, le=1024),
+):
+    """XZ or YZ section (at 25/50/75 % of y or x) of a tomogram, as PNG."""
+    if plane not in ("xz", "yz"):
+        raise HTTPException(status_code=400, detail="plane must be xz or yz")
+    src = SOURCES["tomo"]
+    folder = _dataset_folder(request, src, dataset)
+    files = await run_in_threadpool(_cached_by_mtime, folder, _list_tiffs)
+    if not files:
+        raise HTTPException(status_code=404, detail="No slices")
+    try:
+        png = await run_in_threadpool(ortho_png, folder, files, plane, index, size)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Could not read the sections: {e}")
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "max-age=3600"})
 
 
 @router.get("/api/overview/{source}/image")

@@ -85,6 +85,8 @@
             aspect-ratio: 1; width: 100%; background: #ecebe7; border-radius: 4px;
             object-fit: contain; display: block;
         }
+        /* Tomograms view, "XY only": no XZ/YZ rows (and no XY row title) */
+        .grid.xy-only .ortho-rows, .grid.xy-only .xy-title { display: none; }
         /* Scale bar on phase retrieval and tomogram thumbnails */
         .thumb-frame { position: relative; }
         .scale-bar { position: absolute; bottom: 6%; display: flex; flex-direction: column; align-items: center; gap: 1px; }
@@ -157,6 +159,14 @@
         <option value="desc">Newest first</option>
         <option value="asc">Oldest first</option>
     </select>
+    {% if source == 'tomo' %}
+    <label class="toolbar-label">Planes
+        <select id="planes">
+            <option value="xy">XY only</option>
+            <option value="all">XY, XZ, YZ</option>
+        </select>
+    </label>
+    {% endif %}
     {% if source in ('phase', 'summary') %}
     <label class="toolbar-label">Save prefix
         <select id="save-prefix">
@@ -277,13 +287,19 @@ function buildTile(d) {
             <span class="tile-name"></span>
             <span class="tile-meta"></span>
         </div>
-        <div class="thumbs" style="grid-template-columns: repeat(${d.thumbs.length}, 1fr);">
+        ${PAGE === 'tomo' ? '<div class="row-title xy-title">XY</div>' : ''}
+        <div class="thumbs main-thumbs" style="grid-template-columns: repeat(${d.thumbs.length}, 1fr);">
             ${d.thumbs.map(t => `
                 <div class="thumb">
                     <div class="thumb-frame"><img class="thumb-img" loading="lazy" alt=""><div class="scale-bar" hidden><span class="bar"></span><span class="txt"></span></div></div>
                     <div class="thumb-label"></div>
                 </div>`).join('')}
-        </div>`;
+        </div>
+        ${PAGE === 'tomo' ? `<div class="ortho-rows">${ORTHO_PLANES.map(p => `
+            <div class="row-title">${p.toUpperCase()}</div>
+            <div class="thumbs ortho-thumbs" data-plane="${p}" style="grid-template-columns: repeat(3, 1fr);">
+                ${thumbCell()}${thumbCell()}${thumbCell()}
+            </div>`).join('')}</div>` : ''}`;
     el.querySelector('.tile-name').textContent = displayName(d.name);
     el.querySelectorAll('.thumb-img').forEach(img => {
         img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
@@ -296,14 +312,56 @@ function updateTile(el, d) {
     if (PAGE === 'summary') return updateSummaryTile(el, d);
     el.querySelector('.tile-meta').textContent =
         `${d.meta} · ${fmtTime(d.mtime)}`;
-    const imgs = el.querySelectorAll('.thumb-img');
-    const labels = el.querySelectorAll('.thumb-label');
-    const frames = el.querySelectorAll('.thumb-frame');
+    const main = el.querySelector('.main-thumbs');
+    const imgs = main.querySelectorAll('.thumb-img');
+    const labels = main.querySelectorAll('.thumb-label');
+    const frames = main.querySelectorAll('.thumb-frame');
     d.thumbs.forEach((t, i) => {
         setScaleBar(frames[i], d, !!t.file);
         setThumb(imgs[i], PAGE, d.name, t.file);
         labels[i].textContent = t.file || `no ${t.label.split(' ')[0]}`;
         labels[i].title = t.label;
+    });
+    if (PAGE === 'tomo') updateOrthoRows(el, d);
+}
+
+/* ---------- Tomograms: XZ and YZ sections at 25 / 50 / 75 % of y and x (z downwards) ---------- */
+const ORTHO_PLANES = ['xz', 'yz'];
+const PLANES_KEY = 'holopipe.tomoOverview.planes';
+const planesSelect = qs('planes');
+const showOrtho = () => !!planesSelect && planesSelect.value === 'all';
+if (planesSelect) {
+    // Default "XY only": the XZ/YZ sections cost a pass over the volume on first view.
+    planesSelect.value = 'xy';
+    try { planesSelect.value = localStorage.getItem(PLANES_KEY) || 'xy'; } catch (e) { /* storage unavailable */ }
+    qs('grid').classList.toggle('xy-only', !showOrtho());
+    planesSelect.addEventListener('change', () => {
+        try { localStorage.setItem(PLANES_KEY, planesSelect.value); } catch (e) { /* storage unavailable */ }
+        qs('grid').classList.toggle('xy-only', !showOrtho());
+        renderGrid();   // loads the XZ/YZ sections when they are switched on
+    });
+}
+function updateOrthoRows(el, d) {
+    if (!showOrtho()) return;   // hidden: do not request the sections
+    ORTHO_PLANES.forEach(plane => {
+        const row = el.querySelector(`.ortho-thumbs[data-plane="${plane}"]`);
+        const info = d.ortho && d.ortho[plane];
+        row.querySelectorAll('.thumb').forEach((cell, i) => {
+            const img = cell.querySelector('.thumb-img'), label = cell.querySelector('.thumb-label');
+            const has = !!(info && d.count);
+            // The slice count is part of the URL: a growing tomogram gets new sections.
+            const url = has ? `${apiBase('tomo')}/ortho?dataset=${enc(d.name)}&plane=${plane}&index=${i}&size=256&n=${d.count}&v=${IMAGE_VERSION}` : '';
+            if (img.dataset.key !== url || img.dataset.failed) {
+                img.dataset.key = url;
+                delete img.dataset.failed;
+                if (url) img.src = url; else img.removeAttribute('src');
+            }
+            const axis = plane === 'xz' ? 'y' : 'x';
+            label.textContent = has ? `${axis} = ${info.positions[i]}` : '';
+            label.title = has ? `${plane.toUpperCase()} section at ${axis} = ${info.positions[i]} px` : '';
+            setScaleBar(cell.querySelector('.thumb-frame'),
+                has ? { pixel_size_nm: d.pixel_size_nm, image_size: info.size, pixel_note: d.pixel_note } : null, has);
+        });
     });
 }
 
