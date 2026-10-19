@@ -29,8 +29,9 @@
             flex-direction: column;
             gap: 0.9rem;
         }
-        .head { display: flex; align-items: center; gap: 0.75rem; }
-        .head img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; }
+        /* Logo above the login frame */
+        .login { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; width: 100%; max-width: 340px; }
+        .login-logo { width: 128px; height: 128px; object-fit: contain; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
         h1 { font-size: 18px; font-weight: 500; }
         .field { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 12px; font-weight: 500; color: #555; }
@@ -66,11 +67,9 @@
     </style>
 </head>
 <body>
+    <div class="login">
+    <img class="login-logo" src="/static/logo.png" alt="HoloWizard">
     <form class="panel" method="post" action="/login">
-        <div class="head">
-            <img src="/static/logo.png" alt="">
-            <h1>HoloWizard</h1>
-        </div>
         {% if error %}<div class="error">{{ error }}</div>{% endif %}
         <div class="field">
             <label for="username">User</label>
@@ -83,5 +82,6 @@
         <input type="hidden" name="next" value="{{ next }}">
         <button class="btn" type="submit">Log in</button>
     </form>
+    </div>
 </body>
 </html>
