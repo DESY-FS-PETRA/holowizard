@@ -22,7 +22,7 @@ from holowizard.pipe.beamtime import P05Beamtime as Beamtime
 from holowizard.pipe.utils.clean_yaml import to_clean_yaml
 from holowizard.pipe.server.cluster_manager import OnDemandCluster
 from holowizard.pipe.server.auth import LoginRequiredMiddleware, UserStore, ensure_default_user, users_file
-from holowizard.pipe.server.routes import dashboard, login, overview, parameter, rotation, scan, tomography
+from holowizard.pipe.server.routes import dashboard, login, neuroglancer, overview, parameter, rotation, scan, tomography
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -107,7 +107,7 @@ def create_app(cfg=None, config_source: Union[str, Path] = None) -> FastAPI:
     async def get_config(request: Request):
         return OmegaConf.to_container(request.app.state.cfg, resolve=True)
 
-    for module in (login, overview, dashboard, parameter, rotation, tomography, scan):
+    for module in (login, overview, dashboard, parameter, rotation, tomography, neuroglancer, scan):
         app.include_router(module.router)
 
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / ".." / "templates/static")), name="static")

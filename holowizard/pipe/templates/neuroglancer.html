@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <title>Neuroglancer</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        [hidden] { display: none !important; }
+        :root {
+            --border-radius-md: 6px;
+            --border-radius-lg: 10px;
+            --color-background-secondary: #f5f4f1;
+            --color-border-primary: rgba(0,0,0,0.3);
+            --color-border-secondary: rgba(0,0,0,0.15);
+            --color-border-tertiary: rgba(0,0,0,0.08);
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #555;
+            --color-text-tertiary: #888;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+        h1 { font-size: 18px; font-weight: 500; }
+        .topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{border-color:var(--color-border-primary)}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;white-space:nowrap;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        .side { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.25rem;
+            min-width: 0;
+        }
+        .panel-title {
+            font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888;
+            margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+        /* Collapsible panel: the title is the toggle; closed, only the title row is shown. */
+        .collapsible > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+        .collapsible > summary::-webkit-details-marker { display: none; }
+        .collapsible > summary:hover { color: #555; }
+        .collapsible:not([open]) > summary { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .collapsible .caret { width: 12px; height: 12px; transition: transform 0.15s; }
+        .collapsible[open] .caret { transform: rotate(90deg); }
+        .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.9rem; }
+        .mask-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 0.35rem; }
+        .mask-radius { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 400; color: #333; }
+        .mask-radius input { width: 4.2rem; padding: 2px 6px; font-size: 12px; border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; background: #fafaf9; }
+        label, .field-label { font-size: 12px; font-weight: 500; color: #555; }
+        select, input[type="text"] {
+            width: 100%; padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
+        }
+        select:focus, input[type="text"]:focus { border-color: rgba(0,0,0,0.35); background: #fff; }
+        input[type="file"] { font-size: 12px; width: 100%; }
+        input[type="range"] { width: 100%; accent-color: #1a1a1a; }
+        .slider-row { display: flex; align-items: center; gap: 0.6rem; }
+        .slider-row .value { font-size: 12px; color: #555; min-width: 7.5ch; text-align: right; font-variant-numeric: tabular-nums; }
+        .check { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 400; color: #333; margin-bottom: 0.9rem; }
+        .check input { accent-color: #1a1a1a; }
+        .range-buttons { display: flex; gap: 0.4rem; }
+        .range-buttons .btn { padding: 4px 10px; font-size: 12px; flex: 1; }
+        .hint { font-size: 11px; color: #888; }
+        .info { font-size: 12px; color: #555; margin: -0.4rem 0 0.9rem; overflow-wrap: anywhere; }
+        .info:empty { display: none; }
+        .zarr-box { font-size: 12px; border-radius: 6px; padding: 6px 10px; margin-bottom: 0.9rem; overflow-wrap: anywhere; }
+        .zarr-box.ok { color: #1f6b3a; background: #eaf4ed; }
+        .zarr-box.missing { color: #8a4b0f; background: #fbf0e3; }
+        .zarr-box:empty { display: none; }
+
+        .btn {
+            padding: 7px 14px; font-size: 13px; font-weight: 500; border-radius: 6px; text-decoration: none; display: inline-block;
+            border: 0.5px solid rgba(0,0,0,0.18); background: #fff; color: #1a1a1a; cursor: pointer;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:disabled, .btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        .btn:focus-visible { outline: 2px solid rgba(0,0,0,0.25); outline-offset: 2px; }
+        .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .btn-primary:hover { background: #333; }
+        .btn-danger { color: #993c1d; border-color: rgba(153,60,29,0.3); }
+        .btn-danger:hover { background: #faece7; }
+        .action-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .action-row .right { margin-left: auto; }
+
+        .progress { height: 4px; background: #ecebe7; border-radius: 2px; overflow: hidden; margin: 0.6rem 0 0.2rem; }
+        .progress > div { height: 100%; width: 0; background: #1a1a1a; transition: width 0.2s; }
+        .status { font-size: 12px; color: #555; min-height: 1.2em; overflow-wrap: anywhere; }
+        .status.error { color: #993c1d; }
+
+        .viewer-panel { padding: 0; overflow: hidden; }
+        .viewer-panel .panel-title { margin: 1rem 1.25rem 0; }
+        #viewer-wrap { position: relative; height: calc(100vh - 9.5rem); min-height: 480px; margin-top: 0.75rem; background: #000; }
+        #viewer { width: 100%; height: 100%; border: 0; display: block; }
+        #viewer-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #aaa; text-align: center; padding: 2rem; background: #111; }
+        #viewer-msg[hidden] { display: none; }
+        #viewer-msg code { color: #ddd; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+  {% include "_nav.html" %}
+  <h1>Neuroglancer</h1>
+</div>
+
+<div class="layout">
+    <div class="side">
+        <!-- Data set: tomograms (converted on demand) and uploaded zarrs -->
+        <div class="panel">
+            <div class="panel-title">Data Set</div>
+            <div class="field">
+                <label for="dataset">Tomogram or uploaded zarr</label>
+                <select id="dataset"><option value="">Loading…</option></select>
+            </div>
+            <div class="info" id="dataset-info"></div>
+            <div class="zarr-box" id="zarr-box"></div>
+            <div class="field" id="dtype-field">
+                <label for="dtype">Data type of the OME-Zarr</label>
+                <select id="dtype">
+                    <option value="uint8">8 bit (display copy, 4× smaller)</option>
+                    <option value="float32">32 bit float (original values)</option>
+                </select>
+                <div class="mask-row">
+                    <label class="check" style="margin:0" title="Voxels outside the cylinder are stored as &quot;no data&quot;: transparent in the viewer, not stored on disk"><input type="checkbox" id="mask" checked> Mask outside the reconstruction cylinder,</label>
+                    <label class="mask-radius" title="Radius of the mask in % of the circle inscribed in the slices; a little below 100 % also removes the bright rim at the edge of the reconstruction">radius
+                        <input type="number" id="mask-radius" min="50" max="100" step="1" value="97"> %</label>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn btn-primary" id="convert-btn" disabled>Convert to OME-Zarr</button>
+                <button class="btn btn-danger" id="cancel-btn" hidden>Cancel</button>
+                <a class="btn right disabled" id="download-btn" href="#" download>Download</a>
+            </div>
+            <div class="progress" id="convert-progress" hidden><div id="convert-bar"></div></div>
+            <div class="status" id="status"></div>
+        </div>
+
+        <!-- Upload (collapsed by default) -->
+        <details class="panel collapsible" id="upload-panel">
+            <summary class="panel-title">Upload Zarr
+                <svg class="caret" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="field">
+                <label for="upload-file">Zipped zarr folder (.zip)</label>
+                <input type="file" id="upload-file" accept=".zip,application/zip">
+            </div>
+            <div class="field">
+                <label for="upload-comment">Comment</label>
+                <input type="text" id="upload-comment" maxlength="200" placeholder="optional, shown in the list" autocomplete="off">
+            </div>
+            <div class="action-row">
+                <button class="btn" id="upload-btn" disabled>Upload</button>
+            </div>
+            <div class="progress" id="upload-progress" hidden><div id="upload-bar"></div></div>
+            <div class="status" id="upload-status"></div>
+        </details>
+
+        <!-- View settings, applied to the viewer -->
+        <div class="panel">
+            <div class="panel-title">View</div>
+            <div class="field">
+                <label for="layout">Layout</label>
+                <select id="layout">
+                    <option value="4panel">Orthoslices XY · XZ · YZ + 3D</option>
+                    <option value="xy-3d">XY + 3D</option>
+                    <option value="xy">XY slice</option>
+                    <option value="xz">XZ slice</option>
+                    <option value="yz">YZ slice</option>
+                    <option value="3d">3D only</option>
+                </select>
+            </div>
+            <label class="check"><input type="checkbox" id="show-slices" checked> Show the orthoslices in the 3D view</label>
+            <div class="field">
+                <span class="field-label">Contrast range</span>
+                <div class="range-buttons">
+                    <button class="btn" data-range="minmax" title="Smallest to largest value of the volume">Min-Max</button>
+                    <button class="btn" data-range="1-99" title="1st to 99th percentile of the volume">1%-99%</button>
+                    <button class="btn" data-range="5-95" title="5th to 95th percentile of the volume">5%-95%</button>
+                </div>
+                <div class="hint" id="range-value"></div>
+            </div>
+            <label class="check" title="Swaps the contrast range; also applies to the volume rendering (small values bright and opaque)"><input type="checkbox" id="invert" checked> Invert contrast (smaller values brighter, e.g. negative phase shifts)</label>
+            <div class="field">
+                <label for="vr-mode">Volume rendering</label>
+                <select id="vr-mode">
+                    <option value="off">Off</option>
+                    <option value="on" title="Each voxel is drawn with brightness and opacity given by its value within the contrast range">On (value → brightness and opacity)</option>
+                    <option value="max">Maximum intensity projection</option>
+                    <option value="min">Minimum intensity projection</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="vr-samples">Volume rendering resolution (depth samples)</label>
+                <div class="slider-row">
+                    <input type="range" id="vr-samples" min="5" max="12" step="0.5" value="8">
+                    <span class="value" id="vr-samples-value"></span>
+                </div>
+                <div class="hint">More samples use a finer resolution level of the multiscale data, at the cost of speed.</div>
+            </div>
+            <div class="field">
+                <label for="vr-gain">Volume rendering gain</label>
+                <div class="slider-row">
+                    <input type="range" id="vr-gain" min="-5" max="5" step="0.1" value="0">
+                    <span class="value" id="vr-gain-value"></span>
+                </div>
+            </div>
+            <div class="field">
+                <label for="vr-cutoff">Background cut-off</label>
+                <div class="slider-row">
+                    <input type="range" id="vr-cutoff" min="0" max="0.95" step="0.01" value="0.15">
+                    <span class="value" id="vr-cutoff-value"></span>
+                </div>
+                <div class="hint">Volume rendering only: values below this fraction of the contrast range are transparent.</div>
+            </div>
+            <div class="field" style="margin-bottom:0">
+                <label for="vr-softness">Softness of the cut-off</label>
+                <div class="slider-row">
+                    <input type="range" id="vr-softness" min="0.01" max="0.5" step="0.01" value="0.1">
+                    <span class="value" id="vr-softness-value"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewer -->
+    <div class="panel viewer-panel">
+        <div class="panel-title">Viewer</div>
+        <div id="viewer-wrap">
+            <iframe id="viewer" title="Neuroglancer" src="about:blank"></iframe>
+            <div id="viewer-msg">
+                {% if client_available %}Choose a data set.{% else %}The Neuroglancer client is not installed on the server
+                (Python package <code>neuroglancer</code>, e.g. <code>pip install --no-deps neuroglancer</code>).{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const qs = id => document.getElementById(id);
+const enc = encodeURIComponent;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const CLIENT_AVAILABLE = {{ 'true' if client_available else 'false' }};
+const STORE_KEY = 'holopipe.neuroglancer';
+// The client is loaded from /neuroglancer/v/<token>/ (the URL layout of Neuroglancer's Python integration).
+const CLIENT_URL = `/neuroglancer/v/${Math.random().toString(36).slice(2, 12)}/`;
+const state = { tomograms: [], uploads: [], entry: null, shown: null, pollTimer: null, job: null };
+
+// Grayscale. With volume rendering the opacity is the value, faded in above the background cut-off (so the
+// many faint background voxels do not add up to a haze); masked voxels ("no data") are transparent.
+function shaderFor(z) {
+    let noData = '';
+    if (z.no_data_value != null) {
+        const test = z.dtype === 'uint8' ? 'toRaw(getDataValue()) == 0u' : 'toRaw(getDataValue()) < -1.0e38';
+        noData = `  if (${test}) {\n    emitTransparent();\n    return;\n  }\n`;
+    }
+    return `#uicontrol invlerp normalized
+#uicontrol float cutoff slider(min=0, max=0.95, default=0.15)
+#uicontrol float softness slider(min=0.01, max=0.5, default=0.1)
+void main() {
+${noData}  float v = clamp(normalized(), 0.0, 1.0);
+  if (VOLUME_RENDERING) {
+    float alpha = v * smoothstep(cutoff, cutoff + softness, v);
+    emitRGBA(vec4(vec3(v), alpha));
+    emitIntensity(alpha);
+  } else {
+    emitGrayscale(v);
+  }
+}
+`;
+}
+
+async function api(url, opts) {
+    const res = await fetch(url, opts);
+    if (res.status === 401) { location.reload(); throw new Error('Not logged in'); }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail || res.statusText);
+    return body;
+}
+const setStatus = (text, error = false) => { qs('status').textContent = text; qs('status').classList.toggle('error', error); };
+const fmtTime = s => s == null ? '' : s >= 3600 ? `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min` : s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`;
+const fmtBytes = b => b == null ? '' : b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(b / 1e6))} MB`;
+const fmtVoxel = nm => nm == null ? '' : nm >= 1000 ? `${(nm / 1000).toPrecision(3)} µm` : `${nm.toPrecision(3)} nm`;
+const fmtDate = t => (t || '').replace('T', ' ').slice(0, 16);
+
+function stored() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; } }
+function store(patch) { try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...stored(), ...patch })); } catch (e) { /* storage unavailable */ } }
+
+/* ---------- Data sets ---------- */
+function zarrLabel(z) {
+    if (!z) return 'not converted';
+    if (z.job) return `converting ${z.job.total ? Math.round(100 * z.job.done / z.job.total) : 0} %`;
+    if (z.status === 'done') return `OME-Zarr ${z.dtype === 'uint8' ? '8 bit' : '32 bit'}`;
+    return z.status && z.status.startsWith('error') ? 'conversion failed' : `conversion ${z.status}`;
+}
+
+async function loadDatasets(select) {
+    try {
+        const data = await api('/api/neuroglancer/datasets');
+        state.tomograms = data.tomograms; state.uploads = data.uploads;
+        const sel = qs('dataset'), current = select || sel.value || stored().dataset || '';
+        const tomo = data.tomograms.map(t =>
+            `<option value="tomo:${esc(t.dataset)}">${esc(t.dataset.replace('/', ' / '))} (${zarrLabel(t.zarr)})</option>`).join('');
+        const up = data.uploads.map(u => {
+            const note = [`uploaded by ${u.created_by}`, fmtDate(u.created_at)].join(', ');
+            return `<option value="zarr:${esc(u.id)}">${esc(u.name)} — ${esc(u.comment ? u.comment : note)}</option>`;
+        }).join('');
+        sel.innerHTML = '<option value="">Choose a data set…</option>'
+            + (tomo ? `<optgroup label="Tomograms">${tomo}</optgroup>` : '')
+            + (up ? `<optgroup label="Uploaded">${up}</optgroup>` : '');
+        if (!tomo && !up) sel.innerHTML = '<option value="">No tomograms or uploads yet</option>';
+        if ([...sel.options].some(o => o.value === current)) sel.value = current;
+        selectDataset();
+    } catch (e) {
+        setStatus('Could not load the data sets: ' + e.message, true);
+    }
+}
+
+function currentEntry() {
+    const v = qs('dataset').value;
+    if (v.startsWith('tomo:')) {
+        const t = state.tomograms.find(t => t.dataset === v.slice(5));
+        return t ? { kind: 'tomogram', tomogram: t, zarr: t.zarr } : null;
+    }
+    if (v.startsWith('zarr:')) {
+        const u = state.uploads.find(u => u.id === v.slice(5));
+        return u ? { kind: 'upload', zarr: u } : null;
+    }
+    return null;
+}
+
+function selectDataset() {
+    const entry = currentEntry();
+    state.entry = entry;
+    store({ dataset: qs('dataset').value });
+    const z = entry && entry.zarr;
+    const info = [];
+    if (entry && entry.kind === 'tomogram') info.push(entry.tomogram.meta);
+    if (z && z.shape) info.push(`${z.shape.slice(-3).join(' × ')} voxels (z × y × x)`);
+    if (z && z.dtype) info.push(z.dtype);
+    if (z && z.voxel_size_nm) info.push(`voxel ${fmtVoxel(z.voxel_size_nm)}`);
+    if (z && z.mask) info.push(`cylinder masked (${Math.round(100 * (z.mask.radius_fraction || 1))} %)`);
+    if (z && z.size_bytes) info.push(fmtBytes(z.size_bytes));
+    qs('dataset-info').textContent = info.join(' · ');
+
+    const box = qs('zarr-box');
+    if (!entry) { box.textContent = ''; box.className = 'zarr-box'; }
+    else if (entry.kind === 'upload') {
+        box.className = 'zarr-box ok';
+        box.textContent = `Uploaded by ${z.created_by}, ${fmtDate(z.created_at)}` + (z.comment ? ` – “${z.comment}”` : '') + (z.filename ? ` (${z.filename})` : '') + '.';
+    } else if (z && z.status === 'done') {
+        box.className = 'zarr-box ok';
+        box.textContent = `Converted by ${z.created_by}, ${fmtDate(z.created_at)}` + (z.slices !== entry.tomogram.count ? ` – from ${z.slices} slices, the tomogram now has ${entry.tomogram.count}; convert again.` : '.');
+    } else if (z && !z.job) {
+        box.className = 'zarr-box missing';
+        box.textContent = z.status === 'interrupted' ? 'The conversion was interrupted (server restart); convert again.'
+            : z.status === 'cancelled' ? 'The conversion was cancelled; convert again.' : `The conversion failed: ${z.status}`;
+    } else if (!z) {
+        box.className = 'zarr-box missing';
+        box.textContent = 'Not converted yet: convert it to view it in Neuroglancer.';
+    } else { box.textContent = ''; box.className = 'zarr-box'; }
+
+    const isTomo = entry && entry.kind === 'tomogram';
+    qs('dtype-field').hidden = !isTomo;
+    if (isTomo && z && z.dtype) qs('dtype').value = z.dtype;
+    if (isTomo && z && z.status === 'done') {
+        qs('mask').checked = !!z.mask;
+        if (z.mask && z.mask.radius_fraction) qs('mask-radius').value = Math.round(100 * z.mask.radius_fraction);
+    }
+    qs('mask-radius').disabled = !qs('mask').checked;
+    qs('convert-btn').hidden = !isTomo;
+    qs('convert-btn').textContent = z && z.status === 'done' ? 'Convert again' : 'Convert to OME-Zarr';
+    const ready = z && z.status === 'done' && !z.job;
+    const dl = qs('download-btn');
+    dl.classList.toggle('disabled', !ready);
+    dl.href = ready ? `/api/neuroglancer/download/${enc(z.id)}` : '#';
+    dl.title = ready ? `Download as zipped zarr${z.size_bytes ? ` (${fmtBytes(z.size_bytes)})` : ''}` : 'Nothing to download yet';
+
+    if (z && z.job) attachJob(z.job);
+    else if (!state.job || !running(state.job)) { qs('cancel-btn').hidden = true; qs('convert-progress').hidden = true; if (!state.job) setStatus(''); }
+    updateButtons();
+    if (ready) show(z); else if (!(z && z.job)) showMessage(entry ? 'No OME-Zarr for this tomogram yet.' : 'Choose a data set.');
+}
+
+function updateButtons() {
+    const entry = state.entry;
+    qs('convert-btn').disabled = !entry || entry.kind !== 'tomogram' || !!(state.job && running(state.job));
+}
+
+/* ---------- Conversion ---------- */
+const running = job => ['reading', 'converting'].includes(job.status);
+
+async function convert() {
+    const entry = state.entry;
+    if (!entry || entry.kind !== 'tomogram') return;
+    if (entry.zarr && entry.zarr.status === 'done' && !confirm('Replace the existing OME-Zarr of this tomogram?')) return;
+    qs('convert-btn').disabled = true;
+    setStatus('Starting…');
+    try {
+        attachJob(await api('/api/neuroglancer/convert', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataset: entry.tomogram.dataset, dtype: qs('dtype').value, mask: qs('mask').checked,
+                mask_radius: Math.min(100, Math.max(50, parseFloat(qs('mask-radius').value) || 97)) / 100 }),
+        }));
+        if (state.shown && state.shown.id === state.job.cache_id) { state.shown = null; showMessage('Converting…'); }
+    } catch (e) { setStatus(e.message, true); updateButtons(); }
+}
+
+function attachJob(job) {
+    if (state.job && state.job.id === job.id && state.pollTimer) return;
+    state.job = job;
+    clearTimeout(state.pollTimer); state.pollTimer = null;
+    renderJob(job);
+    poll();
+}
+
+async function poll() {
+    const job = state.job;
+    if (!job) return;
+    try {
+        const s = await api(`/api/neuroglancer/job/${job.id}`);
+        if (state.job !== job) return;
+        Object.assign(job, s);
+        renderJob(s);
+        if (running(s)) { state.pollTimer = setTimeout(poll, 1000); return; }
+        state.pollTimer = null;
+        const mine = state.entry && state.entry.kind === 'tomogram' && state.entry.tomogram.dataset === s.dataset;
+        await loadDatasets(mine ? `tomo:${s.dataset}` : undefined);
+    } catch (e) { setStatus(e.message, true); }
+    updateButtons();
+}
+
+function renderJob(s) {
+    const mine = state.entry && state.entry.kind === 'tomogram' && state.entry.tomogram.dataset === s.dataset;
+    const name = mine ? '' : ` (${s.dataset})`;
+    qs('cancel-btn').hidden = !running(s);
+    qs('convert-progress').hidden = !running(s) && s.status !== 'done';
+    qs('convert-bar').style.width = `${Math.round(100 * (s.total ? s.done / s.total : 0))}%`;
+    if (s.status === 'reading') setStatus(`Reading a sample of slices for the value range…${name}`);
+    else if (s.status === 'converting' && s.done >= s.total) setStatus(`All ${s.total} slices written; finishing…${name}`);
+    else if (s.status === 'converting') setStatus(`Converting slice ${s.done} / ${s.total}` + (s.eta != null ? ` · about ${fmtTime(s.eta)} left` : '') + `${name}.`);
+    else if (s.status === 'done') setStatus(`Converted ${s.total} slices in ${fmtTime(s.elapsed)}${name}.`);
+    else if (s.status === 'cancelled') setStatus(`Cancelled${name}.`);
+    else if (s.status === 'error') setStatus(s.message, true);
+    if (mine && running(s)) showMessage('Converting…');
+}
+
+async function cancel() {
+    if (!state.job) return;
+    try { renderJob(await api(`/api/neuroglancer/job/${state.job.id}/cancel`, { method: 'POST' })); } catch (e) { setStatus(e.message, true); }
+}
+
+/* ---------- Upload ---------- */
+function upload() {
+    const file = qs('upload-file').files[0];
+    if (!file) return;
+    const xhr = new XMLHttpRequest();
+    const url = `/api/neuroglancer/upload?filename=${enc(file.name)}&comment=${enc(qs('upload-comment').value)}`;
+    const status = qs('upload-status'), bar = qs('upload-bar');
+    const setUp = (text, error = false) => { status.textContent = text; status.classList.toggle('error', error); };
+    qs('upload-btn').disabled = true; qs('upload-progress').hidden = false; bar.style.width = '0';
+    xhr.upload.onprogress = e => {
+        if (!e.lengthComputable) return;
+        bar.style.width = `${Math.round(100 * e.loaded / e.total)}%`;
+        setUp(e.loaded < e.total ? `Uploading… ${fmtBytes(e.loaded)} / ${fmtBytes(e.total)}` : 'Unpacking on the server…');
+    };
+    xhr.onload = async () => {
+        let body = {};
+        try { body = JSON.parse(xhr.responseText); } catch (e) { /* not JSON */ }
+        qs('upload-btn').disabled = false;
+        if (xhr.status === 401) { location.reload(); return; }
+        if (xhr.status !== 200) { setUp(body.detail || xhr.statusText || 'Upload failed', true); return; }
+        setUp(`Uploaded as “${body.name}”.`);
+        qs('upload-file').value = ''; qs('upload-comment').value = ''; qs('upload-btn').disabled = true;
+        await loadDatasets(`zarr:${body.id}`);
+    };
+    xhr.onerror = () => { qs('upload-btn').disabled = false; setUp('Upload failed (connection error).', true); };
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Content-Type', 'application/zip');
+    xhr.send(file);
+    setUp('Uploading…');
+}
+
+/* ---------- Viewer ---------- */
+function viewSettings() {
+    return {
+        layout: qs('layout').value,
+        showSlices: qs('show-slices').checked,
+        invert: qs('invert').checked,
+        mode: qs('vr-mode').value,
+        samples: Math.round(2 ** parseFloat(qs('vr-samples').value)),
+        gain: parseFloat(qs('vr-gain').value),
+        cutoff: parseFloat(qs('vr-cutoff').value),
+        softness: parseFloat(qs('vr-softness').value),
+    };
+}
+
+function showMessage(text) {
+    const msg = qs('viewer-msg');
+    if (!CLIENT_AVAILABLE) { msg.hidden = false; return; }
+    msg.textContent = text; msg.hidden = false;
+    state.shown = null;
+}
+
+function ngState(z) {
+    const v = viewSettings();
+    const format = z.format === 'zarr3' ? 'zarr3' : 'zarr2';
+    const layer = {
+        type: 'image',
+        name: (z.name || z.id).replace(/\//g, ' / '),
+        source: `${location.origin}/neuroglancer/data/${enc(z.id)}/|${format}:`,
+        shader: shaderFor(z),
+        tab: 'rendering',
+        volumeRendering: v.mode,
+        volumeRenderingDepthSamples: v.samples,
+        volumeRenderingGain: v.gain,
+    };
+    layer.shaderControls = { cutoff: v.cutoff, softness: v.softness };
+    if (z.value_range) layer.shaderControls.normalized = { range: ordered(z.value_range, v.invert) };
+    return {
+        layers: [layer],
+        selectedLayer: { layer: layer.name, visible: false },
+        layout: v.layout,
+        showSlices: v.showSlices,
+        crossSectionBackgroundColor: '#000000',
+        projectionBackgroundColor: '#000000',
+    };
+}
+
+function showCutoffValues() {
+    qs('vr-cutoff-value').textContent = parseFloat(qs('vr-cutoff').value).toFixed(2);
+    qs('vr-softness-value').textContent = parseFloat(qs('vr-softness').value).toFixed(2);
+}
+
+// Contrast range in display order: Neuroglancer inverts the mapping when the range runs from high to low.
+const ordered = (range, invert) => {
+    const lo = Math.min(range[0], range[1]), hi = Math.max(range[0], range[1]);
+    return invert ? [hi, lo] : [lo, hi];
+};
+
+// The viewer object of the Neuroglancer app in the iframe (same origin), once it has started.
+function ngViewer() {
+    try { return qs('viewer').contentWindow.viewer || null; } catch (e) { return null; }
+}
+
+function show(z) {
+    if (!CLIENT_AVAILABLE) return;
+    const key = `${z.id}|${z.finished_at || z.created_at}`;
+    if (state.shown && state.shown.key === key) return;
+    state.shown = { id: z.id, key };
+    qs('viewer-msg').hidden = true;
+    const s = ngState(z), viewer = ngViewer();
+    if (viewer) {
+        viewer.state.reset();
+        viewer.state.restoreState(s);
+    } else {
+        qs('viewer').src = `${CLIENT_URL}#!${enc(JSON.stringify(s))}`;
+    }
+}
+
+// Apply the view settings to the running viewer (keeps the camera and the loaded data).
+function applySettings() {
+    const v = viewSettings();
+    qs('vr-samples-value').textContent = `${v.samples}`;
+    qs('vr-gain-value').textContent = v.gain.toFixed(1);
+    showCutoffValues();
+    store({ view: v });
+    const viewer = ngViewer();
+    if (!viewer || !state.shown) return;
+    try {
+        viewer.layout.restoreState(v.layout);
+        viewer.showPerspectiveSliceViews.restoreState(v.showSlices);
+        for (const managed of viewer.layerManager.managedLayers) {
+            const layer = managed.layer;
+            if (!layer || !layer.volumeRenderingMode) continue;
+            layer.volumeRenderingMode.restoreState(v.mode);
+            layer.volumeRenderingDepthSamplesTarget.restoreState(v.samples);
+            layer.volumeRenderingGain.restoreState(v.gain);
+            const controls = layer.shaderControlState.toJSON() || {};
+            if (controls.cutoff !== v.cutoff || controls.softness !== v.softness)
+                layer.shaderControlState.restoreState({ ...controls, cutoff: v.cutoff, softness: v.softness });
+            setInverted(layer, v.invert);
+        }
+    } catch (e) {
+        // Fallback over the JSON state (e.g. if the viewer's internals differ in another version).
+        const s = viewer.state.toJSON();
+        s.layout = v.layout; s.showSlices = v.showSlices;
+        for (const l of s.layers || []) {
+            if (l.type !== 'image') continue;
+            Object.assign(l, { volumeRendering: v.mode, volumeRenderingDepthSamples: v.samples, volumeRenderingGain: v.gain });
+            l.shaderControls = { ...(l.shaderControls || {}), cutoff: v.cutoff, softness: v.softness };
+            const range = l.shaderControls && l.shaderControls.normalized && l.shaderControls.normalized.range;
+            if (range) l.shaderControls.normalized.range = ordered(range, v.invert);
+        }
+        viewer.state.restoreState(s);
+    }
+}
+
+// Swap the current contrast range of a layer (keeps a range changed in the viewer); no-op without a range.
+function setInverted(layer, invert) {
+    const controls = layer.shaderControlState.toJSON() || {};
+    const range = controls.normalized && controls.normalized.range;
+    if (!range || (range[0] > range[1]) === invert) return;
+    layer.shaderControlState.restoreState({ ...controls, normalized: { ...controls.normalized, range: ordered(range, invert) } });
+}
+
+// Contrast buttons: ranges over the whole volume (computed on the server from a coarse multiscale level).
+const statsCache = new Map();
+async function setRange(kind) {
+    const z = state.entry && state.entry.zarr, viewer = ngViewer();
+    if (!z || !viewer || !state.shown) return;
+    try {
+        if (!statsCache.has(z.id + z.finished_at)) statsCache.set(z.id + z.finished_at, api(`/api/neuroglancer/stats/${enc(z.id)}`));
+        const stats = await statsCache.get(z.id + z.finished_at);
+        const range = ordered(stats.ranges[kind], qs('invert').checked);
+        for (const managed of viewer.layerManager.managedLayers) {
+            const layer = managed.layer;
+            if (!layer || !layer.shaderControlState) continue;
+            const controls = layer.shaderControlState.toJSON() || {};
+            layer.shaderControlState.restoreState({ ...controls, normalized: { ...(controls.normalized || {}), range } });
+        }
+    } catch (e) {
+        statsCache.delete(z.id + z.finished_at);
+        qs('range-value').textContent = e.message;
+    }
+}
+
+// Current contrast range; for 8 bit copies also in the original values.
+function showRange(range) {
+    const z = state.entry && state.entry.zarr;
+    if (!range) { qs('range-value').textContent = ''; return; }
+    const [lo, hi] = [Math.min(...range), Math.max(...range)];
+    const fmtV = v => Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0) ? v.toExponential(2) : v.toPrecision(3);
+    let text = `Current: ${fmtV(lo)} … ${fmtV(hi)}`;
+    if (z && z.dtype === 'uint8' && z.uint8_maps) {
+        const [a, b] = z.uint8_maps, orig = v => a + v / 255 * (b - a);
+        text += ` (original values ${fmtV(orig(lo))} … ${fmtV(orig(hi))})`;
+    }
+    qs('range-value').textContent = text;
+}
+
+// Changes made in the viewer itself (its layout buttons, layer panel) are shown in the controls.
+function syncFromViewer() {
+    const viewer = ngViewer();
+    if (!viewer) return;
+    const s = viewer.state.toJSON();
+    const layout = typeof s.layout === 'string' ? s.layout : (s.layout && s.layout.type);
+    if (layout && [...qs('layout').options].some(o => o.value === layout)) qs('layout').value = layout;
+    if (typeof s.showSlices === 'boolean') qs('show-slices').checked = s.showSlices;
+    const l = (s.layers || []).find(l => l.type === 'image');
+    if (l) {
+        qs('vr-mode').value = l.volumeRendering || 'off';
+        if (l.volumeRenderingDepthSamples) qs('vr-samples').value = Math.log2(l.volumeRenderingDepthSamples);
+        qs('vr-gain').value = l.volumeRenderingGain || 0;
+        const c = l.shaderControls || {};
+        if (typeof c.cutoff === 'number') qs('vr-cutoff').value = c.cutoff;
+        if (typeof c.softness === 'number') qs('vr-softness').value = c.softness;
+        const range = l.shaderControls && l.shaderControls.normalized && l.shaderControls.normalized.range;
+        if (range) qs('invert').checked = range[0] > range[1];
+        showRange(range);
+    }
+    qs('vr-samples-value').textContent = `${Math.round(2 ** parseFloat(qs('vr-samples').value))}`;
+    qs('vr-gain-value').textContent = parseFloat(qs('vr-gain').value).toFixed(1);
+    showCutoffValues();
+}
+
+qs('viewer').addEventListener('load', () => {
+    // Wait for the app to create its viewer, then follow its state changes.
+    let tries = 0;
+    const hook = () => {
+        const viewer = ngViewer();
+        if (!viewer) { if (++tries < 100) setTimeout(hook, 100); return; }
+        let pending = false;
+        viewer.state.changed.add(() => {
+            if (pending) return;
+            pending = true;
+            requestAnimationFrame(() => { pending = false; syncFromViewer(); });
+        });
+    };
+    hook();
+});
+
+/* ---------- Events ---------- */
+qs('dataset').addEventListener('change', () => selectDataset());
+qs('convert-btn').addEventListener('click', convert);
+qs('cancel-btn').addEventListener('click', cancel);
+qs('upload-file').addEventListener('change', () => { qs('upload-btn').disabled = !qs('upload-file').files.length; qs('upload-status').textContent = ''; });
+qs('upload-btn').addEventListener('click', upload);
+qs('mask').addEventListener('change', () => { qs('mask-radius').disabled = !qs('mask').checked; });
+document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => setRange(b.dataset.range)));
+['layout', 'show-slices', 'invert', 'vr-mode', 'vr-samples', 'vr-gain', 'vr-cutoff', 'vr-softness'].forEach(id => qs(id).addEventListener('input', applySettings));
+const navBtn = qs('logo-btn'), navMenu = qs('nav-menu');
+navBtn.addEventListener('click', e => { e.stopPropagation(); navMenu.classList.toggle('open'); });
+document.addEventListener('click', () => navMenu.classList.remove('open'));
+
+// Restore the last view settings.
+(() => {
+    const v = stored().view;
+    if (v) {
+        if ([...qs('layout').options].some(o => o.value === v.layout)) qs('layout').value = v.layout;
+        qs('show-slices').checked = v.showSlices !== false;
+        qs('invert').checked = v.invert !== false;
+        if ([...qs('vr-mode').options].some(o => o.value === v.mode)) qs('vr-mode').value = v.mode;
+        if (v.samples) qs('vr-samples').value = Math.log2(v.samples);
+        if (v.gain != null) qs('vr-gain').value = v.gain;
+        if (v.cutoff != null) qs('vr-cutoff').value = v.cutoff;
+        if (v.softness != null) qs('vr-softness').value = v.softness;
+    }
+    qs('vr-samples-value').textContent = `${Math.round(2 ** parseFloat(qs('vr-samples').value))}`;
+    qs('vr-gain-value').textContent = parseFloat(qs('vr-gain').value).toFixed(1);
+    showCutoffValues();
+})();
+loadDatasets();
+</script>
+</body>
+</html>

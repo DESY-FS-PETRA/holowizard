@@ -29,3 +29,4 @@ fastapi[standard]
 markdown
 plotly
 starlette==0.52.1
+neuroglancer
