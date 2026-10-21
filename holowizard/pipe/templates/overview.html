@@ -133,6 +133,10 @@
         .file-name { font-family: ui-monospace, monospace; font-size: 12px; min-width: 16ch; }
         .counter { font-variant-numeric: tabular-nums; color: #888; min-width: 10ch; text-align: right; }
         #viewer { flex: 1; min-height: 0; position: relative; }
+        /* Pixel value under the mouse (replaces Plotly's coordinate tooltip) */
+        #pixel-value { position: absolute; z-index: 5; pointer-events: none; padding: 2px 7px; border-radius: 4px; font-size: 12px;
+                       font-variant-numeric: tabular-nums; color: #fff; background: rgba(0,0,0,0.72); white-space: nowrap; }
+        #pixel-value[hidden] { display: none; }
         #viewer-msg {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
             color: #888; pointer-events: none;
@@ -210,7 +214,7 @@
             <span class="file-name" id="file-name"></span>
             <span class="counter" id="counter"></span>
         </div>
-        <div id="viewer"><div id="viewer-msg"></div></div>
+        <div id="viewer"><div id="viewer-msg"></div><div id="pixel-value" hidden></div></div>
         <div class="hint">← → / mouse wheel on slider: step · PgUp/PgDn: ±10 · Home/End · space: play · Esc: close · drag in image to zoom, double-click to reset</div>
     </div>
 </div>
@@ -551,7 +555,7 @@ const viewer = {
     token: 0,
     pollTimer: null,
     playTimer: null,
-    cache: new Map(),   // url -> Promise<{src, factor}>
+    cache: new Map(),   // url -> Promise<{src, factor, range}>
 };
 const CACHE_MAX = 60;
 
@@ -565,6 +569,8 @@ function fetchImage(url) {
     const p = fetch(url).then(async res => {
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
         const factor = parseFloat(res.headers.get('X-Downsample')) || 1;
+        // Value range mapped to black .. white in the rendered image (for the colour bar).
+        const range = (res.headers.get('X-Range') || '').split(',').map(Number);
         const blob = await res.blob();
         const src = await new Promise((resolve, reject) => {
             const r = new FileReader();
@@ -572,7 +578,7 @@ function fetchImage(url) {
             r.onerror = reject;
             r.readAsDataURL(blob);
         });
-        return { src, factor };
+        return { src, factor, range: range.length === 2 && range.every(Number.isFinite) ? range : null };
     });
     p.catch(() => viewer.cache.delete(url));
     viewer.cache.set(url, p);
@@ -693,14 +699,16 @@ async function show(index) {
     if (!n) { updateCounter(); message('No images in this selection.'); return; }
     viewer.index = Math.max(0, Math.min(n - 1, index));
     updateCounter();
+    hideValue();
     const dir = viewer.dir, file = viewer.files[viewer.index];
     const size = qs('resolution').value;
     const token = ++viewer.token;
     try {
-        const { src, factor } = await fetchImage(imageUrl(viewer.source, dir, file, size));
+        const { src, factor, range } = await fetchImage(imageUrl(viewer.source, dir, file, size));
         if (token !== viewer.token) return;   // a newer request superseded this one
         message('');
-        const trace = { type: 'image', source: src, dx: factor, dy: factor, x0: 0, y0: 0, hoverinfo: 'x+y', name: file };
+        // No Plotly tooltip: the pixel value under the mouse is shown instead (see onViewerMouseMove).
+        const trace = { type: 'image', source: src, dx: factor, dy: factor, x0: 0, y0: 0, hoverinfo: 'none', name: file };
         const layout = {
             margin: { l: 40, r: 10, t: 10, b: 30 },
             xaxis: { constrain: 'domain', showgrid: false },
@@ -709,7 +717,7 @@ async function show(index) {
             dragmode: 'zoom',
             paper_bgcolor: '#fff',
         };
-        await Plotly.react(qs('viewer'), [trace], layout, { responsive: true, displaylogo: false });
+        await Plotly.react(qs('viewer'), [trace, ...colorBarTrace(range)], layout, { responsive: true, displaylogo: false });
         attachScaleBarListener();
         updateViewerScaleBar();
         prefetch(dir, size);
@@ -749,6 +757,86 @@ function attachScaleBarListener() {
     if (gd.removeListener) gd.removeListener('plotly_relayout', onViewerRelayout);
     gd.on('plotly_relayout', onViewerRelayout);
 }
+
+// Colour bar of the displayed image: the image trace is a rendered picture (black .. white = the value range of
+// its X-Range header), which Plotly cannot give a colour bar; an empty marker trace with the same grey scale and
+// range carries it.
+function colorBarTrace(range) {
+    if (!range || !(range[1] > range[0])) return [];
+    return [{
+        type: 'scatter', mode: 'markers', x: [null], y: [null], hoverinfo: 'skip', showlegend: false,
+        marker: {
+            color: range, cmin: range[0], cmax: range[1], colorscale: [[0, '#000'], [1, '#fff']], showscale: true,
+            // Plain numbers (e.g. raw counts); exponent form only for small values such as phase shifts.
+            colorbar: { thickness: 12, len: 0.92, outlinewidth: 0.5, outlinecolor: 'rgba(0,0,0,0.3)', tickfont: { size: 11 },
+                        exponentformat: Math.max(Math.abs(range[0]), Math.abs(range[1])) < 0.01 ? 'e' : 'none' },
+        },
+    }];
+}
+
+/* ---------- Pixel value under the mouse ---------- */
+// Read on the server from the full resolution image (the display may be downsampled); one request at a time,
+// the latest mouse position wins; values already seen are cached.
+const valueCache = new Map();
+const VALUE_CACHE_MAX = 2000;
+const hover = { key: null, pending: null, busy: false };
+
+function fmtValue(r) {
+    if (!r || !r.inside) return null;
+    if (r.nan) return 'NaN';
+    const v = r.value, a = Math.abs(v);
+    if (Number.isInteger(v)) return String(v);
+    return a >= 1e4 || (a < 1e-3 && v !== 0) ? v.toExponential(4) : v.toPrecision(5);
+}
+function hideValue() { qs('pixel-value').hidden = true; hover.key = null; }
+function setValueLabel(text) {
+    const box = qs('pixel-value');
+    if (text == null) { box.hidden = true; return; }
+    box.textContent = text; box.hidden = false;
+}
+
+function onViewerMouseMove(e) {
+    const gd = qs('viewer'), fl = gd._fullLayout;
+    if (!fl || !fl.xaxis || !fl.yaxis || !viewer.dir || !viewer.files.length) { hideValue(); return; }
+    const xa = fl.xaxis, ya = fl.yaxis, rect = gd.getBoundingClientRect();
+    const px = e.clientX - rect.left - xa._offset, py = e.clientY - rect.top - ya._offset;
+    if (px < 0 || py < 0 || px > xa._length || py > ya._length) { hideValue(); return; }
+    // Image pixels are centred on integer coordinates (x0 = 0, dx = downsampling factor).
+    const x = Math.round(xa.p2c(px)), y = Math.round(ya.p2c(py));
+    if (x < 0 || y < 0) { hideValue(); return; }
+    const box = qs('pixel-value');
+    box.style.left = `${e.clientX - rect.left + 14}px`;
+    box.style.top = `${e.clientY - rect.top - 26}px`;
+    const file = viewer.files[viewer.index];
+    const key = `${viewer.source}|${viewer.dir}|${file}|${x}|${y}`;
+    if (key === hover.key) return;
+    hover.key = key;
+    if (valueCache.has(key)) { setValueLabel(valueCache.get(key)); return; }
+    if (box.hidden) setValueLabel('…');
+    hover.pending = { key, url: `${apiBase(viewer.source)}/value?dataset=${enc(viewer.dir)}&file=${enc(file)}&x=${x}&y=${y}` };
+    if (!hover.busy) fetchHoverValue();
+}
+
+async function fetchHoverValue() {
+    const job = hover.pending;
+    if (!job) return;
+    hover.pending = null;
+    hover.busy = true;
+    try {
+        const res = await fetch(job.url);
+        if (res.ok) {
+            const text = fmtValue(await res.json());
+            valueCache.set(job.key, text);
+            while (valueCache.size > VALUE_CACHE_MAX) valueCache.delete(valueCache.keys().next().value);
+            if (hover.key === job.key) setValueLabel(text);
+        }
+    } catch (e) { /* no value shown */ }
+    hover.busy = false;
+    if (hover.pending) fetchHoverValue();
+}
+
+qs('viewer').addEventListener('mousemove', onViewerMouseMove);
+qs('viewer').addEventListener('mouseleave', hideValue);
 
 function prefetch(dir, size) {
     for (const off of [1, -1, 2, 3]) {

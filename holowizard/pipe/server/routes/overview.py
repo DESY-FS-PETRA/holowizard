@@ -614,6 +614,49 @@ async def overview_image(
     )
 
 
+@lru_cache(maxsize=4)
+def _read_whole(path: str, mtime_ns: int) -> np.ndarray:
+    """First page of a TIFF that cannot be memory-mapped (compressed); ``mtime_ns`` is only part of the cache key."""
+    with tifffile.TiffFile(path) as tif:
+        return tif.pages[0].asarray()
+
+
+def _pixel_value(path: str, mtime_ns: int, x: int, y: int, rotate: bool) -> Optional[float]:
+    """Value of the full resolution pixel at (x, y) of the image as displayed (rotated by 90 degrees if ``rotate``,
+    like the rendered images); None outside the image."""
+    try:
+        img = tifffile.memmap(path, mode="r")
+    except Exception:
+        img = _read_whole(path, mtime_ns)
+    if img.ndim > 2:
+        img = img.reshape(-1, *img.shape[-2:])[0]
+    h, w = img.shape
+    # np.rot90(a)[i, j] == a[j, w - 1 - i]
+    row, col = (x, w - 1 - y) if rotate else (y, x)
+    if not (0 <= row < h and 0 <= col < w):
+        return None
+    return float(img[row, col])
+
+
+@router.get("/api/overview/{source}/value")
+async def overview_value(source: str, request: Request, dataset: str, file: str, x: int, y: int):
+    """Pixel value at (x, y) in the coordinates of the displayed image (full resolution, default orientation)."""
+    src = _source(source)
+    if file != Path(file).name or not file.lower().endswith(TIFF_SUFFIXES):
+        raise HTTPException(status_code=400, detail=f"Invalid file name: {file!r}")
+    path = _dataset_folder(request, src, dataset) / file
+    try:
+        mtime_ns = path.stat().st_mtime_ns
+        value = await run_in_threadpool(_pixel_value, str(path), mtime_ns, x, y, src.rotate)
+    except OSError:
+        raise HTTPException(status_code=404, detail=f"Image not found: {file}")
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Could not read {file}: {e}")
+    # JSON has no NaN: report it separately (phase maps may contain NaN).
+    is_nan = value is not None and value != value
+    return {"value": None if is_nan else value, "nan": is_nan, "inside": value is not None}
+
+
 # Views of the single overview page, in the order of its "View" dropdown; "raw" is the default.
 VIEWS = {"raw": "Raw data", "phase": "Phase retrieval", "tomo": "Tomograms", "summary": "Summary"}
 
