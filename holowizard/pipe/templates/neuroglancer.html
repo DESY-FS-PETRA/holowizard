@@ -59,13 +59,6 @@
             font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888;
             margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 0.5px solid rgba(0,0,0,0.08);
         }
-        /* Collapsible panel: the title is the toggle; closed, only the title row is shown. */
-        .collapsible > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
-        .collapsible > summary::-webkit-details-marker { display: none; }
-        .collapsible > summary:hover { color: #555; }
-        .collapsible:not([open]) > summary { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-        .collapsible .caret { width: 12px; height: 12px; transition: transform 0.15s; }
-        .collapsible[open] .caret { transform: rotate(90deg); }
         .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.9rem; }
         .mask-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 0.35rem; }
         .mask-radius { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 400; color: #333; }
@@ -159,26 +152,6 @@
             <div class="status" id="status"></div>
         </div>
 
-        <!-- Upload (collapsed by default) -->
-        <details class="panel collapsible" id="upload-panel">
-            <summary class="panel-title">Upload Zarr
-                <svg class="caret" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </summary>
-            <div class="field">
-                <label for="upload-file">Zipped zarr folder (.zip)</label>
-                <input type="file" id="upload-file" accept=".zip,application/zip">
-            </div>
-            <div class="field">
-                <label for="upload-comment">Comment</label>
-                <input type="text" id="upload-comment" maxlength="200" placeholder="optional, shown in the list" autocomplete="off">
-            </div>
-            <div class="action-row">
-                <button class="btn" id="upload-btn" disabled>Upload</button>
-            </div>
-            <div class="progress" id="upload-progress" hidden><div id="upload-bar"></div></div>
-            <div class="status" id="upload-status"></div>
-        </details>
-
         <!-- View settings, applied to the viewer -->
         <div class="panel">
             <div class="panel-title">View</div>
@@ -193,7 +166,6 @@
                     <option value="3d">3D only</option>
                 </select>
             </div>
-            <label class="check"><input type="checkbox" id="show-slices" checked> Show the orthoslices in the 3D view</label>
             <div class="field">
                 <span class="field-label">Contrast range</span>
                 <div class="range-buttons">
@@ -203,7 +175,7 @@
                 </div>
                 <div class="hint" id="range-value"></div>
             </div>
-            <label class="check" title="Swaps the contrast range; also applies to the volume rendering (small values bright and opaque)"><input type="checkbox" id="invert" checked> Invert contrast (smaller values brighter, e.g. negative phase shifts)</label>
+            <label class="check" title="Swaps the contrast range; also applies to the volume rendering (small values bright and opaque)"><input type="checkbox" id="invert" checked> Invert contrast</label>
             <div class="field">
                 <label for="vr-mode">Volume rendering</label>
                 <select id="vr-mode">
@@ -214,12 +186,18 @@
                 </select>
             </div>
             <div class="field">
+                <label for="tf-preset">Transfer function</label>
+                <select id="tf-preset">
+                    <option value="">Grey, with background cut-off</option>
+                </select>
+            </div>
+            <div class="field">
                 <label for="vr-samples">Volume rendering resolution (depth samples)</label>
                 <div class="slider-row">
-                    <input type="range" id="vr-samples" min="5" max="12" step="0.5" value="8">
+                    <input type="range" id="vr-samples" min="9.965784284662087" max="14.872674880270605" step="any" value="9.965784284662087">
                     <span class="value" id="vr-samples-value"></span>
                 </div>
-                <div class="hint">More samples use a finer resolution level of the multiscale data, at the cost of speed.</div>
+                <div class="hint">More samples use a finer resolution level of the multiscale data, at the cost of speed (1000 to 30000; above a few thousand it gets slow).</div>
             </div>
             <div class="field">
                 <label for="vr-gain">Volume rendering gain</label>
@@ -234,7 +212,7 @@
                     <input type="range" id="vr-cutoff" min="0" max="0.95" step="0.01" value="0.15">
                     <span class="value" id="vr-cutoff-value"></span>
                 </div>
-                <div class="hint">Volume rendering only: values below this fraction of the contrast range are transparent.</div>
+                <div class="hint">Volume rendering only</div>
             </div>
             <div class="field" style="margin-bottom:0">
                 <label for="vr-softness">Softness of the cut-off</label>
@@ -269,13 +247,72 @@ const STORE_KEY = 'holopipe.neuroglancer';
 const CLIENT_URL = `/neuroglancer/v/${Math.random().toString(36).slice(2, 12)}/`;
 const state = { tomograms: [], uploads: [], entry: null, shown: null, pollTimer: null, job: null };
 
+// CT presets of 3D Slicer (static/slicer_ct_presets.json): opacity and colour control points at positions relative
+// to the preset's HU window (0 = lower, 1 = upper end of the window).
+const presets = new Map();
+async function loadPresets() {
+    try {
+        const data = await api('/static/slicer_ct_presets.json');
+        for (const p of data.presets) presets.set(p.name, p);
+        qs('tf-preset').insertAdjacentHTML('beforeend', `<optgroup label="3D Slicer CT presets">${
+            data.presets.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('')}</optgroup>`);
+        const wanted = (stored().view || {}).preset;
+        if (wanted && presets.has(wanted)) qs('tf-preset').value = wanted;
+    } catch (e) { /* only the grey transfer function then */ }
+    updatePresetControls();
+}
+
+// GLSL float literal
+const glf = x => { const t = String(Number(x)); return /[.e]/.test(t) ? t : `${t}.0`; };
+
+// Piecewise-linear GLSL function through control points [[x, ...values]]; constant outside the first and last point.
+function glslPiecewise(name, type, points, value) {
+    const lines = [`${type} ${name}(float d) {`, `  if (d <= ${glf(points[0][0])}) return ${value(points[0])};`];
+    for (let i = 1; i < points.length; ++i) {
+        const [a, b] = [points[i - 1], points[i]];
+        lines.push(b[0] > a[0]
+            ? `  if (d <= ${glf(b[0])}) return mix(${value(a)}, ${value(b)}, (d - ${glf(a[0])}) / ${glf(b[0] - a[0])});`
+            : `  if (d <= ${glf(b[0])}) return ${value(b)};`);
+    }
+    lines.push(`  return ${value(points[points.length - 1])};`, '}');
+    return lines.join('\n');
+}
+
 // Grayscale. With volume rendering the opacity is the value, faded in above the background cut-off (so the
 // many faint background voxels do not add up to a haze); masked voxels ("no data") are transparent.
-function shaderFor(z) {
+// With a CT preset, the volume rendering uses the preset's opacity and colour instead. The preset's HU window runs
+// from phase 0, the background (window start), to the end of the contrast range where the material is (window end):
+// the most negative end with "Invert contrast" (material with negative values, as in holopipe's phase tomograms),
+// otherwise the most positive end. It is set in its own control "density" so that the slices keep their contrast;
+// the cut-off moves the window start away from the noise around 0.
+function shaderFor(z, v = viewSettings()) {
     let noData = '';
     if (z.no_data_value != null) {
         const test = z.dtype === 'uint8' ? 'toRaw(getDataValue()) == 0u' : 'toRaw(getDataValue()) < -1.0e38';
         noData = `  if (${test}) {\n    emitTransparent();\n    return;\n  }\n`;
+    }
+    const preset = presets.get(v.preset);
+    if (preset) {
+        const opacity = glslPiecewise('presetOpacity', 'float', preset.opacity, p => glf(p[1]));
+        const color = glslPiecewise('presetColor', 'vec3', preset.color, p => `vec3(${glf(p[1])}, ${glf(p[2])}, ${glf(p[3])})`);
+        return `#uicontrol invlerp normalized
+#uicontrol invlerp density
+#uicontrol float cutoff slider(min=0, max=0.95, default=0.15)
+// Transfer function: 3D Slicer preset ${preset.name}
+${opacity}
+${color}
+void main() {
+${noData}  float v = normalized();
+  if (VOLUME_RENDERING) {
+    float d = (density() - cutoff) / (1.0 - cutoff);  // 0 = phase 0 (+ cut-off), 1 = most negative end
+    float alpha = presetOpacity(d);
+    emitRGBA(vec4(presetColor(d), alpha));
+    emitIntensity(alpha);
+  } else {
+    emitGrayscale(clamp(v, 0.0, 1.0));
+  }
+}
+`;
     }
     return `#uicontrol invlerp normalized
 #uicontrol float cutoff slider(min=0, max=0.95, default=0.15)
@@ -473,48 +510,17 @@ async function cancel() {
     try { renderJob(await api(`/api/neuroglancer/job/${state.job.id}/cancel`, { method: 'POST' })); } catch (e) { setStatus(e.message, true); }
 }
 
-/* ---------- Upload ---------- */
-function upload() {
-    const file = qs('upload-file').files[0];
-    if (!file) return;
-    const xhr = new XMLHttpRequest();
-    const url = `/api/neuroglancer/upload?filename=${enc(file.name)}&comment=${enc(qs('upload-comment').value)}`;
-    const status = qs('upload-status'), bar = qs('upload-bar');
-    const setUp = (text, error = false) => { status.textContent = text; status.classList.toggle('error', error); };
-    qs('upload-btn').disabled = true; qs('upload-progress').hidden = false; bar.style.width = '0';
-    xhr.upload.onprogress = e => {
-        if (!e.lengthComputable) return;
-        bar.style.width = `${Math.round(100 * e.loaded / e.total)}%`;
-        setUp(e.loaded < e.total ? `Uploading… ${fmtBytes(e.loaded)} / ${fmtBytes(e.total)}` : 'Unpacking on the server…');
-    };
-    xhr.onload = async () => {
-        let body = {};
-        try { body = JSON.parse(xhr.responseText); } catch (e) { /* not JSON */ }
-        qs('upload-btn').disabled = false;
-        if (xhr.status === 401) { location.reload(); return; }
-        if (xhr.status !== 200) { setUp(body.detail || xhr.statusText || 'Upload failed', true); return; }
-        setUp(`Uploaded as “${body.name}”.`);
-        qs('upload-file').value = ''; qs('upload-comment').value = ''; qs('upload-btn').disabled = true;
-        await loadDatasets(`zarr:${body.id}`);
-    };
-    xhr.onerror = () => { qs('upload-btn').disabled = false; setUp('Upload failed (connection error).', true); };
-    xhr.open('POST', url);
-    xhr.setRequestHeader('Content-Type', 'application/zip');
-    xhr.send(file);
-    setUp('Uploading…');
-}
-
 /* ---------- Viewer ---------- */
 function viewSettings() {
     return {
         layout: qs('layout').value,
-        showSlices: qs('show-slices').checked,
         invert: qs('invert').checked,
         mode: qs('vr-mode').value,
-        samples: Math.round(2 ** parseFloat(qs('vr-samples').value)),
+        samples: depthSamples(),
         gain: parseFloat(qs('vr-gain').value),
         cutoff: parseFloat(qs('vr-cutoff').value),
         softness: parseFloat(qs('vr-softness').value),
+        preset: qs('tf-preset').value,
     };
 }
 
@@ -532,27 +538,47 @@ function ngState(z) {
         type: 'image',
         name: (z.name || z.id).replace(/\//g, ' / '),
         source: `${location.origin}/neuroglancer/data/${enc(z.id)}/|${format}:`,
-        shader: shaderFor(z),
+        shader: shaderFor(z, v),
         tab: 'rendering',
         volumeRendering: v.mode,
         volumeRenderingDepthSamples: v.samples,
         volumeRenderingGain: v.gain,
     };
-    layer.shaderControls = { cutoff: v.cutoff, softness: v.softness };
+    layer.shaderControls = v.preset ? { cutoff: v.cutoff } : { cutoff: v.cutoff, softness: v.softness };
     if (z.value_range) layer.shaderControls.normalized = { range: ordered(z.value_range, v.invert) };
+    if (v.preset) layer.shaderControls.density = { range: densityRange(z, z.value_range, v.invert) };
     return {
         layers: [layer],
         selectedLayer: { layer: layer.name, visible: false },
         layout: v.layout,
-        showSlices: v.showSlices,
         crossSectionBackgroundColor: '#000000',
         projectionBackgroundColor: '#000000',
     };
 }
 
+// Depth samples of the slider (log2 scale), MIN_SAMPLES .. MAX_SAMPLES (its min and max are their log2).
+const MIN_SAMPLES = 1000, MAX_SAMPLES = 30000;
+const depthSamples = () => Math.min(MAX_SAMPLES, Math.max(MIN_SAMPLES, Math.round(2 ** parseFloat(qs('vr-samples').value))));
+
+// The softness belongs to the grey transfer function; a preset brings its own opacity curve (the cut-off applies to both).
+function updatePresetControls() {
+    qs('vr-softness').disabled = !!qs('tf-preset').value;
+}
+
 function showCutoffValues() {
     qs('vr-cutoff-value').textContent = parseFloat(qs('vr-cutoff').value).toFixed(2);
     qs('vr-softness-value').textContent = parseFloat(qs('vr-softness').value).toFixed(2);
+}
+
+// Window of a CT preset in stored values: from phase 0 (the background; for 8 bit copies the stored value of 0,
+// unknown for 8 bit uploads without the mapping: then the other end of the contrast range) to the end of the
+// contrast range where the material is: the most negative end if ``invert`` ("Invert contrast"), else the most
+// positive end.
+function densityRange(z, range, invert = qs('invert').checked) {
+    const lo = Math.min(range[0], range[1]), hi = Math.max(range[0], range[1]);
+    let zero = 0;
+    if (z.dtype === 'uint8') zero = z.uint8_maps ? 255 * (0 - z.uint8_maps[0]) / (z.uint8_maps[1] - z.uint8_maps[0]) : (invert ? hi : lo);
+    return [zero, invert ? lo : hi];
 }
 
 // Contrast range in display order: Neuroglancer inverts the mapping when the range runs from high to low.
@@ -572,6 +598,7 @@ function show(z) {
     if (state.shown && state.shown.key === key) return;
     state.shown = { id: z.id, key };
     qs('viewer-msg').hidden = true;
+    state.shownZarr = z;
     const s = ngState(z), viewer = ngViewer();
     if (viewer) {
         viewer.state.reset();
@@ -587,31 +614,44 @@ function applySettings() {
     qs('vr-samples-value').textContent = `${v.samples}`;
     qs('vr-gain-value').textContent = v.gain.toFixed(1);
     showCutoffValues();
+    updatePresetControls();
     store({ view: v });
     const viewer = ngViewer();
     if (!viewer || !state.shown) return;
     try {
         viewer.layout.restoreState(v.layout);
-        viewer.showPerspectiveSliceViews.restoreState(v.showSlices);
         for (const managed of viewer.layerManager.managedLayers) {
             const layer = managed.layer;
             if (!layer || !layer.volumeRenderingMode) continue;
             layer.volumeRenderingMode.restoreState(v.mode);
             layer.volumeRenderingDepthSamplesTarget.restoreState(v.samples);
             layer.volumeRenderingGain.restoreState(v.gain);
+            const shader = state.shownZarr ? shaderFor(state.shownZarr, v) : null;
+            const switched = !!shader && layer.fragmentMain.value !== shader;
+            if (switched) layer.fragmentMain.value = shader;
             const controls = layer.shaderControlState.toJSON() || {};
-            if (controls.cutoff !== v.cutoff || controls.softness !== v.softness)
-                layer.shaderControlState.restoreState({ ...controls, cutoff: v.cutoff, softness: v.softness });
+            const wanted = v.preset ? { cutoff: v.cutoff } : { cutoff: v.cutoff, softness: v.softness };
+            // New window when the preset is switched on or the material sign ("Invert contrast") changed; otherwise
+            // a window adjusted in the viewer's own panel is kept.
+            const density = controls.density && controls.density.range;
+            const signChanged = !!density && (density[1] < density[0]) !== v.invert;
+            if (v.preset && (switched || !density || signChanged) && state.shownZarr) {
+                const range = (controls.normalized && controls.normalized.range) || state.shownZarr.value_range;
+                if (range) wanted.density = { range: densityRange(state.shownZarr, range, v.invert) };
+            }
+            if (Object.entries(wanted).some(([k, x]) => JSON.stringify(controls[k]) !== JSON.stringify(x)))
+                layer.shaderControlState.restoreState({ ...controls, ...wanted });
             setInverted(layer, v.invert);
         }
     } catch (e) {
         // Fallback over the JSON state (e.g. if the viewer's internals differ in another version).
         const s = viewer.state.toJSON();
-        s.layout = v.layout; s.showSlices = v.showSlices;
+        s.layout = v.layout;
         for (const l of s.layers || []) {
             if (l.type !== 'image') continue;
             Object.assign(l, { volumeRendering: v.mode, volumeRenderingDepthSamples: v.samples, volumeRenderingGain: v.gain });
-            l.shaderControls = { ...(l.shaderControls || {}), cutoff: v.cutoff, softness: v.softness };
+            if (state.shownZarr) l.shader = shaderFor(state.shownZarr, v);
+            l.shaderControls = { ...(l.shaderControls || {}), cutoff: v.cutoff, ...(v.preset ? {} : { softness: v.softness }) };
             const range = l.shaderControls && l.shaderControls.normalized && l.shaderControls.normalized.range;
             if (range) l.shaderControls.normalized.range = ordered(range, v.invert);
         }
@@ -640,7 +680,8 @@ async function setRange(kind) {
             const layer = managed.layer;
             if (!layer || !layer.shaderControlState) continue;
             const controls = layer.shaderControlState.toJSON() || {};
-            layer.shaderControlState.restoreState({ ...controls, normalized: { ...(controls.normalized || {}), range } });
+            const extra = qs('tf-preset').value ? { density: { range: densityRange(z, range) } } : {};
+            layer.shaderControlState.restoreState({ ...controls, normalized: { ...(controls.normalized || {}), range }, ...extra });
         }
     } catch (e) {
         statsCache.delete(z.id + z.finished_at);
@@ -669,7 +710,6 @@ function syncFromViewer() {
     const s = viewer.state.toJSON();
     const layout = typeof s.layout === 'string' ? s.layout : (s.layout && s.layout.type);
     if (layout && [...qs('layout').options].some(o => o.value === layout)) qs('layout').value = layout;
-    if (typeof s.showSlices === 'boolean') qs('show-slices').checked = s.showSlices;
     const l = (s.layers || []).find(l => l.type === 'image');
     if (l) {
         qs('vr-mode').value = l.volumeRendering || 'off';
@@ -682,7 +722,7 @@ function syncFromViewer() {
         if (range) qs('invert').checked = range[0] > range[1];
         showRange(range);
     }
-    qs('vr-samples-value').textContent = `${Math.round(2 ** parseFloat(qs('vr-samples').value))}`;
+    qs('vr-samples-value').textContent = `${depthSamples()}`;
     qs('vr-gain-value').textContent = parseFloat(qs('vr-gain').value).toFixed(1);
     showCutoffValues();
 }
@@ -707,11 +747,9 @@ qs('viewer').addEventListener('load', () => {
 qs('dataset').addEventListener('change', () => selectDataset());
 qs('convert-btn').addEventListener('click', convert);
 qs('cancel-btn').addEventListener('click', cancel);
-qs('upload-file').addEventListener('change', () => { qs('upload-btn').disabled = !qs('upload-file').files.length; qs('upload-status').textContent = ''; });
-qs('upload-btn').addEventListener('click', upload);
 qs('mask').addEventListener('change', () => { qs('mask-radius').disabled = !qs('mask').checked; });
 document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => setRange(b.dataset.range)));
-['layout', 'show-slices', 'invert', 'vr-mode', 'vr-samples', 'vr-gain', 'vr-cutoff', 'vr-softness'].forEach(id => qs(id).addEventListener('input', applySettings));
+['layout', 'invert', 'vr-mode', 'tf-preset', 'vr-samples', 'vr-gain', 'vr-cutoff', 'vr-softness'].forEach(id => qs(id).addEventListener('input', applySettings));
 const navBtn = qs('logo-btn'), navMenu = qs('nav-menu');
 navBtn.addEventListener('click', e => { e.stopPropagation(); navMenu.classList.toggle('open'); });
 document.addEventListener('click', () => navMenu.classList.remove('open'));
@@ -721,7 +759,6 @@ document.addEventListener('click', () => navMenu.classList.remove('open'));
     const v = stored().view;
     if (v) {
         if ([...qs('layout').options].some(o => o.value === v.layout)) qs('layout').value = v.layout;
-        qs('show-slices').checked = v.showSlices !== false;
         qs('invert').checked = v.invert !== false;
         if ([...qs('vr-mode').options].some(o => o.value === v.mode)) qs('vr-mode').value = v.mode;
         if (v.samples) qs('vr-samples').value = Math.log2(v.samples);
@@ -729,11 +766,11 @@ document.addEventListener('click', () => navMenu.classList.remove('open'));
         if (v.cutoff != null) qs('vr-cutoff').value = v.cutoff;
         if (v.softness != null) qs('vr-softness').value = v.softness;
     }
-    qs('vr-samples-value').textContent = `${Math.round(2 ** parseFloat(qs('vr-samples').value))}`;
+    qs('vr-samples-value').textContent = `${depthSamples()}`;
     qs('vr-gain-value').textContent = parseFloat(qs('vr-gain').value).toFixed(1);
     showCutoffValues();
 })();
-loadDatasets();
+loadPresets().finally(loadDatasets);
 </script>
 </body>
 </html>

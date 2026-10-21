@@ -33,6 +33,7 @@ import threading
 import time
 import uuid
 import zipfile
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
@@ -42,7 +43,7 @@ import numpy as np
 import tifffile
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from holowizard.pipe.server.routes.overview import (
@@ -864,6 +865,30 @@ CLIENT_SHIM = """<script>
 </script>"""
 
 
+# Patch of the client's main script: in the 4-panel layouts, Neuroglancer shows the scale bar only in the XY panel
+# (the XZ and YZ panels get a fixed "off"); they get the viewer's scale bar setting like XY. Matches the minified
+# code of the installed version; if a version differs, nothing is replaced and the client works as shipped.
+SCALE_BAR_PATTERN = re.compile(
+    r"(\w+)=\{\.\.\.(\w+)\((\w+)\),showScaleBar:\3\.showScaleBar\},"
+    r"(\w+)=\{\.\.\.\2\(\3\),showScaleBar:new \w+\(!1,!1\)\}"
+)
+CLIENT_PATCH_VERSION = "1"  # in the script URL, so browsers do not use an unpatched cached copy
+
+
+@lru_cache(maxsize=2)
+def _patched_main_script(path: str, mtime_ns: int) -> bytes:
+    """The client's main script with scale bars in all slice panels; ``mtime_ns`` is only part of the cache key."""
+    text = Path(path).read_text()
+    text = SCALE_BAR_PATTERN.sub(
+        lambda m: (
+            f"{m[1]}={{...{m[2]}({m[3]}),showScaleBar:{m[3]}.showScaleBar}},"
+            f"{m[4]}={{...{m[2]}({m[3]}),showScaleBar:{m[3]}.showScaleBar}}"
+        ),
+        text,
+    )
+    return text.encode()
+
+
 @router.get("/neuroglancer/v/{token}/{file:path}")
 def client_file(token: str, file: str):
     folder = client_dir()
@@ -875,7 +900,11 @@ def client_file(token: str, file: str):
         raise HTTPException(status_code=404, detail="Not found")
     if name == "index.html":
         html = path.read_text().replace("<head>", "<head>" + CLIENT_SHIM, 1)
+        html = re.sub(r'(src="main\.[^"]+\.js)"', rf'\1?patch={CLIENT_PATCH_VERSION}"', html)
         return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
+    if name.startswith("main.") and name.endswith(".js"):
+        script = _patched_main_script(str(path), path.stat().st_mtime_ns)
+        return Response(script, media_type="text/javascript", headers={"Cache-Control": "max-age=86400"})
     media_type = "application/wasm" if name.endswith(".wasm") else None
     # The scripts have content hashes in their names, so they can be cached.
     return FileResponse(path, media_type=media_type, headers={"Cache-Control": "max-age=86400"})
