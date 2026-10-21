@@ -122,11 +122,11 @@
 
 <div class="layout">
     <div class="side">
-        <!-- Data set: tomograms (converted on demand) and uploaded zarrs -->
+        <!-- Data set: tomograms (converted on demand) -->
         <div class="panel">
             <div class="panel-title">Data Set</div>
             <div class="field">
-                <label for="dataset">Tomogram or uploaded zarr</label>
+                <label for="dataset">Tomogram</label>
                 <select id="dataset"><option value="">Loading…</option></select>
             </div>
             <div class="info" id="dataset-info"></div>
@@ -245,7 +245,7 @@ const CLIENT_AVAILABLE = {{ 'true' if client_available else 'false' }};
 const STORE_KEY = 'holopipe.neuroglancer';
 // The client is loaded from /neuroglancer/v/<token>/ (the URL layout of Neuroglancer's Python integration).
 const CLIENT_URL = `/neuroglancer/v/${Math.random().toString(36).slice(2, 12)}/`;
-const state = { tomograms: [], uploads: [], entry: null, shown: null, pollTimer: null, job: null };
+const state = { tomograms: [], entry: null, shown: null, pollTimer: null, job: null };
 
 // CT presets of 3D Slicer (static/slicer_ct_presets.json): opacity and colour control points at positions relative
 // to the preset's HU window (0 = lower, 1 = upper end of the window).
@@ -357,18 +357,11 @@ function zarrLabel(z) {
 async function loadDatasets(select) {
     try {
         const data = await api('/api/neuroglancer/datasets');
-        state.tomograms = data.tomograms; state.uploads = data.uploads;
+        state.tomograms = data.tomograms;
         const sel = qs('dataset'), current = select || sel.value || stored().dataset || '';
         const tomo = data.tomograms.map(t =>
             `<option value="tomo:${esc(t.dataset)}">${esc(t.dataset.replace('/', ' / '))} (${zarrLabel(t.zarr)})</option>`).join('');
-        const up = data.uploads.map(u => {
-            const note = [`uploaded by ${u.created_by}`, fmtDate(u.created_at)].join(', ');
-            return `<option value="zarr:${esc(u.id)}">${esc(u.name)} — ${esc(u.comment ? u.comment : note)}</option>`;
-        }).join('');
-        sel.innerHTML = '<option value="">Choose a data set…</option>'
-            + (tomo ? `<optgroup label="Tomograms">${tomo}</optgroup>` : '')
-            + (up ? `<optgroup label="Uploaded">${up}</optgroup>` : '');
-        if (!tomo && !up) sel.innerHTML = '<option value="">No tomograms or uploads yet</option>';
+        sel.innerHTML = tomo ? `<option value="">Choose a tomogram…</option>${tomo}` : '<option value="">No tomograms yet</option>';
         if ([...sel.options].some(o => o.value === current)) sel.value = current;
         selectDataset();
     } catch (e) {
@@ -381,10 +374,6 @@ function currentEntry() {
     if (v.startsWith('tomo:')) {
         const t = state.tomograms.find(t => t.dataset === v.slice(5));
         return t ? { kind: 'tomogram', tomogram: t, zarr: t.zarr } : null;
-    }
-    if (v.startsWith('zarr:')) {
-        const u = state.uploads.find(u => u.id === v.slice(5));
-        return u ? { kind: 'upload', zarr: u } : null;
     }
     return null;
 }
@@ -405,10 +394,7 @@ function selectDataset() {
 
     const box = qs('zarr-box');
     if (!entry) { box.textContent = ''; box.className = 'zarr-box'; }
-    else if (entry.kind === 'upload') {
-        box.className = 'zarr-box ok';
-        box.textContent = `Uploaded by ${z.created_by}, ${fmtDate(z.created_at)}` + (z.comment ? ` – “${z.comment}”` : '') + (z.filename ? ` (${z.filename})` : '') + '.';
-    } else if (z && z.status === 'done') {
+    else if (z && z.status === 'done') {
         box.className = 'zarr-box ok';
         box.textContent = `Converted by ${z.created_by}, ${fmtDate(z.created_at)}` + (z.slices !== entry.tomogram.count ? ` – from ${z.slices} slices, the tomogram now has ${entry.tomogram.count}; convert again.` : '.');
     } else if (z && !z.job) {
@@ -533,11 +519,10 @@ function showMessage(text) {
 
 function ngState(z) {
     const v = viewSettings();
-    const format = z.format === 'zarr3' ? 'zarr3' : 'zarr2';
     const layer = {
         type: 'image',
         name: (z.name || z.id).replace(/\//g, ' / '),
-        source: `${location.origin}/neuroglancer/data/${enc(z.id)}/|${format}:`,
+        source: `${location.origin}/neuroglancer/data/${enc(z.id)}/|zarr2:`,
         shader: shaderFor(z, v),
         tab: 'rendering',
         volumeRendering: v.mode,
@@ -571,7 +556,7 @@ function showCutoffValues() {
 }
 
 // Window of a CT preset in stored values: from phase 0 (the background; for 8 bit copies the stored value of 0,
-// unknown for 8 bit uploads without the mapping: then the other end of the contrast range) to the end of the
+// unknown without the mapping in the meta data: then the other end of the contrast range) to the end of the
 // contrast range where the material is: the most negative end if ``invert`` ("Invert contrast"), else the most
 // positive end.
 function densityRange(z, range, invert = qs('invert').checked) {
