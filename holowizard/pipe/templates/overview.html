@@ -95,6 +95,15 @@
         .scale-bar .txt { font-size: 9px; line-height: 1; color: #fff; white-space: nowrap; background: rgba(0,0,0,0.35); padding: 1px 3px; border-radius: 2px; }
         .thumb-label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .empty { color: #888; padding: 2rem; text-align: center; grid-column: 1 / -1; }
+        /* Progress bars: filling (width set from the script) or animated while the duration is unknown */
+        .pbar { width: 160px; height: 4px; background: #ecebe7; border-radius: 2px; overflow: hidden; position: relative; flex-shrink: 0; }
+        .pbar > span { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #1a1a1a; transition: width 0.2s; }
+        .pbar.indeterminate > span { width: 35%; transition: none; animation: pbar-slide 1.1s ease-in-out infinite; }
+        @keyframes pbar-slide { from { left: -35%; } to { left: 100%; } }
+        .empty .pbar { margin: 0.6rem auto 0; }
+        #thumb-progress { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 12px; color: #888; font-variant-numeric: tabular-nums; }
+        #thumb-progress .pbar { width: 90px; }
+        #thumb-progress[hidden] { display: none; }
 
         /* Summary page: three rows per scan with aligned columns (first column: ref image or row info). */
         .tile.summary { cursor: default; }
@@ -138,7 +147,7 @@
                        font-variant-numeric: tabular-nums; color: #fff; background: rgba(0,0,0,0.72); white-space: nowrap; }
         #pixel-value[hidden] { display: none; }
         #viewer-msg {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 0.6rem; align-items: center; justify-content: center;
             color: #888; pointer-events: none;
         }
         label.check { display: flex; align-items: center; gap: 4px; cursor: pointer; }
@@ -179,12 +188,13 @@
     </label>
     {% endif %}
     <span id="count"></span>
+    <span id="thumb-progress" hidden title="Thumbnails on screen that are loaded"><span class="pbar"><span></span></span><span class="txt"></span></span>
     <span class="spacer"></span>
     <span class="path" id="raw-path"></span>
     <span class="status-dot" id="status-dot" title="Live"></span>
 </div>
 
-<div class="grid" id="grid"><div class="empty">Loading…</div></div>
+<div class="grid" id="grid"><div class="empty">Loading…<div class="pbar indeterminate"><span></span></div></div></div>
 
 <div class="modal-bg" id="modal-bg">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -282,6 +292,36 @@ function setThumb(img, src, dir, file) {
     }
 }
 
+/* ---------- Loading progress of the thumbnails on screen (the others load lazily when scrolled into view) ---------- */
+const onScreen = new Set();
+const thumbObserver = new IntersectionObserver(entries => {
+    for (const e of entries) e.isIntersecting ? onScreen.add(e.target) : onScreen.delete(e.target);
+    scheduleThumbProgress();
+});
+function trackThumbs(el) {
+    el.querySelectorAll('.thumb-img').forEach(img => {
+        thumbObserver.observe(img);
+        img.addEventListener('load', scheduleThumbProgress);
+        img.addEventListener('error', scheduleThumbProgress);
+    });
+}
+let thumbProgressQueued = false;
+function scheduleThumbProgress() {
+    if (thumbProgressQueued) return;
+    thumbProgressQueued = true;
+    requestAnimationFrame(() => { thumbProgressQueued = false; updateThumbProgress(); });
+}
+function updateThumbProgress() {
+    // Thumbnails on screen with an image (hidden rows, e.g. XZ/YZ with "XY only", do not count).
+    const imgs = [...onScreen].filter(img => img.isConnected && img.getAttribute('src') && img.offsetParent !== null);
+    const done = imgs.filter(img => img.complete).length;
+    const box = qs('thumb-progress');
+    box.hidden = !imgs.length || done >= imgs.length;
+    if (box.hidden) return;
+    box.querySelector('.pbar > span').style.width = `${100 * done / imgs.length}%`;
+    box.querySelector('.txt').textContent = `Thumbnails ${done} / ${imgs.length}`;
+}
+
 function buildTile(d) {
     if (PAGE === 'summary') return buildSummaryTile(d);
     const el = document.createElement('div');
@@ -309,6 +349,7 @@ function buildTile(d) {
         img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
     });
     el.addEventListener('click', () => openViewer(d.name, PAGE, (tiles.get(d.name) || {}).data || d));
+    trackThumbs(el);
     return el;
 }
 
@@ -400,6 +441,7 @@ function buildSummaryTile(d) {
     el.querySelectorAll('.summary-row').forEach(row => {
         row.addEventListener('click', () => { if (row.dataset.dataset) openViewer(row.dataset.dataset, row.dataset.kind, row._data); });
     });
+    trackThumbs(el);
     return el;
 }
 
@@ -487,6 +529,7 @@ function renderGrid() {
             `<div class="empty">${dirs.length ? 'No directory matches the filter.' : {{ empty_text | tojson }}}</div>`);
     }
     qs('count').textContent = `${visible.length} / ${dirs.length} ${ {{ unit | tojson }} }`;
+    scheduleThumbProgress();
 }
 
 async function pollDirs() {
@@ -643,7 +686,7 @@ async function openViewer(dir, source, info) {
     qs('modal-bg').classList.add('open');
     document.body.style.overflow = 'hidden';
     Plotly.purge(qs('viewer'));
-    message('Loading…');
+    message('Loading…', true);
     try {
         const files = await loadFileList();
         if (!files.some(f => prefixOf(f) === 'img')) viewer.prefix = 'all';
@@ -681,8 +724,10 @@ function closeViewer() {
     Plotly.purge(qs('viewer'));
 }
 
-function message(text) {
-    qs('viewer-msg').textContent = text || '';
+function message(text, loading = false) {
+    const box = qs('viewer-msg');
+    box.textContent = text || '';
+    if (loading) box.insertAdjacentHTML('beforeend', '<div class="pbar indeterminate"><span></span></div>');
 }
 
 function updateCounter() {
