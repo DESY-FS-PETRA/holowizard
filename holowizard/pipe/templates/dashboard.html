@@ -279,126 +279,197 @@
         }
         #form-container::-webkit-scrollbar { width: 4px; }
         #form-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+        /* Frames: cluster status on top, scan table below */
+        .page { display: flex; flex-direction: column; gap: 1.25rem; }
+        .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .live-note { font-size: 12px; color: #993c1d; text-transform: none; letter-spacing: normal; }
+        .live-note[hidden] { display: none; }
+        .stats { display: flex; flex-wrap: wrap; gap: 0.75rem 3rem; }
+        .stat-label { font-size: 12px; color: #888; }
+        .stat-value { font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+        .stat-detail { font-size: 12px; color: #555; }
+        .state-dot { width: 9px; height: 9px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
+        .state-dot.on { background: #28a745; }
+        .cancel-btn { padding: 4px 12px; font-size: 12px; }
+        .cancel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cancel-btn:disabled:hover { background: #fff; }
+        .empty-note { color: #888; font-size: 13px; padding: 0.75rem 0 0.25rem; }
+        /* Progress: one row per task (name | bar | count); bar segments done, failed, running, rest = waiting */
+        .progress { display: grid; grid-template-columns: max-content minmax(180px, 320px) max-content; gap: 5px 0.75rem; align-items: center; }
+        .progress .task-name { font-size: 12px; color: #555; white-space: nowrap; }
+        .progress .task-count { font-size: 12px; color: #555; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .progress .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #e6e5e1; }
+        .progress .seg { display: block; height: 100%; flex: none; }
+        .progress .seg.done { background: #28a745; }
+        .progress .seg.failed { background: #d9534f; }
+        .progress .seg.running {
+            background: repeating-linear-gradient(-45deg, #f0ad00 0 6px, #ffd24d 6px 12px);
+            background-size: 17px 17px; animation: progress-stripes 0.8s linear infinite;
+        }
+        @keyframes progress-stripes { to { background-position: 17px 0; } }
+        .progress.is-cancelled { opacity: 0.45; }
+        .progress.is-cancelled .seg.running { animation: none; }
+        /* Scan table (the reset at the top removes all cell padding) */
+        .scan-table { width: 100%; border-collapse: collapse; }
+        .scan-table th, .scan-table td { padding: 10px 1.5rem 10px 0; text-align: left; vertical-align: middle; }
+        .scan-table th:last-child, .scan-table td:last-child { padding-right: 0; }
+        .scan-table th { padding-top: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888;
+                         border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+        .scan-table #scan-rows tr + tr td { border-top: 0.5px solid rgba(0,0,0,0.06); }
+        .scan-table a { color: #1a1a1a; text-decoration: none; }
+        .scan-table a:hover { text-decoration: underline; }
+        .scan-table .scan-link { font-weight: 500; }
+        .scan-table .dir-link { color: #555; }
     </style>
 </head>
 <body>
-    <script>
-        setTimeout(() => {
-            fetch(window.location.href)
-                .then(response => {
-                    if (response.ok) {
-                        window.location.reload();
-                    } else {
-                        console.warn("Page reload failed; staying on current page.");
-                    }
-                })
-                .catch(() => {
-                    console.warn("Network error; staying on current page.");
-                });
-        }, 5000);
-    </script>
-    <script>
-        function confirmCancel(scanName) {
-            if (confirm("Are you sure you want to cancel this scan?")) {
-                fetch(`/api/cancel/${scanName}`)
-            }
-        }
-    </script>
 
 <div class="topbar">
   {% include "_nav.html" %}
   <h1>Worker Status</h1>
 </div>
 
-    <p><strong>Active Workers:</strong> {{ num_workers }}</p>
-    <p><strong>Cluster:</strong>
-        {% if cluster.running %}running{% if cluster.idle_minutes is not none %}, idle for {{ cluster.idle_minutes }} min (stops after {{ cluster.idle_limit_minutes }} min without work){% endif %}
-        {% else %}stopped (starts automatically when work is submitted){% endif %}
-    </p>
+<div class="page">
+    <div class="panel">
+        <div class="panel-title panel-title-row">
+            <span>Cluster</span>
+            <span class="live-note" id="live-note" hidden>Connection to the server lost – retrying…</span>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Active workers</div>
+                <div class="stat-value" id="num-workers"></div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SLURM workers</div>
+                <div class="stat-value"><span class="state-dot" id="cluster-dot"></span><span id="cluster-state"></span></div>
+                <div class="stat-detail" id="cluster-detail"></div>
+            </div>
+        </div>
+    </div>
 
-    <table>
+    <div class="panel">
+        <div class="panel-title">Scans</div>
+    <table class="scan-table">
         <thead>
             <tr>
                 <th></th>
                 <th>Scan</th>
-                <th>Base Directory</th>
+                <th>Base directory</th>
                 <th>Progress</th>
             </tr>
         </thead>
-        <tbody>
-            {% for scan_name, scan_info in progress.items() %}
-            <tr>
-                <td>
-                    {% if scan_info.cancelled %}
-                        <button 
-                            disabled
-                            style="background-color: #ccc; color: #666; padding: 8px 16px; border: none; border-radius: 4px; cursor: not-allowed;">
-                            Cancel
-                        </button>
-                    {% else %}
-                        <button 
-                            onclick="confirmCancel('{{ scan_name }}')" 
-                            style="background-color: red; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
-                            Cancel
-                        </button>
-                    {% endif %}
-                </td>
-                <td><a href="/scan/{{ scan_name }}">{{ scan_info.name }}</a></td>
-                <td><a href="file://{{ scan_info.path }}"> {{ scan_info.base_dir }}</a></td>
-                <td>
-                    <div class="progress-container">
-                        {% set tasks = scan_info.tasks %}
-                        {% set total_tasks = tasks|length %}
-                        {% for task_name, data in tasks.items() %}
-                            {% set total = data.total %}
-                            {% set done = data.done %}
-                            {% set running = data.running %}
-                            {% set remaining = total - done - running %}
-                            {% set done_pct = (done / total * 100) if total > 0 else 0 %}
-                            {% set running_pct = (running / total * 100) if total > 0 else 0 %}
-                            {% set remaining_pct = (100 - done_pct - running_pct) %}
-                            {% set segments = [] %}
-                            {% if done_pct > 0 %}
-                                {% set _ = segments.append("#28a745 0%") %}
-                                {% set _ = segments.append("#28a745 " ~ done_pct ~ "%") %}
-                            {% endif %}
-                            {% if running_pct > 0 %}
-                                {% set _ = segments.append("#ffc107 " ~ done_pct ~ "%") %}
-                                {% set _ = segments.append("#ffc107 " ~ (done_pct + running_pct) ~ "%") %}
-                            {% endif %}
-                            {% if remaining_pct > 0 %}
-                                {% set _ = segments.append("#e0e0e0 " ~ (done_pct + running_pct) ~ "%") %}
-                                {% set _ = segments.append("#e0e0e0 100%") %}
-                            {% endif %}
-                            <div
-                                class="progress-segment{% if data.cancelled %} cancelled{% endif %}"
-                                style="
-                                    width: {{ 100/total_tasks }}%;
-                                    background: linear-gradient(to right, {{ segments | join(', ') }});
-                                    {% if scan_info.cancelled %}
-                                    text-decoration: line-through;
-                                    color: black;
-                                    {% endif %}
-                                    
-                                    {% if data.failed %}
-                                    background: #f44336;
-                                    color: black;
-                                    {% endif %}
-                                "
-                                >
-                                {{ task_name }} ({{ data.done }}/{{ data.total }})
-                            </div>
-
-                    
-                        {% endfor %}
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+        <tbody id="scan-rows"></tbody>
+        <tbody><tr id="empty-row" hidden><td colspan="4" class="empty-note">No scans submitted yet.</td></tr></tbody>
     </table>
+    </div>
+</div>
 
 <script>
+    // The table is rendered here from the data of /api/progress and updated in place every 5 s (no page reloads:
+    // the scroll position stays and the running animations do not restart).
+    // Embedded by the page route; missing if the server still runs older code (templates are read from disk on
+    // every request, the Python code only at a restart): then the table is loaded from /api/progress right away.
+    const INITIAL = {% if initial is defined %}{{ initial | safe }}{% else %}null{% endif %};
+    const POLL_MS = 5000;
+    const qs = id => document.getElementById(id);
+
+    function renderCluster(c) {
+        const running = !!(c && c.running);
+        qs('cluster-dot').classList.toggle('on', running);
+        qs('cluster-state').textContent = running ? 'Running' : 'Stopped';
+        qs('cluster-detail').textContent = !running ? 'start automatically when work is submitted'
+            : c.idle_minutes != null ? `idle for ${c.idle_minutes} min · stop after ${c.idle_limit_minutes} min without work` : 'working';
+    }
+
+    // Numbers of one task for its bar (clamped so the segments never exceed the bar) and the text next to it.
+    function taskView(t, cancelled) {
+        const total = Math.max(t.total, 1);
+        const done = Math.min(t.done, total), failed = Math.min(t.failed, total - done);
+        const running = Math.min(t.running, total - done - failed);
+        let label;
+        if (t.total > 1) {
+            label = [`${done} / ${t.total}`, running ? `${running} running` : '', failed ? `${failed} failed` : ''].filter(Boolean).join(' · ');
+        } else {
+            label = failed ? 'failed' : done ? 'done' : running ? 'running' : cancelled ? 'cancelled' : 'waiting';
+        }
+        return { total, done, failed, running, label };
+    }
+
+    function updateProgress(box, info) {
+        box.classList.toggle('is-cancelled', !!info.cancelled);
+        const names = Object.keys(info.tasks);
+        if (box.dataset.tasks !== names.join('|')) {   // build the rows once; later only widths and texts change
+            box.dataset.tasks = names.join('|');
+            box.innerHTML = names.map(() => '<div class="task-name"></div><div class="bar"><span class="seg done"></span>'
+                + '<span class="seg failed"></span><span class="seg running"></span></div><div class="task-count"></div>').join('');
+        }
+        const nameEls = box.querySelectorAll('.task-name'), bars = box.querySelectorAll('.bar'), counts = box.querySelectorAll('.task-count');
+        names.forEach((name, i) => {
+            const v = taskView(info.tasks[name], info.cancelled);
+            nameEls[i].textContent = name.replace(/_/g, ' ');
+            bars[i].title = `${name}: ${v.label}`;
+            const [d, f, r] = bars[i].children;
+            d.style.width = `${100 * v.done / v.total}%`;
+            f.style.width = `${100 * v.failed / v.total}%`; f.style.minWidth = v.failed ? '3px' : '0';
+            r.style.width = `${100 * v.running / v.total}%`; r.style.minWidth = v.running ? '3px' : '0';
+            counts[i].textContent = v.label;
+        });
+    }
+
+    const rows = new Map();   // scan key -> <tr>
+    function buildRow(key) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td><button class="btn btn-danger cancel-btn">Cancel</button></td><td><a class="scan-link"></a></td>'
+            + '<td><a class="dir-link"></a></td><td><div class="progress"></div></td>';
+        tr.querySelector('.cancel-btn').addEventListener('click', () => confirmCancel(key));
+        return tr;
+    }
+
+    function render(data) {
+        qs('num-workers').textContent = data.num_workers;
+        renderCluster(data.cluster);
+        const body = qs('scan-rows'), keys = Object.keys(data.progress);
+        for (const [key, tr] of rows) if (!keys.includes(key)) { tr.remove(); rows.delete(key); }
+        let prev = null;
+        for (const key of keys) {   // newest first, as sent by the server
+            const info = data.progress[key];
+            let tr = rows.get(key);
+            if (!tr) { tr = buildRow(key); rows.set(key, tr); }
+            tr.querySelector('.cancel-btn').disabled = !!info.cancelled;
+            const scan = tr.querySelector('.scan-link');
+            scan.href = `/scan/${encodeURIComponent(key)}`; scan.textContent = info.name;
+            const dir = tr.querySelector('.dir-link');
+            dir.href = `file://${info.path}`; dir.textContent = info.base_dir;
+            updateProgress(tr.querySelector('.progress'), info);
+            const expected = prev ? prev.nextSibling : body.firstChild;
+            if (expected !== tr) body.insertBefore(tr, expected);
+            prev = tr;
+        }
+        qs('empty-row').hidden = keys.length > 0;
+    }
+
+    async function refresh() {
+        try {
+            const res = await fetch('/api/progress', { cache: 'no-store' });
+            if (res.status === 401) { location.reload(); return; }   // session expired: to the login page
+            if (!res.ok) throw new Error(res.statusText);
+            render(await res.json());
+            qs('live-note').hidden = true;
+        } catch (e) {
+            qs('live-note').hidden = false;
+        }
+    }
+    async function poll() { await refresh(); setTimeout(poll, POLL_MS); }
+
+    async function confirmCancel(key) {
+        if (!confirm("Are you sure you want to cancel this scan?")) return;
+        try { await fetch(`/api/cancel/${encodeURIComponent(key)}`); } catch (e) { /* shown by the next update */ }
+        refresh();
+    }
+
+    if (INITIAL) { render(INITIAL); setTimeout(poll, POLL_MS); } else { poll(); }
+
     const btn = document.getElementById('logo-btn');
     const menu = document.getElementById('nav-menu');
     btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });

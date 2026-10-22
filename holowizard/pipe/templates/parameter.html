@@ -317,6 +317,9 @@
         .col-scan { grid-area: scan; min-width: 0; }
         .col-test { grid-area: test; min-width: 0; }
         .col-live { grid-area: live; min-width: 0; }
+        /* Status of a running test run until its first image or plot arrives */
+        .preview-status { font-size: 12px; color: #555; text-align: center; margin: 0.25rem 0 0; font-variant-numeric: tabular-nums; }
+        .preview-status[hidden] { display: none; }
         /* Narrow windows: test image and live preview move below the scan panel. */
         @media (max-width: 1200px) {
             .layout {
@@ -491,6 +494,7 @@
     <!-- BOTTOM (columns 2 and 3): images streamed over zeromq during a test run, and the find focus loss -->
     <div class="panel col-live">
         <div class="panel-title">Live Preview</div>
+        <div class="preview-status" id="preview-status" hidden></div>
         <div id="loss-image" style="display:none;"></div>
         <img id="live-preview" style="display:none;" alt="Preview">
     </div>
@@ -805,13 +809,24 @@
         // Live preview websocket. The server keeps a running preview across page reloads and reattaches
         // this page to it; if the connection drops, the page reconnects automatically.
         let socket = null;
+        // Status line ("Waiting for a SLURM worker…", "Flatfield correction…") until the first image or plot.
+        let firstFrameSeen = false;
+        let runActive = false;   // status lines arriving after the result (race with the server's reporter) are ignored
+        const setStatus = text => {
+            const el = qs('preview-status');
+            el.textContent = text || '';
+            el.hidden = !text || firstFrameSeen;
+        };
         const showRunning = () => {
             qs('loss-image').style.display = 'block';
             qs('loss-image').classList.add('loader');
         };
+        const startRun = () => { runActive = true; firstFrameSeen = false; setStatus('Starting…'); showRunning(); };
         const handleMessage = e => {
             const data = e.data;
             if (data instanceof ArrayBuffer) {
+                firstFrameSeen = true;
+                setStatus('');
                 qs('loss-image').classList.remove('loader');
                 const blob = new Blob([data]);
                 qs('live-preview').src = URL.createObjectURL(blob);
@@ -819,8 +834,12 @@
                 return;
             }
             const json_data = JSON.parse(data);
-            if (json_data.running) { showRunning(); return; }
+            if (json_data.status !== undefined && !json_data.running) { if (runActive) setStatus(json_data.status); return; }
+            if (json_data.running) { runActive = true; setStatus(json_data.status); showRunning(); return; }
             qs('loss-image').classList.remove('loader');
+            runActive = false;
+            firstFrameSeen = false;
+            setStatus('');
             if (json_data.stopped) return;
             if (json_data.error) {
                 alert(json_data.error);
@@ -860,14 +879,16 @@
 
         qs('optimize-btn').onclick = () => {
             resetLivePreview();
-            if (sendPreview(retrieveReco())) showRunning();
+            if (sendPreview(retrieveReco())) startRun();
         };
         qs('find-focus-btn').onclick = () => {
             resetLivePreview();
-            if (sendPreview({ ...retrieveReco(), find_focus: true })) showRunning();
+            if (sendPreview({ ...retrieveReco(), find_focus: true })) startRun();
         };
         qs('stop-btn').onclick = () => {
             try { socket.send(JSON.stringify({ action: 'cancel_preview' })); } catch (_) {}
+            runActive = false;
+            setStatus('');
             qs('loss-image').classList.remove('loader');
             resetLivePreview();
         };

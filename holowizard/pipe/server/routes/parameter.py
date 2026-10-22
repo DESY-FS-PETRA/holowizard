@@ -5,6 +5,7 @@ import json
 import os
 import re
 import threading
+import time
 import uuid
 from functools import lru_cache
 from pathlib import Path
@@ -391,6 +392,9 @@ class PreviewRun:
         self.find_focus = find_focus
         self.task: Optional[asyncio.Task] = None
         self.pending_message: Optional[Dict[str, Any]] = None  # result that finished while no page was connected
+        self.step: Optional[str] = None  # current step, reported by the beamtime ("flatfield", ...)
+        self.started = time.monotonic()
+        self.status: Optional[str] = None  # last status line sent to the page
 
     @property
     def running(self) -> bool:
@@ -443,7 +447,43 @@ def _cancel_run(beamtime, run: PreviewRun):
         run.task.cancel()
 
 
+# Status line on the page until the first image or plot arrives (the page hides it then): the step and whether a
+# SLURM worker is connected yet. Starting workers on demand can take minutes (job queue, Python start on the node).
+STEP_TEXT = {
+    None: "Starting…",
+    "flatfield": "Flatfield correction…",
+    "find_focus": "Find focus: reconstructing the first z01 sampling point…",
+    "reconstruction": "Reconstructing the test image…",
+}
+
+
+def _connected_workers(cluster) -> int:
+    try:
+        return cluster.status()["workers"]
+    except Exception:
+        return 0
+
+
+async def _report_status(cluster, preview: UserPreview, run: PreviewRun):
+    """Send the status line once a second while the run is busy."""
+    while run.task is not None and not run.task.done() and preview.run is run:
+        workers = await asyncio.to_thread(_connected_workers, cluster)
+        if workers == 0 and run.step is not None:
+            text = "Waiting for a SLURM worker to start (job in the queue or starting on the node)…"
+        else:
+            text = STEP_TEXT.get(run.step, "Running…")
+        elapsed = int(time.monotonic() - run.started)
+        run.status = f"{text} {elapsed // 60}:{elapsed % 60:02d}"
+        await preview.broadcast({"status": run.status})
+        await asyncio.sleep(1)
+
+
 async def _execute_preview(beamtime, cluster, preview: UserPreview, run: PreviewRun, data: Dict[str, Any]):
+    loop = asyncio.get_running_loop()
+
+    def progress(step: str):  # called from the worker thread of the beamtime
+        loop.call_soon_threadsafe(setattr, run, "step", step)
+
     # run the heavy lift in a thread, get a result back
     try:
         result = await asyncio.to_thread(
@@ -454,6 +494,7 @@ async def _execute_preview(beamtime, cluster, preview: UserPreview, run: Preview
             run.session,
             img_name=data["img_name"],
             find_focus=run.find_focus,
+            progress=progress,
         )
     except asyncio.CancelledError:
         return
@@ -498,7 +539,7 @@ async def websocket_preview(ws: WebSocket):
     if run is not None:
         conn.subscribe(run.session)
         if run.running:
-            await conn.send({"running": True, "find_focus": run.find_focus})
+            await conn.send({"running": True, "find_focus": run.find_focus, "status": run.status})
         if run.pending_message is not None and await conn.send(run.pending_message):
             run.pending_message = None
 
@@ -552,6 +593,7 @@ async def websocket_preview(ws: WebSocket):
                 if c is not conn:
                     await c.send({"running": True, "find_focus": run.find_focus})
             run.task = asyncio.create_task(_execute_preview(beamtime, state.cluster, preview, run, data))
+            asyncio.create_task(_report_status(state.cluster, preview, run))
 
     except WebSocketDisconnect:
         pass

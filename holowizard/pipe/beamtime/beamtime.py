@@ -100,6 +100,10 @@ class Beamtime(ABC):
             indices = list(range(len(scan.hologram_path)))
             random.shuffle(indices)
             task = PhaseRetrievalTask(scan, flatfield_task.save_path)
+            # Finished images, counted here for the worker status page (the scheduler queue only shows the tasks
+            # submitted so far and not yet released, so it cannot tell how many images are done).
+            scan.reconstruction_done = 0
+            scan.reconstruction_failed = 0
             futures = [
                 self.cluster.client_scheduler.submit(
                     task,
@@ -113,7 +117,10 @@ class Beamtime(ABC):
             for f in as_completed(futures):
                 try:
                     f.result()
+                    scan.reconstruction_done += 1
                 except Exception as e:
+                    if not scan.cancelled:
+                        scan.reconstruction_failed += 1
                     print(f"Reconstruction task failed for scan {scan.key}: {e}")
                 finally:
                     f.release()
@@ -149,16 +156,21 @@ class Beamtime(ABC):
                 else:
                     print(f"Warning: No future found for task {task['key']}")
 
-    def phase_retrieval_single_holo(self, scan, session_id, find_focus=False, img_name=None):
+    def phase_retrieval_single_holo(self, scan, session_id, find_focus=False, img_name=None, progress=None):
         """
         Optimize a single hologram by running the find focus task.
 
         Args:
             img_index (int): Index of the image to be optimized.
+            progress (callable, optional): called with the name of each step ("flatfield", "find_focus",
+                "reconstruction") when it is submitted, e.g. to show the status on the web page.
         """
+        report = progress or (lambda step: None)
+        report("flatfield")
         flatfield_task = FlatFieldTask(scan)
         _, status = submit_and_handle("flatfield", flatfield_task, self.cluster, scan)
         img_index = [i for i, path in enumerate(scan.hologram_path) if img_name in path][0] if img_name else img_name
+        report("find_focus" if find_focus else "reconstruction")
         if find_focus:
             plotter = [WebsocketPlotter(session_id)]
             find_focus_task = FindFocusTask(scan, flatfield_task.save_path, viewer=None, plotter=plotter)
