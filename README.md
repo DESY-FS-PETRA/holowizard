@@ -12,7 +12,7 @@ It is developed at DESY, Hamburg in the group X-Ray Nanoscience and X-Ray Optics
 The software is designed to cover all steps in experimental/algorithm development:
 - The Forge generates datasets within given variation bouds either for testing new algorithms or provide training data sets for ML applications
 - The Core implements the ASRM algorithm, our phase retrieval engine. It includes also all neccessary auxillary functions to load and preprocess single holograms/diffraction patterns.
-- The Pipe enables the **online** and **offline** batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.
+- The Workbench enables the **online** and **offline** batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.
 - The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.
 
 # Table of Contents
@@ -88,10 +88,10 @@ Every page of the workbench requires a login. Users and their password hashes (P
 by default
 
 ```
-~/.config/holowizard/pipe_users.json
+~/.config/holowizard/holowizard_workbench_users.json
 ```
 
-of the account that runs the server. Set the environment variable `HOLOPIPE_USERS_FILE` to use another file, e.g. one
+of the account that runs the server. Set the environment variable `HOLOWIZARD_WORKBENCH_USERS_FILE` to use another file, e.g. one
 shared by several instances. The file is readable only by its owner and also holds the secret used to sign the login
 cookies, so keep it private.
 
@@ -100,7 +100,7 @@ which is printed once to the console:
 
 ```
 ========================================================================
-Created login user file /home/<account>/.config/holowizard/pipe_users.json
+Created login user file /home/<account>/.config/holowizard/holowizard_workbench_users.json
   user:     p05user
   password: <random password>
 Change it with: holowizard_workbench_users passwd p05user
@@ -123,8 +123,8 @@ $ holowizard_workbench_users remove <user>     # remove a user
 - A login stays valid for 7 days. *Logout* in the menu ends it earlier.
 
 **What is stored per user:** each user has their own editable parameter set on the Phase Retrieval page
-(`pipe_config/reconstruction/custom_<user>.yaml` in the beamtime's log folder, e.g.
-`scratch_cc/holopipe/`), and the rotation center and tomography pages track running
+(`holowizard_workbench_config/phase_retrieval/custom_<user>.yaml` in the beamtime's log folder, e.g.
+`scratch_cc/holowizard_workbench/`), and the rotation center and tomography pages track running
 jobs per user (only the user who started a reconstruction can cancel it). The user who saved a rotation center or
 started a tomogram is recorded in `rotation_center.yaml` and `reconstruction.yaml`.
 

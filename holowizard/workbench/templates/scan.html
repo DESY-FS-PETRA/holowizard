@@ -30,7 +30,7 @@
     <title>Scan: {{ scan.name }}</title>
   {% if scan.cancelled %}
     <div style="color: red; font-weight: bold;">
-      ⚠️ Warning: The reconstruction has been cancelled!
+      ⚠️ Warning: The phase retrieval has been cancelled!
     </div>
   {% endif %}
   {% for f in scan.done %}
@@ -68,7 +68,7 @@
     <li><strong>Magnification</strong> {{ scan.M | round(2) }}</li>
     <li><strong>Effective Propagation Distance:</strong> {{ scan.z_eff | round(6) }} mm</li>
    </ul> 
-  <h2>Reconstruction Details</h2>
+  <h2>Phase Retrieval Details</h2>
     <ul>
     <li><strong>Binning:</strong> {{ scan.binning }}</li>
     <li><strong>Effective Pixel Size (raw):</strong> {{ (scan.dx_eff / scan.binning) | round(6) }} mm</li>
@@ -79,7 +79,7 @@
     <ul>
     {% for task in scan.config.scan.tasks %}
         <li>
-        <strong>{{ task | capitalize }}</strong>
+        <strong>{{ task | replace('_', ' ') | capitalize }}</strong>
         <pre><code class="language-yaml">
             {%   set cfg = scan.config[task] %}
             {{ cfg | to_yaml | indent(12) }}

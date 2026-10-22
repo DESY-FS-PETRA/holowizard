@@ -18,14 +18,14 @@ class FindFocusTask:
     updates the configuration, and optionally visualizes the result through plots.
 
     Typical usage:
-        focus = FindFocus(config_path="/path/to/holopipe_config.json")
+        focus = FindFocus(config_path="/path/to/holowizard_config.json")
         focus.run_focus(img_index=0)
         focus.plot_results()
     """
 
     def __init__(self, scan: Scan, flatfield_params_save_path, viewer=[], plotter=[]):
         """
-        Initialize the focus finder with a given holopipe configuration.
+        Initialize the focus finder with a given holowizard configuration.
 
         Args:
             config_path (str): Path to the JSON configuration file.

@@ -73,10 +73,10 @@ class Beamtime(ABC):
 
     def run_scan(self, scan: Scan):
         """
-        Run the phase retrieval of a submitted scan: flatfield correction, then the reconstruction of all holograms.
+        Run the phase retrieval of a submitted scan: flatfield correction, then the phase retrieval of all holograms.
 
         The tasks come from ``scan.config.scan.tasks``, which "Submit Phase Retrieval" sets to flatfield and
-        reconstruction. Find focus runs only for single test images (``phase_retrieval_single_holo``); the
+        phase_retrieval. Find focus runs only for single test images (``phase_retrieval_single_holo``); the
         tomographic reconstruction is started separately on the Tomography page.
         """
         # --- FLATFIELD ---
@@ -86,21 +86,21 @@ class Beamtime(ABC):
         if scan.cancelled:
             return
 
-        # --- RECONSTRUCTION ---
-        if "reconstruction" in scan.config.scan.tasks:
+        # --- PHASE RETRIEVAL ---
+        if "phase_retrieval" in scan.config.scan.tasks:
             indices = list(range(len(scan.hologram_path)))
             random.shuffle(indices)
             task = PhaseRetrievalTask(scan, flatfield_task.save_path)
             # Finished images, counted here for the worker status page (the scheduler queue only shows the tasks
             # submitted so far and not yet released, so it cannot tell how many images are done).
-            scan.reconstruction_done = 0
-            scan.reconstruction_failed = 0
+            scan.phase_retrieval_done = 0
+            scan.phase_retrieval_failed = 0
             futures = [
                 self.cluster.client_scheduler.submit(
                     task,
                     scan,
                     i,
-                    key=f"reconstruction-{uuid.uuid4()}-{scan.key}",
+                    key=f"phase_retrieval-{uuid.uuid4()}-{scan.key}",
                     priority=20,
                 )
                 for i in indices
@@ -108,15 +108,15 @@ class Beamtime(ABC):
             for f in as_completed(futures):
                 try:
                     f.result()
-                    scan.reconstruction_done += 1
+                    scan.phase_retrieval_done += 1
                 except Exception as e:
                     if not scan.cancelled:
-                        scan.reconstruction_failed += 1
-                    print(f"Reconstruction task failed for scan {scan.key}: {e}")
+                        scan.phase_retrieval_failed += 1
+                    print(f"Phase retrieval task failed for scan {scan.key}: {e}")
                 finally:
                     f.release()
             status = "cancelled" if scan.cancelled else "done"
-            scan.done.append(dict(name="reconstruction", status=status))
+            scan.done.append(dict(name="phase_retrieval", status=status))
 
     def cancel_task(self, scan_id):
         """
@@ -141,7 +141,7 @@ class Beamtime(ABC):
 
     def phase_retrieval_single_holo(self, scan, session_id, find_focus=False, img_name=None, progress=None):
         """
-        Test reconstruction of a single hologram (Phase Retrieval page): flatfield correction, then either find focus
+        Test phase retrieval of a single hologram (Phase Retrieval page): flatfield correction, then either find focus
         (returns its result, e.g. the fitted z01) or a phase retrieval shown live in the browser (returns None).
 
         Args:
@@ -150,14 +150,14 @@ class Beamtime(ABC):
             find_focus (bool): Run find focus instead of the phase retrieval.
             img_name (str): File name of the hologram (the test image chosen on the page).
             progress (callable, optional): called with the name of each step ("flatfield", "find_focus",
-                "reconstruction") when it is submitted, e.g. to show the status on the web page.
+                "phase_retrieval") when it is submitted, e.g. to show the status on the web page.
         """
         report = progress or (lambda step: None)
         report("flatfield")
         flatfield_task = FlatFieldTask(scan)
         _, status = submit_and_handle("flatfield", flatfield_task, self.cluster, scan)
         img_index = [i for i, path in enumerate(scan.hologram_path) if img_name in path][0] if img_name else img_name
-        report("find_focus" if find_focus else "reconstruction")
+        report("find_focus" if find_focus else "phase_retrieval")
         if find_focus:
             plotter = [WebsocketPlotter(session_id)]
             find_focus_task = FindFocusTask(scan, flatfield_task.save_path, viewer=None, plotter=plotter)
@@ -168,5 +168,5 @@ class Beamtime(ABC):
         else:
             viewer = [WebsocketViewer(session_id)]
             task = PhaseRetrievalTask(scan, flatfield_task.save_path, viewer=viewer, save_scratch=True)
-            _, status = submit_and_handle("reconstuction", task, self.cluster, scan, img_index)
+            _, status = submit_and_handle("phase_retrieval", task, self.cluster, scan, img_index)
         return None

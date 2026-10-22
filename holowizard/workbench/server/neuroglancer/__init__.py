@@ -3,7 +3,7 @@
 Tomograms (the TIFF slices in ``path_processed/<scan>/recon_dir/<version>``, as in the scan overview) are
 converted to a multiscale OME-Zarr (zarr v2, chunks of 64³ voxels, blosc-zstd; every level is downsampled by 2
 until the largest side is at most 128 voxels). Everything is stored in the cache folder
-``<beamtime log_path>/neuroglancer`` (``scratch_cc/holopipe/neuroglancer``):
+``<beamtime log_path>/neuroglancer`` (``scratch_cc/holowizard_workbench/neuroglancer``):
 
 * ``<id>.zarr``: the data, served to the viewer under ``/neuroglancer/data/<id>/``
 * ``<id>.json``: what it is (source tomogram, user, time, value range for the display)

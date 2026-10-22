@@ -18,7 +18,7 @@ class FlatFieldTask:
     It checks if the PCA file exists, and if not, it calculates the flatfield components.
 
     Typical usage:
-        flatfield_task = FlatFieldTask(config_path="/path/to/holopipe_config.json")
+        flatfield_task = FlatFieldTask(config_path="/path/to/holowizard_config.json")
         flatfield_task.run()
     """
 

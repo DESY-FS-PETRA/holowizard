@@ -5,7 +5,7 @@ Two overviews share the tile grid and the image browser:
 * ``raw``: the scan directories in ``path_raw``; each tile shows the first ref_ image and the first,
   middle and last img_ image.
 * ``phase``: the phase retrieval results in ``path_processed/<scan>/<save prefix>/phase_retrieval``,
-  one tile per reconstruction run; each tile shows the first, middle and last image.
+  one tile per phase retrieval run; each tile shows the first, middle and last image.
 * ``tomo``: the tomographic reconstructions in ``path_processed/<scan>/recon_dir/<version>``, one tile
   per version that contains TIFF slices; each tile shows the first, middle and last slice.
 

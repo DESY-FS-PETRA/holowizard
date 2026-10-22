@@ -212,8 +212,8 @@
 <script>
 const qs = id => document.getElementById(id);
 const enc = encodeURIComponent;
-const DATASET_KEY = 'holopipe.rotation.dataset';
-const FILTERS_KEY = 'holopipe.rotation.filters';
+const DATASET_KEY = 'workbench.rotation.dataset';
+const FILTERS_KEY = 'workbench.rotation.filters';
 const FILTER_IDS = ['f-nan', 'f-dark', 'f-dark-factor', 'f-min', 'f-min-factor', 'f-neighbours'];
 const currentFilters = () => ({
     nan: qs('f-nan').checked,
@@ -409,7 +409,7 @@ async function runScan() {
 }
 
 // The center being viewed, per series, so that a page reload returns to it.
-const VIEWED_KEY = 'holopipe.rotation.viewed';
+const VIEWED_KEY = 'workbench.rotation.viewed';
 // Show a series again (after a page reload): its settings in the form, its results in the viewer.
 function restoreSeries(job) {
     const s = job.settings || {};

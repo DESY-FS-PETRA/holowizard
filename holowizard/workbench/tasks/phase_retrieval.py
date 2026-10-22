@@ -19,7 +19,7 @@ from holowizard.workbench.utils.reco_params import build_reco_params
 # matplotlib.use("Qt5Agg")
 class PhaseRetrievalTask:
     """
-    Handles phase retrieval using the JSON config and builder pipeline.
+    Handles phase retrieval using the JSON config.
     """
 
     def __init__(self, scan: Scan, flatfield_params_save_path, viewer=[], save_scratch=False):
@@ -27,9 +27,9 @@ class PhaseRetrievalTask:
         Initialize the PhaseRetrieval runner.
 
         Args:
-            config_path (str): Path to the JSON configuration file.
+            scan (Scan): Scan object containing the configuration and data paths.
         """
-        self.enabled = "reconstruction" in scan.config.scan.tasks
+        self.enabled = "phase_retrieval" in scan.config.scan.tasks
         if not self.enabled:
             # Logger.info(
             #    "Phase retrieval disabled",
@@ -37,7 +37,7 @@ class PhaseRetrievalTask:
             return
         self.viewer = viewer
         self.paths = scan.config["paths"]
-        self.reco_params = build_reco_params(scan, scan.reconstruction)
+        self.reco_params = build_reco_params(scan, scan.phase_retrieval)
         if save_scratch:
             self.phase_dir = os.path.join(scan.path_log, self.paths.base_dir, self.paths.phase_dir)
             self.absorption_dir = os.path.join(scan.path_log, self.paths.base_dir, self.paths.absorption_dir)
@@ -54,7 +54,7 @@ class PhaseRetrievalTask:
 
     def __call__(self, scan, img_index=0):
         """
-        Perform a single phase retrieval reconstruction.
+        Perform the phase retrieval of a single hologram.
 
         Args:
             img_index (int): Index of the image in the file list to reconstruct.

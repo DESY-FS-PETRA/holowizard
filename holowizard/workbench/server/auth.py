@@ -1,7 +1,7 @@
-"""Password login for the pipe server.
+"""Password login for the holowizard server.
 
 Users are stored with PBKDF2 password hashes in a JSON file (default
-``~/.config/holowizard/pipe_users.json``, override with ``HOLOPIPE_USERS_FILE``).
+``~/.config/holowizard/holowizard_workbench_users.json``, override with ``HOLOWIZARD_WORKBENCH_USERS_FILE``).
 If the file does not exist, it is created on server start with the user
 ``p05user`` and a random password that is printed once to the console.
 
@@ -30,7 +30,7 @@ from typing import Dict, Optional
 from urllib.parse import quote
 
 DEFAULT_USER = "p05user"
-SESSION_COOKIE = "holopipe_session"
+SESSION_COOKIE = "holowizard_session"
 SESSION_MAX_AGE = 7 * 24 * 3600
 PBKDF2_ITERATIONS = 600_000
 PUBLIC_PATHS = ("/login", "/logout", "/static/")
@@ -39,7 +39,12 @@ USERNAME = re.compile(r"[A-Za-z0-9_-]{1,64}")
 
 
 def users_file() -> Path:
-    return Path(os.getenv("HOLOPIPE_USERS_FILE", Path.home() / ".config" / "holowizard" / "pipe_users.json"))
+    return Path(
+        os.getenv(
+            "HOLOWIZARD_WORKBENCH_USERS_FILE",
+            Path.home() / ".config" / "holowizard" / "holowizard_workbench_users.json",
+        )
+    )
 
 
 # --- Password hashing ---
@@ -250,7 +255,7 @@ def _ask_password() -> str:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=f"Manage login users of the pipe server ({users_file()}).")
+    parser = argparse.ArgumentParser(description=f"Manage login users of the holowizard server ({users_file()}).")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list", help="list users")
     for cmd, text in (("add", "add a user"), ("passwd", "change a user's password"), ("remove", "remove a user")):

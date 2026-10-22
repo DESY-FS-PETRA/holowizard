@@ -8,8 +8,7 @@ scan:
   tasks:
     - flatfield
     - find_focus
-    - reconstruction
-    - tomography
+    - phase_retrieval
   px_size: 0.0065
   z01_confidence: 5
   detector: Hamamatsu

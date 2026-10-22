@@ -374,7 +374,7 @@ function updateTile(el, d) {
 
 /* ---------- Tomograms: XZ and YZ sections at 25 / 50 / 75 % of y and x (z downwards) ---------- */
 const ORTHO_PLANES = ['xz', 'yz'];
-const PLANES_KEY = 'holopipe.tomoOverview.planes';
+const PLANES_KEY = 'workbench.tomoOverview.planes';
 const planesSelect = qs('planes');
 const showOrtho = () => !!planesSelect && planesSelect.value === 'all';
 if (planesSelect) {
@@ -562,7 +562,7 @@ qs('view').addEventListener('change', e => { location.href = `/overview?view=${e
 qs('sort').addEventListener('change', renderGrid);
 
 /* ---------- Save prefix (phase retrieval overview: data sets are "<scan>/<save prefix>") ---------- */
-const SAVE_PREFIX_KEY = `holopipe.${PAGE}Overview.savePrefix`;
+const SAVE_PREFIX_KEY = `workbench.${PAGE}Overview.savePrefix`;
 const savePrefixSelect = qs('save-prefix');
 const selectedSavePrefix = () => savePrefixSelect ? savePrefixSelect.value : '';
 function updateSavePrefixes() {

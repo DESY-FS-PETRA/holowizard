@@ -10,12 +10,12 @@ API_BASE = f"http://{socket.gethostname()}:8000/api"
 def get_test_options():
     """
     Calls your UI‐router endpoints:
-      GET /stage/reconstruction
+      GET /stage/phase_retrieval
       GET /stage/find_focus
 
     and returns a dict:
     {
-      "reconstruction": [...],
+      "phase_retrieval": [...],
       "find_focus":    [...]
     }
     """
@@ -23,21 +23,21 @@ def get_test_options():
     UI_BASE = API_BASE.rsplit("/api", 1)[0]
 
     # fetch both lists
-    recon_list = requests.get(f"{UI_BASE}/stage/reconstruction")
+    recon_list = requests.get(f"{UI_BASE}/stage/phase_retrieval")
     recon_list.raise_for_status()
 
     focus_list = requests.get(f"{UI_BASE}/stage/find_focus")
     focus_list.raise_for_status()
 
     return {
-        "reconstruction": recon_list.json(),
+        "phase_retrieval": recon_list.json(),
         "find_focus": focus_list.json(),
     }
 
 
 def parse_stage_options(opt_list):
     """
-    --option flags look like: --option reconstruction=wire
+    --option flags look like: --option phase_retrieval=wire
     """
     opts = {}
     for item in opt_list or []:
@@ -51,7 +51,7 @@ def parse_stage_options(opt_list):
 def main():
     # 1) fetch dynamic choices
     opts = get_test_options()
-    recon_choices = opts.get("reconstruction", [])
+    recon_choices = opts.get("phase_retrieval", [])
     focus_choices = opts.get("find_focus", [])
 
     # 2) build parser
@@ -64,10 +64,11 @@ def main():
     parser.add_argument(
         "--stages",
         nargs="+",
-        help="Should be a subset of: flatfield, find_focus, reconstruction, tomography",
+        help="Should be a subset of: flatfield, find_focus, phase_retrieval, tomography",
     )
     parser.add_argument(
-        "--reconstruction",
+        "--phase-retrieval",
+        dest="phase_retrieval",
         choices=recon_choices,
         help="Preset for phase‐retrieval (Can be adapted in the holowizard config folder or under /parameter)",
     )
@@ -87,7 +88,7 @@ def main():
         "z01": args.z01,
         "a0": args.a0,
         "energy": args.energy,
-        "reconstruction": args.reconstruction,
+        "phase_retrieval": args.phase_retrieval,
         "find_focus": args.find_focus,
     }
     if args.stages:

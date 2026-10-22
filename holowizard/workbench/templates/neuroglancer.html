@@ -242,7 +242,7 @@ const qs = id => document.getElementById(id);
 const enc = encodeURIComponent;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const CLIENT_AVAILABLE = {{ 'true' if client_available else 'false' }};
-const STORE_KEY = 'holopipe.neuroglancer';
+const STORE_KEY = 'workbench.neuroglancer';
 // The client is loaded from /neuroglancer/v/<token>/ (the URL layout of Neuroglancer's Python integration).
 const CLIENT_URL = `/neuroglancer/v/${Math.random().toString(36).slice(2, 12)}/`;
 const state = { tomograms: [], entry: null, shown: null, pollTimer: null, job: null };
@@ -282,7 +282,7 @@ function glslPiecewise(name, type, points, value) {
 // many faint background voxels do not add up to a haze); masked voxels ("no data") are transparent.
 // With a CT preset, the volume rendering uses the preset's opacity and colour instead. The preset's HU window runs
 // from phase 0, the background (window start), to the end of the contrast range where the material is (window end):
-// the most negative end with "Invert contrast" (material with negative values, as in holopipe's phase tomograms),
+// the most negative end with "Invert contrast" (material with negative values, as in holowizard's phase tomograms),
 // otherwise the most positive end. It is set in its own control "density" so that the slices keep their contrast;
 // the cut-off moves the window start away from the noise around 0.
 function shaderFor(z, v = viewSettings()) {

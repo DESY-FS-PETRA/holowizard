@@ -5,8 +5,7 @@ defaults:
 - beamtime
 - server
 - scan
-- tomography
-- reconstruction: 
+- phase_retrieval: 
   - defaults_thin
   - defaults_thick
 - find_focus: 

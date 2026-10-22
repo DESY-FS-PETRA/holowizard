@@ -83,7 +83,7 @@ class Scan(ABC):
         self.z01 = z01
         self.z02 = z02
         self.config = cfg
-        self.reconstruction = cfg.reconstruction
+        self.phase_retrieval = cfg.phase_retrieval
         self.find_focus = cfg.find_focus
         self.meta_dict = self._load_metadata(path_to_metadata)
         self.a0 = a0
@@ -92,12 +92,12 @@ class Scan(ABC):
         beam_setup = BeamSetup(
             energy=self.energy,
             z02=self.z02,
-            px_size=cfg.scan.px_size * cfg.reconstruction.stages[-1].padding.down_sampling_factor,
+            px_size=cfg.scan.px_size * cfg.phase_retrieval.stages[-1].padding.down_sampling_factor,
         )
         measurement = Measurement(self.z01)
 
         _, self.M, self.dx_eff, self.z_eff, self.fr_eff = ConeBeam.get_effective_geometry(beam_setup, measurement)
-        self.binning = cfg.reconstruction.stages[-1].padding.down_sampling_factor
+        self.binning = cfg.phase_retrieval.stages[-1].padding.down_sampling_factor
         self.key = str(uuid.uuid4())  # Unique identifier for the scan
         self.cancelled = False
 
@@ -128,7 +128,7 @@ class Scan(ABC):
             "further_paths": dict(self.config.paths),
             "flatfield": OmegaConf.to_container(self.config.flatfield),
             "config": {
-                "reconstruction": remove_keys(OmegaConf.to_container(self.reconstruction, resolve=True)),
+                "phase_retrieval": remove_keys(OmegaConf.to_container(self.phase_retrieval, resolve=True)),
                 "find_focus": remove_keys(OmegaConf.to_container(self.find_focus, resolve=True)),
             },
         }

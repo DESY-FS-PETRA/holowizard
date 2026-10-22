@@ -49,7 +49,7 @@ async def _lifespan(app: FastAPI):
         with initialize_config_dir(version_base="1.2", config_dir=str(source)):
             cfg = compose(config_name="defaults")
     app.state.beamtime = Beamtime(beamtime_name=cfg.beamtime.id, year=cfg.beamtime.year, cluster=None)
-    app.state.config_dir = app.state.beamtime.log_path / cfg.paths.pipe_config
+    app.state.config_dir = app.state.beamtime.log_path / cfg.paths.workbench_config
     _sync_config_dir(source, app.state.config_dir)
     dask_dict = OmegaConf.to_container(cfg["dask_options"], resolve=True)
     dask_options = DaskOptions.from_dict(dask_dict)
@@ -87,7 +87,7 @@ def create_app(cfg=None, config_source: Union[str, Path] = None) -> FastAPI:
     """Create the server app.
 
     ``config_source`` is the folder with the shipped configs (default: ``scripts/config``). On startup it is
-    copied into ``<beamtime log_path>/<paths.pipe_config>``, which is the folder the UI reads and writes.
+    copied into ``<beamtime log_path>/<paths.workbench_config>``, which is the folder the UI reads and writes.
     """
     app = FastAPI(lifespan=_lifespan)
     app.state.config_source = Path(config_source) if config_source else CONFIG_SOURCE

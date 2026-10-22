@@ -238,7 +238,7 @@
 <script>
 const qs = id => document.getElementById(id);
 const enc = encodeURIComponent;
-const DATASET_KEY = 'holopipe.tomography.dataset';
+const DATASET_KEY = 'workbench.tomography.dataset';
 const state = { dataset: null, job: null, pollTimer: null, index: 0, token: 0, images: new Map() };
 
 async function api(url, opts) {

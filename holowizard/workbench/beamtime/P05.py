@@ -19,7 +19,7 @@ class P05Beamtime(Beamtime):
 
         path_raw = f"/asap3/petra3/gpfs/p05/{year}/data/{beamtime_name}/raw"
         path_processed = f"/asap3/petra3/gpfs/p05/{year}/data/{beamtime_name}/processed"
-        log_path = f"/asap3/petra3/gpfs/p05/{year}/data/{beamtime_name}/scratch_cc/holopipe"
+        log_path = f"/asap3/petra3/gpfs/p05/{year}/data/{beamtime_name}/scratch_cc/holowizard_workbench"
         os.makedirs(log_path,exist_ok=True)
         super().__init__(path_raw, path_processed, log_path, beamtime_name, cluster)
         # self.meta_dict = self._load_metadata(path_raw)

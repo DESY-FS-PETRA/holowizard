@@ -44,8 +44,8 @@ UI_CLIENT_COOKIE = "holowizard_client_id"
 # Stages whose config is fixed and not selectable in the UI.
 FIXED_STAGE_CONFIGS = {"find_focus": "defaults.yaml"}
 # Tasks run by "Submit Phase Retrieval"; flatfield is always run first by the beamtime.
-SUBMIT_TASKS = ["flatfield", "reconstruction"]
-# Every edit made in the reconstruction parameter form goes into the parameter set of the logged-in user.
+SUBMIT_TASKS = ["flatfield", "phase_retrieval"]
+# Every edit made in the phase retrieval parameter form goes into the parameter set of the logged-in user.
 # Everyone can load it, only its user can write it.
 CUSTOM_PREFIX = "custom_"
 PARAMETER_SET_NAME = re.compile(r"[A-Za-z0-9_-]+")
@@ -107,7 +107,7 @@ def dict_from_form(form: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
-# Test reconstructions and find focus process a single image: one SLURM worker job is enough (only "Submit phase
+# Test phase retrievals and find focus process a single image: one SLURM worker job is enough (only "Submit phase
 # retrieval" starts the full pool).
 PREVIEW_JOBS = 1
 
@@ -196,11 +196,11 @@ async def submit_scan(cfg_in: ScanConfig, bg: BackgroundTasks, request: Request)
     cfg = state.cfg.copy()
     energy = cfg_in.energy or state.cfg.scan.energy
     cfg.scan.tasks = SUBMIT_TASKS
-    # The reconstruction always uses the parameters of the form on the phase retrieval page.
-    reconstruction = dict_from_form(cfg_in.form_data or {})
-    if not reconstruction["stages"]:
-        raise HTTPException(status_code=400, detail="No reconstruction parameters; choose a parameter set first")
-    cfg.reconstruction = reconstruction
+    # The phase retrieval always uses the parameters of the form on the phase retrieval page.
+    phase_retrieval = dict_from_form(cfg_in.form_data or {})
+    if not phase_retrieval["stages"]:
+        raise HTTPException(status_code=400, detail="No phase retrieval parameters; choose a parameter set first")
+    cfg.phase_retrieval = phase_retrieval
 
     if cfg_in.base_dir is not None:
         cfg.paths.base_dir = cfg_in.base_dir
@@ -334,7 +334,7 @@ def api_compute_z_params(req: GeometryRequest, request: Request):
 @router.post("/api/parameter_sets/custom")
 async def save_custom_parameters(form_data: Dict[str, str], request: Request):
     name = custom_set_name(request.state.user)
-    out = request.app.state.config_dir / "reconstruction" / name
+    out = request.app.state.config_dir / "phase_retrieval" / name
     data = dict_from_form(form_data)
 
     def _write():
@@ -396,7 +396,7 @@ async def parameter_details(base_name: str, request: Request):
 async def save_tuning(request: Request):
     form = await request.form()
     data = dict_from_form(form)
-    stage = form.get("stage", "reconstruction")
+    stage = form.get("stage", "phase_retrieval")
     if stage in FIXED_STAGE_CONFIGS:
         raise HTTPException(status_code=400, detail=f"Parameters of stage '{stage}' are fixed and cannot be saved")
     name: UploadFile | str = form.get("param_set_name", "unnamed")
@@ -531,7 +531,7 @@ STEP_TEXT = {
     None: "Starting…",
     "flatfield": "Flatfield correction…",
     "find_focus": "Find focus: reconstructing the first z01 sampling point…",
-    "reconstruction": "Reconstructing the test image…",
+    "phase_retrieval": "Phase retrieval of the test image…",
 }
 
 
@@ -637,7 +637,7 @@ async def websocket_preview(ws: WebSocket):
                 continue
 
             form = dict_from_form(data.get("form_data", {}))
-            cfg.reconstruction = form
+            cfg.phase_retrieval = form
             try:
                 cfg.find_focus = load_stage_config(state.config_dir, "find_focus", FIXED_STAGE_CONFIGS["find_focus"])
             except Exception as e:

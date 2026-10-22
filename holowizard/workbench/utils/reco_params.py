@@ -15,7 +15,7 @@ def build_reco_params(scan: Scan, reco_params) -> RecoParams:
     Build a RecoParams object from the configuration dictionary for Find Focus.
 
     Args:
-        config (dict): Parsed holopipe configuration.
+        config (dict): Parsed holowizard configuration.
 
     Returns:
         RecoParams: The constructed runtime object.

@@ -60,13 +60,9 @@ holowizard_forge_generate_data = "holowizard.forge.scripts.generate_data:main"
 holowizard_forge_create_testconfig = "holowizard.forge.scripts.create_testconfig:main"
 holowizard_livereco_server_start = "holowizard.livereco.server.main:main"
 holowizard_core_create_examples = "holowizard.core.scripts.create_examples:main"
-holowizard_workbench_start = "holowizard.workbench.scripts.holopipe:main"
+holowizard_workbench_start = "holowizard.workbench.scripts.workbench:main"
 holowizard_workbench_users = "holowizard.workbench.server.auth:main"
 holowizard_workbench_reconstruct_scan = "holowizard.workbench.script.reco:main"
-# Former names of the commands (the package was called holowizard.pipe), kept for existing scripts
-holowizard_pipe_start = "holowizard.workbench.scripts.holopipe:main"
-holowizard_pipe_users = "holowizard.workbench.server.auth:main"
-holowizard_pipe_reconstruct_scan = "holowizard.workbench.script.reco:main"
 
 [project.optional-dependencies]
 dev = [

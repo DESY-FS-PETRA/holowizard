@@ -1,4 +1,4 @@
-"""Worker status page (dashboard.html): reconstruction progress of all submitted scans."""
+"""Worker status page (dashboard.html): phase retrieval progress of all submitted scans."""
 
 import json
 
@@ -18,11 +18,11 @@ def _progress(state):
         for t in scan.config.scan.tasks:
             tq = [f for f in q if t in f["key"]]
             running = sum(1 for f in tq if f["state"] == "processing")
-            total = len(scan.hologram_path) if t == "reconstruction" else 1
-            if t == "reconstruction":
-                # Counted by the beamtime as the images finish (0 before the reconstruction has started).
-                done = getattr(scan, "reconstruction_done", 0)
-                failed = getattr(scan, "reconstruction_failed", 0)
+            total = len(scan.hologram_path) if t == "phase_retrieval" else 1
+            if t == "phase_retrieval":
+                # Counted by the beamtime as the images finish (0 before the phase retrieval has started).
+                done = getattr(scan, "phase_retrieval_done", 0)
+                failed = getattr(scan, "phase_retrieval_failed", 0)
             else:
                 done = int(any(x["name"] == t and x["status"] == "done" for x in scan.done))
                 failed = int(any(x["name"] == t and x["status"] == "failed" for x in scan.done))

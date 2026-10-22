@@ -382,7 +382,7 @@
 
     <!-- LEFT: Parameter form -->
     <div class="panel col-params">
-        <div class="panel-title">Reconstruction Parameters</div>
+        <div class="panel-title">Phase Retrieval Parameters</div>
 
         <div class="field-row">
             <div class="field">
@@ -463,7 +463,7 @@
 
         <!-- Action buttons -->
         <div class="btn-row">
-            <input id="optimize-btn" type="submit" value="Test Reconstruction" class="btn btn-primary">
+            <input id="optimize-btn" type="submit" value="Test Phase Retrieval" class="btn btn-primary">
             <input id="find-focus-btn" type="button" value="Find Focus" class="btn">
             <input id="stop-btn" type="button" value="Stop" class="btn btn-danger">
         </div>
@@ -584,8 +584,8 @@
         return sel.onchange();
     };
 
-    // Parameter sets are always those of the reconstruction stage.
-    const STAGE = 'reconstruction';
+    // Parameter sets are always those of the phase retrieval stage.
+    const STAGE = 'phase_retrieval';
     const loadParameterSets = async () => {
         const opts = await fetchJson(endpoints.stage(STAGE));
         await fill(qs('parameter-select'), opts);
