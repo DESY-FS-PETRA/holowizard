@@ -161,3 +161,8 @@ class SlurmCluster:
         )
 
         return future
+
+    def set_num_workers(self, num_workers: int) -> None:
+        self.dask_options.num_worker = num_workers
+        if self.cluster:
+            self.cluster.scale(jobs=num_workers)
