@@ -24,9 +24,9 @@ class Header:
             header_message.append(" _   _         _         _    _  _                      _ ")
             header_message.append("| | | |       | |       | |  | |(_)                    | |")
             header_message.append("| |_| |  ___  | |  ___  | |  | | _  ____ __ _  _ __  __| |")
-            header_message.append("|  _  | / _ \ | | / _ \ | |/\| || ||_  // _` || '__|/ _` |")
-            header_message.append("| | | || (_) || || (_) |\  /\  /| | / /| (_| || |  | (_| |")
-            header_message.append("\_| |_/ \___/ |_| \___/  \/  \/ |_|/___|\__,_||_|   \__,_|")
+            header_message.append(r"|  _  | / _ \ | | / _ \ | |/\| || ||_  // _` || '__|/ _` |")
+            header_message.append(r"| | | || (_) || || (_) |\  /\  /| | / /| (_| || |  | (_| |")
+            header_message.append(r"\_| |_/ \___/ |_| \___/  \/  \/ |_|/___|\__,_||_|   \__,_|")
             header_message.append("                                                          ")
 
             header_message.append(Header.get_line())
