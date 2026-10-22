@@ -38,7 +38,7 @@ from starlette.datastructures import UploadFile
 from holowizard.workbench.scan import P05Scan as Scan
 from holowizard.workbench.scan.p05_scan import P05Geometry
 from holowizard.workbench.utils.python_export import test_phase_retrieval_script
-from holowizard.workbench.utils.scan_layout import split_subsets, subset_index, write_tomogram_marker
+from holowizard.workbench.utils.scan_layout import read_energy, split_subsets, subset_index, write_tomogram_marker
 
 UI_STATE_DIR = "ui_state"  # one JSON file per browser, inside beamtime.log_path
 UI_CLIENT_COOKIE = "holowizard_client_id"
@@ -501,6 +501,13 @@ async def list_folders(request: Request):
     if not path.exists():
         raise HTTPException(status_code=404, detail="Folder not found")
     return sorted(os.listdir(path))
+
+
+@router.get("/folder/{folder_name}/energy")
+async def scan_energy(folder_name: str, request: Request):
+    """Energy recorded in the raw folder of a scan (from the wavelength in scan_parameters.txt), or null."""
+    folder = _image_folder(request.app.state.beamtime.path_raw, folder_name, None)
+    return {"energy": await run_in_threadpool(read_energy, folder)}
 
 
 @router.get("/folder/{folder_name}/tomograms")

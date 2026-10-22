@@ -166,6 +166,11 @@
             align-items: center;
             gap: 12px;
         }
+        .submit-row .python-btn { margin-right: auto; }  /* left; the rest stays on the right */
+        .submit-row { flex-wrap: wrap; row-gap: 8px; }
+        .submit-row .btn-submit { white-space: nowrap; }
+        /* checkbox and submit button stay together (on the next line if the row is too narrow) */
+        .submit-group { display: flex; align-items: center; gap: 12px; margin-left: auto; }
         .btn-submit {
             display: inline-flex;
             align-items: center;
@@ -322,6 +327,11 @@
         /* Status of a running test run until its first image or plot arrives */
         .preview-status { font-size: 12px; color: #555; text-align: center; margin: 0.25rem 0 0; font-variant-numeric: tabular-nums; }
         .preview-status[hidden] { display: none; }
+        /* Value read from the raw data (e.g. the energy from scan_parameters.txt) */
+        .field-note { font-size: 11px; line-height: 1.3; color: #1f6b3a; }
+        .field-note.changed { color: #8a4b0f; }
+        .field-note[hidden] { display: none; }
+        input.from-scan { border-color: #7fb894; background: #f3faf5; }
         .field[hidden], .checkbox-label[hidden] { display: none; }
         /* Narrow windows: test image and live preview move below the scan panel. */
         @media (max-width: 1200px) {
@@ -424,6 +434,7 @@
             <div class="field">
                 <label for="energy">Energy (keV)</label>
                 <input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off">
+                <div class="field-note" id="energy-note" hidden></div>
             </div>
             <div class="field">
                 <label for="a0">A₀</label>
@@ -466,19 +477,22 @@
             <input id="optimize-btn" type="submit" value="Test Phase Retrieval" class="btn btn-primary">
             <input id="find-focus-btn" type="button" value="Find Focus" class="btn">
             <input id="stop-btn" type="button" value="Stop" class="btn btn-danger">
-            <input id="python-btn" type="button" value="Download Python" class="btn"
-                   title="Python script that runs the test phase retrieval of the chosen test image with these parameters, without the workbench">
         </div>
 
 
         <div class="submit-row">
-            <label class="checkbox-label" id="all-tomograms-label" hidden>
-                <input type="checkbox" id="all-tomograms"> All tomograms
-            </label>
-            <button id="submit-btn" type="button" class="btn btn-success btn-submit">
-                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8.5 14 2l-3.5 12-2.7-4.6L2 8.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.8 9.4 14 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                Submit Phase Retrieval
-            </button>
+            <input id="python-btn" type="button" value="Download Python" class="btn python-btn"
+                   title="Python script that runs the test phase retrieval of the chosen test image with these parameters, without the workbench">
+            <div class="submit-group">
+                <label class="checkbox-label" id="all-tomograms-label" hidden
+                       title="Submit Phase Retrieval processes all tomograms of the scan, one run each">
+                    <input type="checkbox" id="all-tomograms"> All tomograms
+                </label>
+                <button id="submit-btn" type="button" class="btn btn-success btn-submit">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8.5 14 2l-3.5 12-2.7-4.6L2 8.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.8 9.4 14 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    Submit Phase Retrieval
+                </button>
+            </div>
         </div>
     
       </div>
@@ -671,8 +685,33 @@
 
     // Scans with several tomograms (tomo_* subfolders): choose the tomogram of the test image; submit processes it
     // or all tomograms.
+    // Energy recorded with the scan (scan_parameters.txt of ptychography scans): fills the energy field and shows where
+    // it came from; a value entered by hand afterwards is marked as changed.
+    let scanEnergy = null;
+    const showEnergyNote = () => {
+        const note = qs('energy-note'), input = qs('energy');
+        const changed = scanEnergy && Math.abs(parseFloat(input.value) - scanEnergy.energy_kev) > 1e-9;
+        note.hidden = !scanEnergy;
+        input.classList.toggle('from-scan', !!scanEnergy && !changed);
+        note.classList.toggle('changed', !!changed);
+        if (!scanEnergy) return;
+        const source = `${scanEnergy.source}, wavelength ${(scanEnergy.wavelength_m * 1e12).toFixed(3)} pm`;
+        note.textContent = changed ? `Changed by hand; read from the scan: ${scanEnergy.energy_kev} keV` : `Read from the scan`;
+        note.title = source;
+    };
+    qs('energy').addEventListener('input', showEnergyNote);
+    // overwrite: false when the page state is restored, so that an energy entered by hand is kept after a reload.
+    const loadScanEnergy = async (scan, overwrite) => {
+        const { energy = null } = scan ? await fetchJson(`${endpoints.folder(scan)}/energy`).catch(() => ({})) : {};
+        if (scan !== qs('scan-select').value) return;
+        scanEnergy = energy;
+        if (energy && overwrite) { qs('energy').value = energy.energy_kev; scheduleSave(); }
+        showEnergyNote();
+    };
+
     qs('scan-select').onchange = async () => {
         const scan = qs('scan-select').value;
+        loadScanEnergy(scan, !restoring);
         const { tomograms = [] } = scan ? await fetchJson(`${endpoints.folder(scan)}/tomograms`).catch(() => ({})) : {};
         const multi = tomograms.length > 0;
         qs('tomogram-field').hidden = !multi;

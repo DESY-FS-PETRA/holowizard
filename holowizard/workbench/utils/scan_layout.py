@@ -77,6 +77,21 @@ def read_scan_parameters(scan_dir: Path) -> Dict[str, str]:
     return dict(line.split(": ", 1) for line in lines if ": " in line)
 
 
+HC_KEV_M = 1.239841984e-9  # h*c in keV*m: energy (keV) = HC_KEV_M / wavelength (m)
+
+
+def read_energy(scan_dir: Path) -> Optional[Dict]:
+    """X-ray energy of a scan from the wavelength in scan_parameters.txt (``wavelength_m``, written by the
+    ptychography scan scripts), or None. Classic holography scans do not record the energy in the raw folder."""
+    try:
+        wavelength = float(read_scan_parameters(scan_dir)["wavelength_m"])
+    except (KeyError, ValueError):
+        return None
+    if not wavelength > 0:
+        return None
+    return {"energy_kev": round(HC_KEV_M / wavelength, 3), "wavelength_m": wavelength, "source": SCAN_PARAMETERS_FILE}
+
+
 # --- Run folders of single tomograms ---
 def write_tomogram_marker(run_folder: Path, info: Dict) -> None:
     import json
