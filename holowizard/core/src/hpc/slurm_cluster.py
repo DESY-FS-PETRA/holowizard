@@ -30,6 +30,7 @@ class SlurmCluster:
     def get_cluster(self) -> SLURMCluster:
         logging.info("Creating Dask SLURM Cluster...")
         cluster = SLURMCluster(
+            job_name="holowizard",  # name of the worker jobs in squeue (dask_jobqueue's default: "dask-worker")
             queue=self.dask_options.partitions,
             cores=1,
             processes=1,
