@@ -1,0 +1,8 @@
+paths:
+  base_dir: "holowizard"  # save prefix of new runs (formerly "holopipe", still found as a legacy name)
+  phase_dir: "phase_retrieval"
+  absorption_dir: "absorption"
+  tomo_dir: "tomo_reco"
+  params_dir: "params"
+  logs_dir: "logs"
+  pipe_config: "pipe_config"

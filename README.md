@@ -66,7 +66,7 @@ $ holowizard_core_create_examples <directory>
 We provide a CLI command to initialize everything:
 
 ```bash
-$ holowizard_pipe_start beamtime.id=YOUR_BEAMTIME_ID beamtime.year=YEAR_OF_BEAMTIME
+$ holowizard_workbench_start beamtime.id=YOUR_BEAMTIME_ID beamtime.year=YEAR_OF_BEAMTIME
 ```
 
 This command sets up the pipeline. You can override any other configuration value using Hydra’s override syntax:  
@@ -102,7 +102,7 @@ curl -X POST \
 
 If you are on the same machine as the server is running you can use the python script:
 ```bash
-holowizard_pipe_reconstruct_scan --help # will tell you all important parameters
+holowizard_workbench_reconstruct_scan --help # will tell you all important parameters
 ```
 
 #### Required Parameters
