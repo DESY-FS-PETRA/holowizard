@@ -63,10 +63,10 @@ class PhaseRetrievalTask:
             return
         self.reco_params.measurements[0].data = scan["hologram", img_index]
 
-        filename = f"hologram_{img_index:04d}.tiff"
+        filename = f"phase_{img_index:04d}.tiff"
 
         self.reco_params.output_path = os.path.join(self.phase_dir, filename)
-        absorption_output_path = os.path.join(self.absorption_dir, filename)
+        absorption_output_path = os.path.join(self.absorption_dir, f"absorption_{img_index:04d}.tiff")
 
         Logger.current_log_level = Logger.level_num_loss
 
