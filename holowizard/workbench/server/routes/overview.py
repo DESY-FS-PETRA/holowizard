@@ -32,6 +32,8 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import RedirectResponse
 from PIL import Image
 
+from holowizard.workbench.utils.scan_layout import is_subset_name, read_positions, split_subsets
+
 DIR_PREFIX = "nano"
 TIFF_SUFFIXES = (".tif", ".tiff")
 MAX_IMAGE_SIZE = 4096
@@ -109,6 +111,12 @@ class OverviewSource:
     rotate: bool = True  # detector images are shown rotated by 90 degrees, like the test image preview
 
 
+def _raw_dataset_ok(ds: str) -> bool:
+    """A scan folder ("nano123") or a tomogram / reference subfolder of a multi-tomogram scan ("nano123/tomo_00003")."""
+    parts = ds.split("/")
+    return _safe_parts(ds, 1) or (_safe_parts(ds, 2) and is_subset_name(parts[1]))
+
+
 def _raw_summary(files):
     imgs = [f for f in files if f.startswith("img_")]
     refs = [f for f in files if f.startswith("ref_")]
@@ -157,7 +165,7 @@ SOURCES = {
         datasets=_scan_dirs,
         folder=lambda root, ds: root / ds,
         summarize=_raw_summary,
-        valid_id=lambda ds: _safe_parts(ds, 1),
+        valid_id=_raw_dataset_ok,
         unit="directories",
         empty_text=f"No {DIR_PREFIX}* directories yet.",
     ),
@@ -190,7 +198,45 @@ SOURCES = {
 }
 
 
+def _multi_tomogram_summary(root: Path, scan: str, subsets: Dict[str, List[str]], with_files: bool) -> Optional[Dict]:
+    """Raw scan with tomo_*/ref_* subfolders: the tile shows the first reference and the first tomogram; the
+    subfolders (with their image counts) and the lateral positions are listed for the popup."""
+    folder = root / scan
+    listed = {
+        name: _cached_by_mtime(folder / name, _list_tiffs) or [] for kind in ("tomo", "ref") for name in subsets[kind]
+    }
+    tomo0, refs0 = subsets["tomo"][0], (subsets["ref"][:1] or [None])[0]
+    imgs = [f for f in listed[tomo0] if f.startswith("img_")]
+    refs = [f for f in listed.get(refs0, []) if f.startswith("ref_")] if refs0 else []
+    thumbs = [
+        {"label": "ref first", "file": refs[0] if refs else None, "dataset": f"{scan}/{refs0}" if refs0 else None}
+    ]
+    thumbs += [dict(t, dataset=f"{scan}/{tomo0}") for t in _first_middle_last(imgs, "img")]
+    n = len(subsets["tomo"])
+    mtimes = [_mtime(folder)] + [_mtime(folder / name) for name in listed]
+    summary = {
+        "name": scan,
+        "mtime": max(t for t in mtimes if t is not None) / 1e9,
+        "meta": f"{n} tomogram{'s' if n != 1 else ''} · {len(imgs)} img · {len(refs)} ref",
+        "thumbs": thumbs,
+        "count": len(imgs),
+        "subsets": {
+            kind: [{"name": name, "count": len(listed[name])} for name in subsets[kind]] for kind in ("tomo", "ref")
+        },
+        "positions": _memo(
+            ("positions", str(folder), _mtime(folder / "positions.txt")), lambda: read_positions(folder)
+        ),
+    }
+    if with_files:
+        summary["files"] = listed[tomo0]
+    return summary
+
+
 def _dataset_summary(source: OverviewSource, root: Path, dataset: str, with_files: bool = False) -> Optional[Dict]:
+    if source.key == "raw" and "/" not in dataset:
+        subsets = split_subsets(_cached_by_mtime(root / dataset, _list_subdirs) or [])
+        if subsets["tomo"]:
+            return _multi_tomogram_summary(root, dataset, subsets, with_files)
     folder = source.folder(root, dataset)
     files = _cached_by_mtime(folder, _list_tiffs)
     if files is None:
@@ -275,9 +321,15 @@ def _image_size(folder: Path) -> Optional[List[int]]:
 
 
 def _raw_width(beamtime, scan: str) -> Optional[int]:
-    return _memo(
-        ("raw width", str(beamtime.path_raw), scan), lambda: _first_tiff_width(Path(beamtime.path_raw) / scan, "img")
-    )
+    def compute():
+        folder = Path(beamtime.path_raw) / scan
+        width = _first_tiff_width(folder, "img")
+        if width is None:  # multi-tomogram scan: the images are in tomo_* subfolders
+            tomos = split_subsets(_list_subdirs(folder))["tomo"]
+            width = _first_tiff_width(folder / tomos[0], "img") if tomos else None
+        return width
+
+    return _memo(("raw width", str(beamtime.path_raw), scan), compute)
 
 
 def _phase_width(beamtime, scan: str, prefix: str) -> Optional[int]:

@@ -151,6 +151,7 @@
             color: #888; pointer-events: none;
         }
         label.check { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        #subset-wrap[hidden] { display: none; }   /* .controls sets display: flex, which would override [hidden] */
         .hint { font-size: 11px; color: #aaa; }
     </style>
 </head>
@@ -200,6 +201,7 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-head">
             <h2 id="modal-title"></h2>
+            <label class="controls" id="subset-wrap" hidden>Tomogram <select id="subset-select"></select></label>
             <span class="controls" id="prefix-filter"></span>
             <span class="spacer"></span>
             <label class="controls">Resolution
@@ -363,7 +365,7 @@ function updateTile(el, d) {
     const frames = main.querySelectorAll('.thumb-frame');
     d.thumbs.forEach((t, i) => {
         setScaleBar(frames[i], d, !!t.file);
-        setThumb(imgs[i], PAGE, d.name, t.file);
+        setThumb(imgs[i], PAGE, t.dataset || d.name, t.file);   // multi-tomogram scans: images from a subfolder
         labels[i].textContent = t.file || `no ${t.label.split(' ')[0]}`;
         labels[i].title = t.label;
     });
@@ -471,7 +473,7 @@ function updateSummaryTile(el, d) {
         imgs.forEach((img, i) => {
             const t = thumbs[i];
             setScaleBar(frames[i], r.kind === 'raw' ? null : data, !!(t && t.file));
-            setThumb(img, r.kind, data ? data.name : '', t && t.file);
+            setThumb(img, r.kind, (t && t.dataset) || (data ? data.name : ''), t && t.file);
             labels[i].textContent = t && t.file ? t.file : '';
             labels[i].title = t ? t.label : '';
         });
@@ -672,8 +674,29 @@ async function loadFileList() {
     return (await res.json()).files;
 }
 
+// Multi-tomogram scans (e.g. ptychographic): tomo_* subfolders with the images, ref_* subfolders with the references.
+// The popup shows one subfolder at a time, the first tomogram by default; the dropdown switches between them.
+const fmtMicron = m => `${(m * 1e6).toFixed(1)} µm`;
+function fillSubsets(subsets, positions) {
+    const sel = qs('subset-select');
+    qs('subset-wrap').hidden = !subsets;
+    if (!subsets) { sel.innerHTML = ''; return; }
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const tomo = subsets.tomo.map((t, i) => {
+        const pos = positions && positions[i] ? ` · x ${fmtMicron(positions[i][0])}, y ${fmtMicron(positions[i][1])}` : '';
+        return `<option value="${esc(t.name)}">${esc(t.name)} · ${t.count} img${pos}</option>`;
+    }).join('');
+    const refs = subsets.ref.map(t => `<option value="${esc(t.name)}">${esc(t.name)} · ${t.count} ref</option>`).join('');
+    sel.innerHTML = `<optgroup label="Tomograms">${tomo}</optgroup>` + (refs ? `<optgroup label="References">${refs}</optgroup>` : '');
+    sel.value = subsets.tomo[0].name;
+}
+
 async function openViewer(dir, source, info) {
-    viewer.dir = dir;
+    // A multi-tomogram raw scan opens its first tomogram; viewer.dir is then "<scan>/<subfolder>".
+    const subsets = source === 'raw' && info && info.subsets && info.subsets.tomo && info.subsets.tomo.length ? info.subsets : null;
+    fillSubsets(subsets, info && info.positions);
+    viewer.scan = dir;
+    viewer.dir = subsets ? `${dir}/${subsets.tomo[0].name}` : dir;
     viewer.source = source;
     // Pixel size for the scale bar (phase retrieval and tomograms only).
     viewer.pixel = source !== 'raw' && info && info.pixel_size_nm ? info.pixel_size_nm : null;
@@ -697,6 +720,22 @@ async function openViewer(dir, source, info) {
     }
     viewer.pollTimer = setInterval(refreshViewerFiles, POLL_MS);
 }
+
+qs('subset-select').addEventListener('change', async e => {
+    // Same image position in the other tomogram (compare the same angle at different positions).
+    const keep = viewer.index;
+    viewer.dir = `${viewer.scan}/${e.target.value}`;
+    viewer.prefix = 'img';
+    message('Loading…', true);
+    try {
+        const files = await loadFileList();
+        if (!files.some(f => prefixOf(f) === 'img')) viewer.prefix = 'all';
+        applyFiles(files, null);
+        show(Math.min(keep, Math.max(0, viewer.files.length - 1)));
+    } catch (err) {
+        message('Could not load directory: ' + err.message);
+    }
+});
 
 async function refreshViewerFiles() {
     if (!viewer.dir) return;
