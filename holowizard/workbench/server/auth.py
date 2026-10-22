@@ -1,7 +1,7 @@
 """Password login for the pipe server.
 
 Users are stored with PBKDF2 password hashes in a JSON file (default
-``~/.config/holowizard/workbench_users.json``, override with ``HOLOPIPE_USERS_FILE``).
+``~/.config/holowizard/pipe_users.json``, override with ``HOLOPIPE_USERS_FILE``).
 If the file does not exist, it is created on server start with the user
 ``p05user`` and a random password that is printed once to the console.
 

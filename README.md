@@ -22,6 +22,7 @@ The software is designed to cover all steps in experimental/algorithm developmen
 - [Tools](#tools)
   - [The Core](#the-core)
   - [The Workbench](#the-workbench)
+    - [User Administration](#user-administration)
   - [The Forge](#the-forge)
   - [The Livereco](#the-livereco)
 - [Citations](#citations)
@@ -80,6 +81,52 @@ INFO:     Uvicorn running on http://MY_IP_ADDRESS:MY_PORT (Press CTRL+C to quit)
 ```
 
 Click the address to open a browser window
+
+### User Administration
+
+Every page of the workbench requires a login. Users and their password hashes (PBKDF2-SHA256) are stored in a JSON file,
+by default
+
+```
+~/.config/holowizard/pipe_users.json
+```
+
+of the account that runs the server. Set the environment variable `HOLOPIPE_USERS_FILE` to use another file, e.g. one
+shared by several instances. The file is readable only by its owner and also holds the secret used to sign the login
+cookies, so keep it private.
+
+**First start:** if the file does not exist yet, the server creates it with the user `p05user` and a random password,
+which is printed once to the console:
+
+```
+========================================================================
+Created login user file /home/<account>/.config/holowizard/pipe_users.json
+  user:     p05user
+  password: <random password>
+Change it with: holowizard_workbench_users passwd p05user
+========================================================================
+```
+
+**Managing users** (on the machine and with the account that runs the server):
+
+```bash
+$ holowizard_workbench_users list              # show all users
+$ holowizard_workbench_users add <user>        # add a user (asks for the password)
+$ holowizard_workbench_users passwd <user>     # change a password
+$ holowizard_workbench_users remove <user>     # remove a user
+```
+
+- User names may contain letters, digits, `_` and `-` (at most 64 characters); passwords need at least 8 characters.
+- The last remaining user cannot be removed.
+- Changes take effect immediately, without restarting the server. Changing a password or removing a user signs out all
+  existing logins of that user.
+- A login stays valid for 7 days. *Logout* in the menu ends it earlier.
+
+**What is stored per user:** each user has their own editable parameter set on the Phase Retrieval page
+(`pipe_config/reconstruction/custom_<user>.yaml` in the beamtime's log folder, e.g.
+`scratch_cc/holopipe/`), and the rotation center and tomography pages track running
+jobs per user (only the user who started a reconstruction can cancel it). The user who saved a rotation center or
+started a tomogram is recorded in `rotation_center.yaml` and `reconstruction.yaml`.
 
 ## The Forge
 

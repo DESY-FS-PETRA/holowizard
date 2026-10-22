@@ -7,7 +7,6 @@ from holowizard.workbench.tasks import (
     FlatFieldTask,
     PhaseRetrievalTask,
     FindFocusTask,
-    TomographyTask,
 )
 from holowizard.workbench.utils.submit_and_handle import submit_and_handle
 from holowizard.workbench.server.websocket_viewer import WebsocketViewer
@@ -32,9 +31,7 @@ class Beamtime(ABC):
         self.path_raw = Path(path_raw)
         self.path_processed = Path(path_processed)
         self.log_path = Path(log_path)
-        # self.meta_dict = self._load_metadata("")
         self.scans = []
-        self.current_scan = None
         self.cluster = cluster
 
     @abstractmethod
@@ -76,7 +73,11 @@ class Beamtime(ABC):
 
     def run_scan(self, scan: Scan):
         """
-        Run the scan pipeline: flatfield → find_focus → reconstruction → tomography.
+        Run the phase retrieval of a submitted scan: flatfield correction, then the reconstruction of all holograms.
+
+        The tasks come from ``scan.config.scan.tasks``, which "Submit Phase Retrieval" sets to flatfield and
+        reconstruction. Find focus runs only for single test images (``phase_retrieval_single_holo``); the
+        tomographic reconstruction is started separately on the Tomography page.
         """
         # --- FLATFIELD ---
         flatfield_task = FlatFieldTask(scan)
@@ -84,16 +85,6 @@ class Beamtime(ABC):
         scan.done.append(dict(name="flatfield", status=status))
         if scan.cancelled:
             return
-
-        # --- FIND FOCUS ---
-        if "find_focus" in scan.config.scan.tasks:
-            find_focus_task = FindFocusTask(scan, flatfield_task.save_path)
-            result, status = submit_and_handle("find_focus", find_focus_task, self.cluster, scan)
-            if result and status == "done":
-                scan.z01 = result.get("z01")
-            scan.done.append(dict(name="find_focus", status=status))
-            if scan.cancelled:
-                return
 
         # --- RECONSTRUCTION ---
         if "reconstruction" in scan.config.scan.tasks:
@@ -126,14 +117,6 @@ class Beamtime(ABC):
                     f.release()
             status = "cancelled" if scan.cancelled else "done"
             scan.done.append(dict(name="reconstruction", status=status))
-            if scan.cancelled:
-                return
-
-        # --- TOMOGRAPHY ---
-        if "tomography" in scan.config.scan.tasks:
-            task = TomographyTask(scan)
-            _, status = submit_and_handle("tomography", task, self.cluster, scan)
-            scan.done.append(dict(name="tomography", status=status))
 
     def cancel_task(self, scan_id):
         """
@@ -158,10 +141,14 @@ class Beamtime(ABC):
 
     def phase_retrieval_single_holo(self, scan, session_id, find_focus=False, img_name=None, progress=None):
         """
-        Optimize a single hologram by running the find focus task.
+        Test reconstruction of a single hologram (Phase Retrieval page): flatfield correction, then either find focus
+        (returns its result, e.g. the fitted z01) or a phase retrieval shown live in the browser (returns None).
 
         Args:
-            img_index (int): Index of the image to be optimized.
+            scan (Scan): Scan of the hologram.
+            session_id (str): Browser session that receives the live images or plots.
+            find_focus (bool): Run find focus instead of the phase retrieval.
+            img_name (str): File name of the hologram (the test image chosen on the page).
             progress (callable, optional): called with the name of each step ("flatfield", "find_focus",
                 "reconstruction") when it is submitted, e.g. to show the status on the web page.
         """

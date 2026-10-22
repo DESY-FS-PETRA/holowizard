@@ -80,7 +80,6 @@ line-length = 120
 exclude = [
   "holowizard/forge",
   "tests/forge",
-  "holowizard/workbench/gui/windows/main_window.py", # temporary
 ]
 
 [tool.ruff.lint]
