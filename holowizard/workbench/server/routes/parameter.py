@@ -29,7 +29,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from omegaconf import OmegaConf
 from plotly.utils import PlotlyJSONEncoder
 from pydantic import BaseModel
@@ -37,6 +37,7 @@ from starlette.datastructures import UploadFile
 
 from holowizard.workbench.scan import P05Scan as Scan
 from holowizard.workbench.scan.p05_scan import P05Geometry
+from holowizard.workbench.utils.python_export import test_phase_retrieval_script
 from holowizard.workbench.utils.scan_layout import split_subsets, subset_index, write_tomogram_marker
 
 UI_STATE_DIR = "ui_state"  # one JSON file per browser, inside beamtime.log_path
@@ -258,6 +259,80 @@ async def submit_scan(cfg_in: ScanConfig, bg: BackgroundTasks, request: Request)
     for scan in scans:  # processed one after the other
         bg.add_task(_run_with_cluster, state.cluster, state.beamtime.new_scan, scan)
     return JSONResponse({"status": "submitted", "runs": [str(s.config.paths.base_dir) for s in scans]})
+
+
+class PythonExportRequest(ScanConfig):
+    img_name: str
+
+
+def _python_export(state, req: PythonExportRequest, user: Optional[str]) -> tuple:
+    """Script and file name of the test phase retrieval of ``req.img_name`` with the parameters of the page; the scan
+    is set up as for "Test Phase Retrieval" (same geometry, flatfield components and stages)."""
+    from holowizard.workbench.tasks.flat_field_correction import components_path
+    from holowizard.workbench.utils.reco_params import build_reco_params
+
+    cfg = copy.deepcopy(state.cfg)
+    cfg.phase_retrieval = dict_from_form(req.form_data or {})
+    if not cfg.phase_retrieval["stages"]:
+        raise HTTPException(status_code=400, detail="No phase retrieval parameters; choose a parameter set first")
+    cfg.find_focus = load_stage_config(state.config_dir, "find_focus", FIXED_STAGE_CONFIGS["find_focus"])
+    if req.base_dir:
+        cfg.paths.base_dir = req.base_dir
+    beamtime = state.beamtime
+    _image_folder(beamtime.path_raw, req.scan_name, req.tomogram)  # checks the scan and tomogram names
+    try:
+        scan = Scan(
+            name=req.scan_name,
+            holder=0,
+            path_raw=beamtime.path_raw,
+            path_processed=beamtime.log_path,
+            z01_new=req.z01,
+            z02_new=req.z02,
+            energy=req.energy,
+            cfg=cfg,
+            a0=req.a0,
+            log_path=beamtime.log_path,
+            tomogram=req.tomogram or None,
+        )
+    except (OSError, ValueError, IndexError, KeyError) as e:
+        raise HTTPException(status_code=422, detail=f"Could not read {req.scan_name}: {e}")
+    hologram = next((p for p in scan.hologram_path if req.img_name in p), None)
+    if hologram is None:
+        raise HTTPException(status_code=404, detail=f"Image not found: {req.img_name}")
+    if not scan.reference_path:
+        raise HTTPException(
+            status_code=422,
+            detail=f"No reference images ({scan.reference_key}*) for {req.scan_name}; the flatfield correction needs them.",
+        )
+    a0 = float(scan.a0 if scan.a0 is not None else 1.0)
+    scan.a0 = a0
+    script = test_phase_retrieval_script(
+        reco_params=build_reco_params(scan, scan.phase_retrieval),
+        a0=a0,
+        scan_name=req.scan_name,
+        hologram_file=str(hologram),
+        reference_dir=str(Path(scan.reference_path[0]).parent),
+        reference_key=scan.reference_key,
+        components_path=str(components_path(scan)),  # the file of the test phase retrieval (not created here)
+        num_components=int(cfg.flatfield.components_num),
+        tomogram=req.tomogram or None,
+        created_by=user,
+    )
+    parts = [req.scan_name, req.tomogram, Path(req.img_name).stem]
+    return script, "test_phase_retrieval_" + "_".join(p for p in parts if p) + ".py"
+
+
+@router.post("/api/phase_retrieval/python")
+async def download_python(req: PythonExportRequest, request: Request):
+    """Python script that runs the test phase retrieval of the chosen test image with the current parameters."""
+    script, filename = await run_in_threadpool(
+        _python_export, request.app.state, req, getattr(request.state, "user", None)
+    )
+    return PlainTextResponse(
+        script,
+        media_type="text/x-python",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def _tomograms(path_raw, scan_name: str) -> List[str]:
@@ -649,19 +724,23 @@ async def websocket_preview(ws: WebSocket):
                 _cancel_run(beamtime, preview.run)
 
             run_session = str(uuid.uuid4())
-            scan = Scan(
-                name=data["scan_name"],
-                holder=0,
-                path_raw=beamtime.path_raw,
-                path_processed=beamtime.log_path,
-                z01_new=data["z01"],
-                z02_new=data["z02"],
-                energy=data.get("energy"),
-                cfg=cfg,
-                a0=data["a0"],
-                log_path=beamtime.log_path,
-                tomogram=data.get("tomogram") or None,
-            )
+            try:
+                scan = Scan(
+                    name=data["scan_name"],
+                    holder=0,
+                    path_raw=beamtime.path_raw,
+                    path_processed=beamtime.log_path,
+                    z01_new=data["z01"],
+                    z02_new=data["z02"],
+                    energy=data.get("energy"),
+                    cfg=cfg,
+                    a0=data["a0"],
+                    log_path=beamtime.log_path,
+                    tomogram=data.get("tomogram") or None,
+                )
+            except (OSError, ValueError, IndexError, KeyError) as e:
+                await conn.send({"error": f"Could not read {data.get('scan_name')}: {e}"})
+                continue
             scan.key = run_session
 
             run = PreviewRun(run_session, scan, bool(data.get("find_focus", False)))

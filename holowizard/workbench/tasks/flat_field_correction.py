@@ -11,6 +11,18 @@ from holowizard.workbench.scan import Scan
 from holowizard.core.src.logging.logger import Logger
 
 
+def components_path(scan: Scan) -> Path:
+    """File of the flatfield components (PCA of the reference images) of a scan.
+
+    For scans with several tomograms, the components depend on the reference folder of the tomogram
+    (``scan.reference``, e.g. ``ref_00000``): its name is added to the file name, so tomograms with different
+    reference folders get their own components, and tomograms that share a reference folder share them.
+    """
+    path = Path(scan.path_processed) / Path(scan.config.paths.base_dir) / Path(scan.config.flatfield.save_path)
+    reference = getattr(scan, "reference", None) if getattr(scan, "tomogram", None) else None
+    return path.with_name(f"{path.stem}_{reference}{path.suffix}") if reference else path
+
+
 class FlatFieldTask:
     """
     This class handles the calculation of flatfield components using a JSON-based configuration.
@@ -31,7 +43,7 @@ class FlatFieldTask:
         """
 
         self.components_num = scan.config.flatfield.components_num
-        self.save_path = scan.path_processed / Path(scan.config.paths.base_dir) / Path(scan.config.flatfield.save_path)
+        self.save_path = components_path(scan)
         os.makedirs(self.save_path.parent, exist_ok=True)
         self.save_path = str(self.save_path)
         self.flatfield = None

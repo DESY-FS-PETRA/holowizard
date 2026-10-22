@@ -44,11 +44,15 @@ class P05Scan(Scan):
             scan_path=self.path_raw, energy=energy, holder=holder, qp=True, tomogram_index=subset_index(tomogram)
         )
 
-        z01, z02 = p05geo.compute_z_params()
-        if z01_new:
-            z01 = z01_new
-        if z02_new:
-            z02 = z02_new
+        # z01 and z02 entered by the user win; the motor log is only needed for missing ones.
+        if z01_new and z02_new:
+            z01, z02 = z01_new, z02_new
+        else:
+            z01, z02 = p05geo.compute_z_params()
+            if z01_new:
+                z01 = z01_new
+            if z02_new:
+                z02 = z02_new
 
         super().__init__(
             name,
@@ -221,7 +225,8 @@ class P05Geometry:
         self.fzp_d = 300  # um
         self.wl = 1.2398 / self.energy  # wavelength in nm
 
-        self.motor_pos, self.rotation_angle = load_motor_log(self.scan_path, tomogram_index)
+        # None for scans without a motor log (e.g. test scans): then z01 and z02 must be given.
+        self.motor_pos, self.rotation_angle = load_motor_log(self.scan_path, tomogram_index) or (None, None)
 
     @property
     def fzp_f(self):
@@ -237,6 +242,11 @@ class P05Geometry:
         Returns:
             tuple: (z01, z02) in nanometer.
         """
+        if self.motor_pos is None:
+            raise ValueError(
+                f"No motor log ({Path(self.scan_path).name}__LogMotors.log) to compute z01 and z02 from; "
+                "enter z01 and z02."
+            )
         try:
             o_stage_y = float(self.motor_pos["OpticsStage1_y"])
             slider1 = float(self.motor_pos["GraniteSlab_1"])
