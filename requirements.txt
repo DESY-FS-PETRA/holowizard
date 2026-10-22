@@ -12,7 +12,7 @@ requests
 xraylib
 cupy-cuda12x
 pyzmq
-pyqt5-tools
+PyQt5
 scikit-learn
 scikit-image
 GitPython
