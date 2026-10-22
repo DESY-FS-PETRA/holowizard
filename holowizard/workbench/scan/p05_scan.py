@@ -6,6 +6,7 @@ from holowizard.workbench.scan.scan import Scan
 from holowizard.core.api.parameters import Measurement
 from holowizard.core.api.parameters import BeamSetup
 import pandas as pd
+from holowizard.workbench.utils.scan_layout import reference_for, split_subsets, subset_index
 
 
 class P05Scan(Scan):
@@ -14,7 +15,9 @@ class P05Scan(Scan):
     Inherits from the base Scan class.
     """
 
-    def __init__(self, name, energy, holder, path_raw, path_processed, log_path, cfg, z01_new, z02_new, a0):
+    def __init__(
+        self, name, energy, holder, path_raw, path_processed, log_path, cfg, z01_new, z02_new, a0, tomogram=None
+    ):
         """
         Initialize the P05Scan object.
 
@@ -22,11 +25,24 @@ class P05Scan(Scan):
             name (str): Name of the scan.
             energy (float): Energy used in the scan.
             holder (float): Holder length in mm.
+            tomogram (str, optional): For scans with several tomograms (``tomo_<index>`` subfolders, e.g.
+                ptychographic scans): the tomogram to use. Its images are read from that subfolder, the references
+                from the matching ``ref_<index>`` subfolder and the rotation angles from the log rows of the tomogram.
         """
         self.path_raw = Path(path_raw) / Path(name)
         self.path_processed = Path(path_processed) / Path(name)
         self.path_log = Path(log_path) / Path(name)
-        p05geo = P05Geometry(scan_path=self.path_raw, energy=energy, holder=holder, qp=True)
+        self.tomogram = tomogram
+        holograms_dir = refs_dir = self.path_raw
+        if tomogram:
+            references = split_subsets(p.name for p in self.path_raw.iterdir() if p.is_dir())["ref"]
+            self.reference = reference_for(tomogram, references)
+            if self.reference is None:
+                raise FileNotFoundError(f"No ref_* folder in {self.path_raw}")
+            holograms_dir, refs_dir = self.path_raw / tomogram, self.path_raw / self.reference
+        p05geo = P05Geometry(
+            scan_path=self.path_raw, energy=energy, holder=holder, qp=True, tomogram_index=subset_index(tomogram)
+        )
 
         z01, z02 = p05geo.compute_z_params()
         if z01_new:
@@ -37,8 +53,8 @@ class P05Scan(Scan):
         super().__init__(
             name,
             energy,
-            self.path_raw,
-            self.path_raw,
+            holograms_dir,
+            refs_dir,
             self.path_processed,
             self.path_raw,
             self.path_log,
@@ -113,12 +129,14 @@ class P05Scan(Scan):
         return skio.imread(path)
 
 
-def load_motor_log(scan_path):
+def load_motor_log(scan_path, tomogram_index=None):
     """
     Load motor positions from the scan's log file.
 
     Args:
         scan_path (str or Path): Path to the scan directory.
+        tomogram_index (int, optional): For scans with several tomograms: only the rotation angles of this
+            tomogram ("Image Number II" in the scan log).
 
     Returns:
         dict: Mapping of motor names to float values.
@@ -181,6 +199,8 @@ def load_motor_log(scan_path):
     df = pd.read_csv(filename, comment="#", sep=r"\s+", names=columns)
     # Projections are labelled "img" (older scans) or "img_y0", "img_y1", ... (newer scans).
     df = df[df["Image Identifier"].astype(str).str.fullmatch(r"img(_y\d+)?")]
+    if tomogram_index is not None:
+        df = df[df["Image Number II"].astype(int) == int(tomogram_index)]
     df["Rotation Stage Position"] = df["Rotation Stage Position"].astype(float)
     return motor_pos, df["Rotation Stage Position"].to_numpy() * np.pi / 180
 
@@ -191,7 +211,7 @@ class P05Geometry:
     Handles P05-specific geometry calculation from scan motor logs.
     """
 
-    def __init__(self, scan_path, energy, holder, qp=True):
+    def __init__(self, scan_path, energy, holder, qp=True, tomogram_index=None):
         self.scan_path = scan_path
         self.energy = energy
         self.holder = holder
@@ -201,7 +221,7 @@ class P05Geometry:
         self.fzp_d = 300  # um
         self.wl = 1.2398 / self.energy  # wavelength in nm
 
-        self.motor_pos, self.rotation_angle = load_motor_log(self.scan_path)
+        self.motor_pos, self.rotation_angle = load_motor_log(self.scan_path, tomogram_index)
 
     @property
     def fzp_f(self):

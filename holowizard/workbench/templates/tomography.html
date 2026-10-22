@@ -144,6 +144,8 @@
         .btn-danger { color: #993c1d; border-color: rgba(153,60,29,0.3); }
         .btn-danger:hover { background: #faece7; }
         .result-link { font-size: 12px; }
+        #all-tomograms-label { display: block; margin-bottom: 0.6rem; }
+        #all-tomograms-label[hidden] { display: none; }
     </style>
 </head>
 <body>
@@ -202,6 +204,10 @@
             <input type="text" id="name" autocomplete="off">
         </div>
         <div class="hint" id="output-path" style="margin:-0.5rem 0 0.5rem; overflow-wrap:anywhere;"></div>
+        <label class="filter" id="all-tomograms-label" hidden>
+            <input type="checkbox" id="all-tomograms"> All tomograms of this scan, one after the other
+            <span class="hint">(each with its saved rotation center, else this one moved with the sample shift)</span>
+        </label>
         <div class="estimate" id="estimate"></div>
 
         <div class="action-row">
@@ -285,7 +291,9 @@ async function selectDataset() {
         const info = await api(`/api/rotation/dataset?dataset=${enc(name)}`);
         state.dataset = info;
         qs('dataset-info').textContent = `${info.projections} projections · ${info.angle_range_deg.toFixed(1)}° · ${info.cols} × ${info.rows} px`;
-        const saved = info.saved;
+        // Saved center of this run, else (multi-tomogram scans) the one derived from another tomogram.
+        const derived = info.derived && !info.derived.error ? info.derived : null;
+        const saved = info.saved || derived;
         qs('center').value = saved ? saved.rotation_center : info.default_center;
         const f = (saved && saved.filters) || {};
         qs('f-nan').checked = f.nan ?? true;
@@ -296,6 +304,8 @@ async function selectDataset() {
         qs('first-row').value = 0; qs('last-row').value = info.rows - 1;
         qs('first-row').max = qs('last-row').max = info.rows - 1;
         qs('name').value = defaultName();
+        qs('all-tomograms-label').hidden = !info.tomogram;
+        if (!info.tomogram) qs('all-tomograms').checked = false;
         loadThumbs(name);
         updateForm();
     } catch (e) {
@@ -319,7 +329,12 @@ function updateForm() {
         qs('estimate').textContent = ''; qs('start-btn').disabled = true; return;
     }
     const saved = info.saved, center = parseFloat(qs('center').value);
-    if (saved && Math.abs(saved.rotation_center - center) < 1e-9) {
+    const derived = !saved && info.derived && !info.derived.error ? info.derived : null;
+    if (derived && Math.abs(derived.rotation_center - center) < 1e-9) {
+        box.className = 'center-box ok';
+        box.textContent = `Rotation center derived from ${derived.from_dataset} (${derived.from_tomogram}, ` +
+            `${fmt(derived.from_center)}), shifted by ${fmt(derived.shift_px)} px (${derived.method}): ${fmt(center)}.`;
+    } else if (saved && Math.abs(saved.rotation_center - center) < 1e-9) {
         box.className = 'center-box ok';
         box.textContent = `Rotation center from the rotation center page: ${fmt(saved.rotation_center)}` +
             (saved.saved_by ? ` (saved by ${saved.saved_by}${saved.saved_at ? `, ${saved.saved_at.replace('T', ' ')}` : ''})` : '') + '.';
@@ -331,7 +346,8 @@ function updateForm() {
     }
     const [scan, prefix] = info.dataset.split('/');
     const name = qs('name').value.trim() || '…';
-    qs('output-path').textContent = `Stored in ${scan}/${prefix}/tomograms/${name}.`;
+    qs('output-path').textContent = `Stored in ${scan}/${prefix}/tomograms/${name}` +
+        (batchSelected() ? ` (and the same for the other tomograms, with their tomogram and center in the name).` : '.');
     const bin = parseInt(qs('binning').value);
     const first = parseInt(qs('first-row').value), last = parseInt(qs('last-row').value);
     const slices = Math.floor((last - first + 1) / bin);
@@ -374,6 +390,7 @@ function updateCenterLines() {
 }
 
 /* ---------- Reconstruction job ---------- */
+const batchSelected = () => !qs('all-tomograms-label').hidden && qs('all-tomograms').checked;
 async function start() {
     const body = {
         dataset: state.dataset.dataset,
@@ -382,6 +399,7 @@ async function start() {
         first_row: parseInt(qs('first-row').value),
         last_row: parseInt(qs('last-row').value),
         binning: parseInt(qs('binning').value),
+        all_tomograms: batchSelected(),
         filters: {
             nan: qs('f-nan').checked, dark: qs('f-dark').checked, dark_factor: parseFloat(qs('f-dark-factor').value) || 0.5,
             phase_min: qs('f-min').checked, min_factor: parseFloat(qs('f-min-factor').value) || 5, neighbours: false,
@@ -410,6 +428,10 @@ async function poll() {
     try {
         const s = await api(`/api/tomography/job/${job.id}`);
         if (state.job !== job && state.job.id !== s.id) return;
+        if (job.output_dataset && s.output_dataset !== job.output_dataset) {
+            // next tomogram of a batch: its slices replace those of the previous one
+            state.images.clear(); state.index = 0; state.shown = false;
+        }
         Object.assign(job, s);
         render(s);
         if (['checking', 'reconstructing'].includes(s.status)) state.pollTimer = setTimeout(poll, 1000);
@@ -429,15 +451,22 @@ function removedSummary(s) {
 function render(s) {
     const isRunning = ['checking', 'reconstructing'].includes(s.status);
     qs('cancel-btn').hidden = !isRunning;
+    // Batch (all tomograms of a scan): "Tomogram 2 / 5 (run, center …): " before the status of the current one.
+    const b = s.batch;
+    const pre = b ? `Tomogram ${b.index + 1} / ${b.count} (${b.runs[b.index]}, center ${fmt(b.centers[b.index])}): ` : '';
+    const overall = f => b ? (b.index + f) / b.count : f;
     if (s.status === 'checking') {
-        setStatus(`Checking projections (once per run)… ${s.checked} / ${s.projections}`); setProgress(0.05 * s.checked / s.projections);
+        setStatus(pre + `Checking projections (once per run)… ${s.checked || 0} / ${s.projections || '…'}`);
+        setProgress(overall(s.projections ? 0.05 * s.checked / s.projections : 0));
     } else if (s.status === 'reconstructing') {
-        setStatus(`Reconstructing slice ${s.done} / ${s.total}` + (s.eta != null ? ` · about ${fmtTime(s.eta)} left` : '') + '.' + removedSummary(s));
-        setProgress(0.05 + 0.95 * s.done / s.total);
+        setStatus(pre + `Reconstructing slice ${s.done} / ${s.total}` + (s.eta != null ? ` · about ${fmtTime(s.eta)} left` : '') + '.' + removedSummary(s));
+        setProgress(overall(0.05 + 0.95 * s.done / s.total));
     } else if (s.status === 'done') {
-        setStatus(`Done: ${s.total} slices in ${fmtTime(s.elapsed)}.` + removedSummary(s)); setProgress(1);
+        setStatus(b ? `Done: ${b.count} tomograms (${b.outputs.join(', ')}).`
+            : `Done: ${s.total} slices in ${fmtTime(s.elapsed)}.` + removedSummary(s));
+        setProgress(1);
     } else if (s.status === 'cancelled') {
-        setStatus(`Cancelled after ${s.done} of ${s.total} slices.`);
+        setStatus(pre + `Cancelled after ${s.done} of ${s.total} slices.`);
     } else if (s.status === 'error') {
         setStatus(s.message, true);
     }
@@ -504,7 +533,7 @@ qs('cancel-btn').addEventListener('click', cancel);
 ['center', 'binning'].forEach(id => qs(id).addEventListener('change', () => { qs('name').value = defaultName(); updateForm(); }));
 ['first-row', 'last-row'].forEach(id => qs(id).addEventListener('input', updateForm));
 qs('center').addEventListener('input', updateCenterLines);
-['name', 'f-nan', 'f-dark', 'f-dark-factor', 'f-min', 'f-min-factor'].forEach(id => qs(id).addEventListener('input', updateForm));
+['name', 'f-nan', 'f-dark', 'f-dark-factor', 'f-min', 'f-min-factor', 'all-tomograms'].forEach(id => qs(id).addEventListener('input', updateForm));
 qs('slice-slider').addEventListener('input', e => show(parseInt(e.target.value)));
 qs('slice-slider').addEventListener('wheel', e => { e.preventDefault(); show(state.index + (e.deltaY > 0 ? 1 : -1)); }, { passive: false });
 qs('prev-btn').addEventListener('click', () => show(state.index - 1));

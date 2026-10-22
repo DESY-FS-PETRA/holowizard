@@ -163,6 +163,8 @@
         .submit-row {
             display: flex;
             justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
         }
         .btn-submit {
             display: inline-flex;
@@ -320,6 +322,7 @@
         /* Status of a running test run until its first image or plot arrives */
         .preview-status { font-size: 12px; color: #555; text-align: center; margin: 0.25rem 0 0; font-variant-numeric: tabular-nums; }
         .preview-status[hidden] { display: none; }
+        .field[hidden], .checkbox-label[hidden] { display: none; }
         /* Narrow windows: test image and live preview move below the scan panel. */
         @media (max-width: 1200px) {
             .layout {
@@ -406,6 +409,10 @@
                 <label for="scan-select">Folder</label>
                 <select id="scan-select"></select>
             </div>
+            <div class="field" id="tomogram-field" hidden>
+                <label for="tomogram-select">Tomogram</label>
+                <select id="tomogram-select"></select>
+            </div>
             <div class="field">
                 <label for="img-select">Test Image</label>
                 <select id="img-select"></select>
@@ -463,6 +470,9 @@
 
 
         <div class="submit-row">
+            <label class="checkbox-label" id="all-tomograms-label" hidden>
+                <input type="checkbox" id="all-tomograms"> All tomograms
+            </label>
             <button id="submit-btn" type="button" class="btn btn-success btn-submit">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8.5 14 2l-3.5 12-2.7-4.6L2 8.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.8 9.4 14 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                 Submit Phase Retrieval
@@ -506,13 +516,17 @@
         parameter: v => `/parameter/${v}`,
         folder: v => `/folder/${v}`
     };
+    const tomogramQuery = () => {
+        const t = qs('tomogram-field').hidden ? '' : qs('tomogram-select').value;
+        return t ? `?tomogram=${encodeURIComponent(t)}` : '';
+    };
     const qs = s => document.getElementById(s);
     const fetchJson = async (url, opts) => (await fetch(url, opts)).json();
 
     // --- Persisted UI state (stored server-side next to the beamtime log path) ---
     const STATE_URL = '/api/ui_state/parameter';
     const PERSISTED_IDS = [
-        'parameter-select', 'scan-select', 'img-select',
+        'parameter-select', 'scan-select', 'tomogram-select', 'img-select', 'all-tomograms',
         'energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp',
         'vmin', 'vmax'
     ];
@@ -653,8 +667,21 @@
     });
     window.addEventListener('pagehide', () => { if (customTimer) saveCustom(true); });
 
+    // Scans with several tomograms (tomo_* subfolders): choose the tomogram of the test image; submit processes it
+    // or all tomograms.
     qs('scan-select').onchange = async () => {
-        const opts = await fetchJson(endpoints.folder(qs('scan-select').value));
+        const scan = qs('scan-select').value;
+        const { tomograms = [] } = scan ? await fetchJson(`${endpoints.folder(scan)}/tomograms`).catch(() => ({})) : {};
+        const multi = tomograms.length > 0;
+        qs('tomogram-field').hidden = !multi;
+        qs('all-tomograms-label').hidden = !multi;
+        if (multi) return fill(qs('tomogram-select'), tomograms);
+        qs('tomogram-select').innerHTML = '';
+        return loadImages();
+    };
+    qs('tomogram-select').onchange = () => loadImages();
+    const loadImages = async () => {
+        const opts = await fetchJson(endpoints.folder(qs('scan-select').value) + tomogramQuery());
         resetLivePreview();
         await fill(qs('img-select'), opts);
     };
@@ -687,7 +714,7 @@
         };
     };
     qs('img-select').onchange = async () => {
-        const url = `/image/${qs('scan-select').value}/${qs('img-select').value}`;
+        const url = `/image/${qs('scan-select').value}/${qs('img-select').value}${tomogramQuery()}`;
         qs('preview-image').style.display = 'block';
         resetLivePreview();
         const fig = await fetchJson(url);
@@ -717,6 +744,8 @@
         z02: +qs('z02').value,
         scan_name: qs('scan-select').value,
         img_name: qs('img-select').value,
+        tomogram: qs('tomogram-field').hidden ? null : qs('tomogram-select').value,
+        all_tomograms: !qs('tomogram-field').hidden && qs('all-tomograms').checked,
         energy: +qs('energy').value,
         base_dir: qs('prefix').value
     });
@@ -778,13 +807,14 @@
         const f = state.fields || {};
         restoring = true;
         try {
-            ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp']
+            ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp', 'all-tomograms']
                 .forEach(id => { if (id in f && qs(id)) setField(qs(id), f[id]); });
             toggleGeomControls();
 
             restorePrefs = {
                 'parameter-select': f['parameter-select'],
                 'scan-select': f['scan-select'],
+                'tomogram-select': f['tomogram-select'],
                 'img-select': f['img-select'],
             };
 
@@ -896,8 +926,10 @@
             // Phase retrieval (after flatfield) with the parameters of the form on the left.
             await flushCustom();
             const res = await fetch('api/submit_scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(retrieveReco()) });
-            const detail = res.ok ? '' : ((await res.json().catch(() => ({}))).detail || res.statusText);
-            alert(res.ok ? 'Submitted!' : `Submit failed: ${detail}`);
+            const body = await res.json().catch(() => ({}));
+            const runs = body.runs || [];
+            alert(res.ok ? (runs.length > 1 ? `Submitted ${runs.length} runs:\n${runs.join('\n')}` : 'Submitted!')
+                : `Submit failed: ${body.detail || res.statusText}`);
         };
     });
 

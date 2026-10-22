@@ -39,6 +39,13 @@ from PIL import Image
 from pydantic import BaseModel
 
 from holowizard.workbench.server.routes.overview import SOURCES, list_datasets
+from holowizard.workbench.utils.scan_layout import (
+    read_tomogram_marker,
+    shifts_from_positions,
+    shifts_from_registration,
+    split_subsets,
+    subset_index,
+)
 
 CENTER_FILE = "rotation_center.yaml"
 CACHE_DIR = "rotation_center_cache"  # in the beamtime log_path
@@ -58,6 +65,7 @@ SINOGRAM_CACHE_SIZE = 8  # test slices kept in memory (one row of every projecti
 STATS_THREADS = 48
 ALGORITHM = "FBP_CUDA"
 PROJECTION_IDENTIFIER = re.compile(r"img(_y\d+)?")  # "img" (older scans) or "img_y0", ... (newer scans)
+DETECTOR_PIXEL_M = 6.5e-6  # P05 nano detector; with the magnification of scan_parameters.txt for tomogram shifts
 
 router = APIRouter(tags=["rotation"])
 _gpu_lock = threading.Lock()  # astra/GPU work one reconstruction at a time
@@ -73,7 +81,10 @@ def _file_index(name: str) -> Optional[int]:
 
 # --- Data set / geometry ---
 def _run_folders(beamtime, dataset: str) -> Tuple[Path, Path, Path]:
-    """(run folder, projection folder, raw scan folder) of a phase retrieval run "scan/prefix"."""
+    """(run folder, projection folder, raw folder of the holograms) of a phase retrieval run "scan/prefix".
+
+    For runs of one tomogram of a multi-tomogram scan (marked by tomogram.json), the raw folder is the tomogram's
+    subfolder ``raw/<scan>/tomo_<index>``."""
     src = SOURCES["phase"]
     if not src.valid_id(dataset):
         raise HTTPException(status_code=400, detail=f"Invalid data set: {dataset!r}")
@@ -82,18 +93,35 @@ def _run_folders(beamtime, dataset: str) -> Tuple[Path, Path, Path]:
     projections = src.folder(processed, dataset)
     if not projections.is_dir():
         raise HTTPException(status_code=404, detail=f"Data set not found: {dataset}")
-    return processed / scan / prefix, projections, Path(beamtime.path_raw) / scan
+    run_folder = processed / scan / prefix
+    raw_scan = Path(beamtime.path_raw) / scan
+    marker = read_tomogram_marker(run_folder)
+    if marker:
+        tomogram = str(marker["tomogram"])
+        if subset_index(tomogram) is None or not (raw_scan / tomogram).is_dir():
+            raise HTTPException(status_code=404, detail=f"Raw tomogram not found: {scan}/{tomogram}")
+        raw_scan = raw_scan / tomogram
+    return run_folder, projections, raw_scan
+
+
+def _scan_log(raw_scan: Path) -> Tuple[Path, Optional[int]]:
+    """Scan log and tomogram index ("image number II") of a raw folder: a tomogram subfolder uses the log of its
+    scan, restricted to its rows."""
+    index = subset_index(raw_scan.name)
+    folder = raw_scan.parent if index is not None else raw_scan
+    return folder / f"{folder.name}__LogScan.log", index
 
 
 @lru_cache(maxsize=64)
-def _scan_angles(raw_scan: str, mtime_ns: int) -> Dict[int, float]:
+def _scan_angles(log: str, mtime_ns: int, tomogram_index: Optional[int] = None) -> Dict[int, float]:
     """Rotation angle (radians) per image number, from the projection rows of the raw scan log."""
     import pandas as pd
 
-    log = Path(raw_scan) / f"{Path(raw_scan).name}__LogScan.log"
     columns = ["identifier", "info", "number_1", "number_2", "number", "time", "current", "rotation"]
     df = pd.read_csv(log, comment="#", sep=r"\s+", names=columns, usecols=range(8))
     df = df[df["identifier"].astype(str).str.fullmatch(PROJECTION_IDENTIFIER)]
+    if tomogram_index is not None:
+        df = df[df["number_2"].astype(int) == tomogram_index]
     angles: Dict[int, float] = {}
     for number, rotation in zip(df["number"].astype(int), df["rotation"].astype(float)):
         angles.setdefault(int(number), float(np.radians(rotation)))
@@ -105,8 +133,8 @@ def _projections_and_angles(projections: Path, raw_scan: Path) -> Tuple[List[Pat
     if not files:
         raise ValueError("No projections in this run yet.")
     try:
-        log = raw_scan / f"{raw_scan.name}__LogScan.log"
-        angles = _scan_angles(str(raw_scan), log.stat().st_mtime_ns)
+        log, index = _scan_log(raw_scan)
+        angles = _scan_angles(str(log), log.stat().st_mtime_ns, index)
     except Exception as e:
         raise ValueError(f"Could not read the rotation angles from the raw scan log: {e}")
     used, theta = [], []
@@ -121,7 +149,8 @@ def _projections_and_angles(projections: Path, raw_scan: Path) -> Tuple[List[Pat
             f"at least {MIN_PROJECTIONS} are needed for a test reconstruction. "
             "Runs with a single image are test reconstructions, not tomography data."
         )
-    return used, np.asarray(theta), f"{len(used)} projections, angles from {raw_scan.name}__LogScan.log"
+    source = f"{log.name}" + (f" ({raw_scan.name})" if index is not None else "")
+    return used, np.asarray(theta), f"{len(used)} projections, angles from {source}"
 
 
 def _image_shape(files: List[Path]) -> Tuple[int, int]:
@@ -518,10 +547,93 @@ def _read_saved(run_folder: Path) -> Optional[Dict[str, Any]]:
     return data if isinstance(data, dict) else None
 
 
+# --- Rotation center shared by the tomograms of a multi-tomogram scan ---
+# The tomograms differ only by a lateral shift of the sample, so the rotation axis moves with the object: a center
+# tuned on one tomogram gives the centers of all others. Phase images are the raw holograms rotated by 90 degrees
+# (phase column = raw row), possibly binned, so the center moves by the row displacement of the object.
+_shift_cache: Dict[Tuple[str, str, str], Tuple[float, str]] = {}
+_shift_lock = threading.Lock()
+
+
+def _row_shift(scan_dir: Path, source: str, target: str) -> Tuple[float, str]:
+    """Row displacement (raw pixels) of the object in tomogram ``target`` relative to ``source``, and its origin."""
+    key = (str(scan_dir), source, target)
+    with _shift_lock:
+        if key in _shift_cache:
+            return _shift_cache[key]
+    tomograms = split_subsets(p.name for p in scan_dir.iterdir() if p.is_dir())["tomo"]
+    shifts = shifts_from_positions(scan_dir, tomograms, DETECTOR_PIXEL_M)
+    if shifts and source in shifts and target in shifts:
+        result = (shifts[target][0] - shifts[source][0], "positions.txt")
+    else:  # no usable positions: register the projections of the two tomograms
+        shifts = shifts_from_registration(scan_dir, [source, target])
+        result = (shifts[target][0], "image registration")
+    with _shift_lock:
+        _shift_cache[key] = result
+    return result
+
+
+def _raw_rows(raw_tomogram: Path) -> Optional[int]:
+    for p in sorted(raw_tomogram.iterdir()):
+        if p.name.startswith("img") and p.suffix.lower() in (".tif", ".tiff"):
+            try:
+                with tifffile.TiffFile(str(p)) as t:
+                    return int(t.pages[0].shape[0])
+            except (OSError, ValueError, IndexError):
+                continue
+    return None
+
+
+def _derived_center(beamtime, run_folder: Path, raw_tomogram: Path, cols: int) -> Optional[Dict[str, Any]]:
+    """Rotation center of a run of one tomogram from the most recently saved center of another tomogram of the same
+    scan and series (save prefix), shifted by the displacement of the object; None if there is none."""
+    marker = read_tomogram_marker(run_folder)
+    if not marker:
+        return None
+    candidates = []
+    for sibling in run_folder.parent.iterdir():
+        if sibling == run_folder:
+            continue
+        other = read_tomogram_marker(sibling)
+        saved = _read_saved(sibling) if other else None
+        if other and saved and other.get("series") == marker.get("series") and "rotation_center" in saved:
+            if (raw_tomogram.parent / str(other["tomogram"])).is_dir():
+                candidates.append((str(saved.get("saved_at") or ""), sibling, other, saved))
+    if not candidates:
+        return None
+    _, sibling, other, saved = max(candidates, key=lambda c: c[0])
+    raw_rows = _raw_rows(raw_tomogram)
+    if not raw_rows:
+        return None
+    scale = 1 / max(1, round(raw_rows / cols))  # binning of the phase retrieval
+    shift, method = _row_shift(raw_tomogram.parent, str(other["tomogram"]), raw_tomogram.name)
+    center = float(saved["rotation_center"]) + shift * scale
+    return {
+        "rotation_center": round(center, 2),
+        "from_dataset": f"{run_folder.parent.name}/{sibling.name}",
+        "from_tomogram": other["tomogram"],
+        "from_center": float(saved["rotation_center"]),
+        "shift_px": round(shift * scale, 2),
+        "method": method,
+        "filters": saved.get("filters"),
+        "slice": saved.get("slice"),
+    }
+
+
 def _dataset_info(beamtime, dataset: str) -> Dict[str, Any]:
     run_folder, projections, raw_scan = _run_folders(beamtime, dataset)
     files, angles, angle_info = _projections_and_angles(projections, raw_scan)
     rows, cols = _image_shape(files)
+    saved = _read_saved(run_folder)
+    derived = None
+    if saved is None:
+        try:
+            derived = _derived_center(beamtime, run_folder, raw_scan, cols)
+        except Exception as e:  # a missing center is not an error; the page offers the image center
+            derived = {"error": f"Could not derive the rotation center from another tomogram: {e}"}
+        if derived and "rotation_center" in derived and not 0 <= derived["rotation_center"] < cols:
+            derived = {"error": f"The center derived from {derived['from_dataset']} lies outside the image."}
+    marker = read_tomogram_marker(run_folder)
     return {
         "dataset": dataset,
         "rows": rows,
@@ -529,8 +641,10 @@ def _dataset_info(beamtime, dataset: str) -> Dict[str, Any]:
         "projections": len(files),
         "angle_range_deg": float(np.degrees(angles.max() - angles.min())),
         "angle_info": angle_info,
-        "default_center": cols // 2,
-        "saved": _read_saved(run_folder),
+        "default_center": round(derived["rotation_center"]) if derived and "rotation_center" in derived else cols // 2,
+        "saved": saved,
+        "derived": derived,
+        "tomogram": marker["tomogram"] if marker else None,
         "config_file": str(run_folder / CENTER_FILE),
     }
 
@@ -641,6 +755,7 @@ async def save_center(req: SaveRequest, request: Request):
         "projections_used": req.projections_used,
         "filters": req.filters.model_dump() if req.filters else None,
         "projection_folder": str(projections),
+        "tomogram": info["tomogram"],
         "saved_by": getattr(request.state, "user", None),
         "saved_at": datetime.datetime.now().isoformat(timespec="seconds"),
     }

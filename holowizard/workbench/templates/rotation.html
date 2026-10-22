@@ -291,12 +291,22 @@ async function loadDatasets() {
     }
 }
 
+// Text on the center derived from another tomogram of the same scan (multi-tomogram scans), or ''.
+function derivedText(d) {
+    if (!d) return '';
+    if (d.error) return d.error;
+    return `Derived from ${d.from_dataset} (${d.from_tomogram}, center ${fmt(d.from_center)}): ` +
+        `${fmt(d.rotation_center)}, shift ${d.shift_px >= 0 ? '+' : ''}${fmt(d.shift_px)} px from ${d.method}`;
+}
+
 function showSaved() {
     const s = state.dataset && state.dataset.saved;
+    const d = state.dataset && state.dataset.derived;
     const box = qs('saved');
-    box.classList.toggle('none', !s);
+    box.classList.toggle('none', !s && !(d && !d.error));
     box.textContent = s
         ? `Saved rotation center: ${fmt(s.rotation_center)} (slice ${s.slice}${s.saved_by ? `, by ${s.saved_by}` : ''}${s.saved_at ? `, ${s.saved_at.replace('T', ' ')}` : ''})`
+        : d ? `${derivedText(d)}. Not saved for this run yet; save it to use it as is, or tune it.`
         : 'No rotation center saved for this run yet.';
     box.title = state.dataset ? state.dataset.config_file : '';
 }
@@ -327,7 +337,8 @@ async function selectDataset() {
         loadThumbs(name);
         const saved = info.saved;
         qs('slice').max = qs('slice-num').max = info.rows - 1;
-        const slice = saved && saved.slice != null && saved.slice < info.rows ? saved.slice : Math.floor(info.rows / 2);
+        const from = saved || (info.derived && !info.derived.error ? info.derived : null);
+        const slice = from && from.slice != null && from.slice < info.rows ? from.slice : Math.floor(info.rows / 2);
         qs('slice').value = qs('slice-num').value = slice;
         qs('guess').value = info.default_center;
         qs('run-btn').disabled = false;

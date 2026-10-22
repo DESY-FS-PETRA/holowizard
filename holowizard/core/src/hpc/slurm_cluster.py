@@ -22,6 +22,8 @@ class SlurmCluster:
         self.cluster = None
         self.worker_thread = None
         self.stop_event = None
+        # SLURM jobs to keep running (each job starts one worker per GPU of its node); the full pool by default.
+        self.target_jobs = dask_options.num_worker
 
         logging.info(f"Using environment: {self.env}")
 
@@ -43,7 +45,10 @@ class SlurmCluster:
                 "module load maxwell mamba",
                 "source activate base",
                 ". mamba-init",
-                f"mamba activate {self.dask_options.python_env}",
+                # conda/mamba environment, or a plain virtual environment (e.g. created with uv)
+                f'if [ -f "{self.dask_options.python_env}/pyvenv.cfg" ]; then '
+                f'source "{self.dask_options.python_env}/bin/activate"; '
+                f'else mamba activate "{self.dask_options.python_env}"; fi',
                 f"""
                 if ! command -v nvidia-smi &> /dev/null; then
                     echo "nvidia-smi not found. Exiting."
@@ -81,11 +86,13 @@ class SlurmCluster:
             self.client_scheduler: Client = Client(self.scheduler_address)
             logging.info(f"Scheduler address: {self.client_scheduler.dashboard_link}")
 
-    def start_cluster(self) -> None:
+    def start_cluster(self, jobs=None) -> None:
+        """Start the workers: ``jobs`` SLURM jobs, or the full pool (``num_worker``) if None."""
         self.start_scheduler()
         self.start_maintainer_thread()
+        self.target_jobs = self.dask_options.num_worker if jobs is None else jobs
         self.cluster = self.get_cluster()
-        self.cluster.scale(jobs=self.dask_options.num_worker)
+        self.cluster.scale(jobs=self.target_jobs)
         logging.info("Waiting for workers to connect...")
 
     def start_maintainer_thread(self):
@@ -105,7 +112,7 @@ class SlurmCluster:
                 logging.info("No active cluster")
                 continue
 
-            scale_up_to = self.dask_options.num_worker
+            scale_up_to = self.target_jobs
             try:
                 worker_count = len(self.client_scheduler.scheduler_info()["workers"])
                 logging.info(f"{worker_count} workers connected.")
@@ -165,5 +172,10 @@ class SlurmCluster:
 
     def set_num_workers(self, num_workers: int) -> None:
         self.dask_options.num_worker = num_workers
+        self.scale_to(num_workers)
+
+    def scale_to(self, jobs: int) -> None:
+        """Change the number of SLURM jobs kept running (also for the maintainer thread)."""
+        self.target_jobs = jobs
         if self.cluster:
-            self.cluster.scale(jobs=num_workers)
+            self.cluster.scale(jobs=jobs)

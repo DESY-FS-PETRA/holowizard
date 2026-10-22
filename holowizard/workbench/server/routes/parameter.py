@@ -1,6 +1,8 @@
 """Phase retrieval page (parameter.html, parameter_form.html): parameter sets, live preview and scan submission."""
 
 import asyncio
+import copy
+import datetime
 import json
 import os
 import re
@@ -9,7 +11,7 @@ import time
 import uuid
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import plotly.express as px
@@ -35,6 +37,7 @@ from starlette.datastructures import UploadFile
 
 from holowizard.workbench.scan import P05Scan as Scan
 from holowizard.workbench.scan.p05_scan import P05Geometry
+from holowizard.workbench.utils.scan_layout import split_subsets, subset_index, write_tomogram_marker
 
 UI_STATE_DIR = "ui_state"  # one JSON file per browser, inside beamtime.log_path
 UI_CLIENT_COOKIE = "holowizard_client_id"
@@ -67,6 +70,9 @@ class ScanConfig(BaseModel):
     energy: Optional[float] = None
     base_dir: Optional[Path] = None
     form_data: Optional[Dict[str, Any]] = None
+    # Scans with several tomograms (tomo_* subfolders): the tomogram to process, or all of them.
+    tomogram: Optional[str] = None
+    all_tomograms: bool = False
 
 
 class GeometryRequest(BaseModel):
@@ -100,6 +106,10 @@ def dict_from_form(form: Dict[str, Any]) -> Dict[str, Any]:
 
     return data
 
+
+# Test reconstructions and find focus process a single image: one SLURM worker job is enough (only "Submit phase
+# retrieval" starts the full pool).
+PREVIEW_JOBS = 1
 
 # The test image plot is at most a few hundred pixels wide, so it is sent downsampled to this size.
 PREVIEW_IMAGE_SIZE = 768
@@ -197,25 +207,84 @@ async def submit_scan(cfg_in: ScanConfig, bg: BackgroundTasks, request: Request)
 
     holder_val = float(cfg_in.holder) if cfg_in.holder is not None else 0
 
-    scan = Scan(
-        name=cfg_in.scan_name,
-        holder=holder_val,
-        path_raw=state.beamtime.path_raw,
-        path_processed=state.beamtime.path_processed,
-        z01_new=cfg_in.z01,
-        z02_new=cfg_in.z02,
-        energy=energy,
-        cfg=cfg,
-        a0=cfg_in.a0,
-        log_path=state.beamtime.log_path,
-    )
-    bg.add_task(_run_with_cluster, state.cluster, state.beamtime.new_scan, scan)
-    return JSONResponse({"status": "submitted"})
+    # Scans with several tomograms: one run per tomogram, in "<save prefix>_<tomogram>" (marked by tomogram.json, so
+    # that the other pages know the tomogram of the run).
+    tomograms = _tomograms(state.beamtime.path_raw, cfg_in.scan_name)
+    if tomograms and cfg_in.all_tomograms:
+        selected: List[Optional[str]] = tomograms
+    elif tomograms:
+        if cfg_in.tomogram not in tomograms:
+            raise HTTPException(status_code=400, detail=f"Choose a tomogram of {cfg_in.scan_name}")
+        selected = [cfg_in.tomogram]
+    else:
+        selected = [None]
+    series = str(cfg.paths.base_dir)
+    user = getattr(request.state, "user", None)
+    scans = []
+    for tomogram in selected:
+        run_cfg = copy.deepcopy(cfg)
+        if tomogram:
+            run_cfg.paths.base_dir = f"{series}_{tomogram}"
+        try:
+            scan = Scan(
+                name=cfg_in.scan_name,
+                holder=holder_val,
+                path_raw=state.beamtime.path_raw,
+                path_processed=state.beamtime.path_processed,
+                z01_new=cfg_in.z01,
+                z02_new=cfg_in.z02,
+                energy=energy,
+                cfg=run_cfg,
+                a0=cfg_in.a0,
+                log_path=state.beamtime.log_path,
+                tomogram=tomogram,
+            )
+        except (OSError, ValueError, IndexError) as e:
+            raise HTTPException(status_code=422, detail=f"Could not read {cfg_in.scan_name} {tomogram or ''}: {e}")
+        if tomogram:
+            write_tomogram_marker(
+                Path(state.beamtime.path_processed) / cfg_in.scan_name / run_cfg.paths.base_dir,
+                {
+                    "scan": cfg_in.scan_name,
+                    "tomogram": tomogram,
+                    "index": subset_index(tomogram),
+                    "reference": scan.reference,
+                    "series": series,
+                    "created_by": user,
+                    "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
+                },
+            )
+        scans.append(scan)
+    for scan in scans:  # processed one after the other
+        bg.add_task(_run_with_cluster, state.cluster, state.beamtime.new_scan, scan)
+    return JSONResponse({"status": "submitted", "runs": [str(s.config.paths.base_dir) for s in scans]})
 
 
-def _run_with_cluster(cluster, func, *args, **kwargs):
-    """Run ``func`` while holding the SLURM workers (they are started first if needed)."""
-    with cluster.lease():
+def _tomograms(path_raw, scan_name: str) -> List[str]:
+    """The tomo_* subfolders of a scan (empty for classic scans)."""
+    folder = Path(path_raw) / scan_name
+    try:
+        return split_subsets(p.name for p in folder.iterdir() if p.is_dir())["tomo"]
+    except OSError:
+        return []
+
+
+def _image_folder(path_raw, scan_name: str, tomogram: Optional[str]) -> Path:
+    """Folder with the images of a scan, or of one of its tomograms."""
+    folder = Path(path_raw) / scan_name
+    if Path(scan_name).name != scan_name or scan_name in ("", ".", ".."):
+        raise HTTPException(status_code=400, detail=f"Invalid scan: {scan_name!r}")
+    if tomogram:
+        if tomogram not in _tomograms(path_raw, scan_name):
+            raise HTTPException(status_code=404, detail=f"Tomogram not found: {scan_name}/{tomogram}")
+        folder = folder / tomogram
+    return folder
+
+
+def _run_with_cluster(cluster, func, *args, jobs: Optional[int] = None, **kwargs):
+    """Run ``func`` while holding the SLURM workers (they are started first if needed): ``jobs`` worker jobs, or
+    the full pool if None."""
+    with cluster.lease(jobs):
         return func(*args, **kwargs)
 
 
@@ -359,10 +428,17 @@ async def list_folders(request: Request):
     return sorted(os.listdir(path))
 
 
+@router.get("/folder/{folder_name}/tomograms")
+async def list_tomograms(folder_name: str, request: Request):
+    """Tomograms (tomo_* subfolders) of a scan with several tomograms; empty for classic scans."""
+    _image_folder(request.app.state.beamtime.path_raw, folder_name, None)
+    return {"tomograms": await run_in_threadpool(_tomograms, request.app.state.beamtime.path_raw, folder_name)}
+
+
 ## TODO that has to be changed to the beamtime object
 @router.get("/folder/{folder_name}")
-async def list_folder(folder_name: str, request: Request):
-    path = Path(request.app.state.beamtime.path_raw) / folder_name
+async def list_folder(folder_name: str, request: Request, tomogram: Optional[str] = None):
+    path = _image_folder(request.app.state.beamtime.path_raw, folder_name, tomogram)
     if not path.exists():
         raise HTTPException(status_code=404, detail="Folder not found")
     return sorted([x for x in os.listdir(path) if "img" in x])
@@ -370,8 +446,10 @@ async def list_folder(folder_name: str, request: Request):
 
 ## TODO that has to be changed to a scan object
 @router.get("/image/{scan}/{img}")
-async def get_image(scan: str, img: str, request: Request):
-    path = Path(request.app.state.beamtime.path_raw) / scan / img
+async def get_image(scan: str, img: str, request: Request, tomogram: Optional[str] = None):
+    if Path(img).name != img:
+        raise HTTPException(status_code=400, detail=f"Invalid image: {img!r}")
+    path = _image_folder(request.app.state.beamtime.path_raw, scan, tomogram) / img
     if not path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     fig_dict = await run_in_threadpool(process_image, path)
@@ -492,6 +570,7 @@ async def _execute_preview(beamtime, cluster, preview: UserPreview, run: Preview
             beamtime.phase_retrieval_single_holo,
             run.scan,
             run.session,
+            jobs=PREVIEW_JOBS,
             img_name=data["img_name"],
             find_focus=run.find_focus,
             progress=progress,
@@ -581,6 +660,7 @@ async def websocket_preview(ws: WebSocket):
                 cfg=cfg,
                 a0=data["a0"],
                 log_path=beamtime.log_path,
+                tomogram=data.get("tomogram") or None,
             )
             scan.key = run_session
 

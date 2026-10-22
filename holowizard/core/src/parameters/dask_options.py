@@ -9,7 +9,7 @@ class DaskOptions:
         working_dir="",
         num_worker=1,
         partitions="maxgpu,psgpu,allgpu",
-        constraint="V100|P100|A100|A6000",
+        constraint="V100|A100|A6000",  # no P100: torch cu128 needs compute capability >= 7.0
         walltime="07-00:00:00",
         python_env=None,
         check_interval=120,

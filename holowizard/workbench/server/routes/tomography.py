@@ -36,11 +36,15 @@ from holowizard.workbench.server.routes.rotation import (
     Filters,
     _dataset_info,
     _projections_and_angles,
+    _raw_rows,
+    _read_saved,
+    _row_shift,
     _run_folders,
     apply_filters,
     fbp,
     projection_stats,
 )
+from holowizard.workbench.utils.scan_layout import read_tomogram_marker, subset_index
 
 PARAMETER_FILE = "reconstruction.yaml"
 TOMOGRAM_SUBDIR = "tomograms"  # in the run folder of the phase retrieval
@@ -88,6 +92,7 @@ class TomogramJob:
         output: Path,
         output_dataset: str,
         link: Path,
+        start: bool = True,
     ):
         self.id = uuid.uuid4().hex
         self.beamtime, self.user, self.dataset = beamtime, user, dataset
@@ -105,7 +110,8 @@ class TomogramJob:
         self.started = time.time()
         self.finished: Optional[float] = None
         self.cancelled = False
-        threading.Thread(target=self._run, name=f"tomogram-{self.id[:8]}", daemon=True).start()
+        if start:
+            threading.Thread(target=self._run, name=f"tomogram-{self.id[:8]}", daemon=True).start()
 
     # binned row index -> file name
     def slice_name(self, index: int) -> str:
@@ -235,6 +241,63 @@ class TomogramJob:
         }
 
 
+class TomogramBatch:
+    """Reconstructs the tomograms of several runs one after the other (all tomograms of a multi-tomogram scan).
+    Looks like a TomogramJob to the page: its state is that of the current reconstruction, plus ``batch``."""
+
+    def __init__(self, user: str, jobs: List[Dict[str, Any]]):
+        self.id = uuid.uuid4().hex
+        self.user = user
+        self.specs = jobs  # TomogramJob arguments per run
+        self.index = 0
+        self.current: Optional[TomogramJob] = None
+        self.results: List[str] = ["waiting"] * len(jobs)
+        self.errors: List[str] = []
+        self.cancelled = False
+        self.status = "checking"
+        threading.Thread(target=self._run, name=f"tomogram-batch-{self.id[:8]}", daemon=True).start()
+
+    def _run(self):
+        for i, spec in enumerate(self.specs):
+            if self.cancelled:
+                self.results[i] = "cancelled"
+                continue
+            self.index = i
+            self.current = TomogramJob(**spec, start=False)
+            self.current.cancelled = self.cancelled
+            self.current._run()
+            self.results[i] = self.current.status
+            if self.current.status == "error":
+                self.errors.append(f"{spec['dataset']}: {self.current.message}")
+        failed = [i for i, r in enumerate(self.results) if r == "error"]
+        self.status = "cancelled" if self.cancelled else "error" if failed else "done"
+
+    def cancel(self):
+        self.cancelled = True
+        if self.current is not None:
+            self.current.cancelled = True
+
+    def state(self) -> Dict[str, Any]:
+        job = self.current
+        s = job.state() if job else {"status": "checking", "message": "Starting…", "checked": 0, "done": 0}
+        if self.status != "checking" or job is None:  # finished (or not started)
+            s["status"] = self.status if self.status != "checking" else s["status"]
+        elif s["status"] not in ("checking", "reconstructing"):  # between two reconstructions
+            s["status"] = "checking"
+        if self.status == "error":
+            s["message"] = "Failed: " + "; ".join(self.errors)
+        s["id"] = self.id
+        s["batch"] = {
+            "index": self.index,
+            "count": len(self.specs),
+            "runs": [spec["dataset"] for spec in self.specs],
+            "outputs": [spec["output_dataset"] for spec in self.specs],
+            "centers": [float(spec["center"]) for spec in self.specs],
+            "results": self.results,
+        }
+        return s
+
+
 # --- Routes ---
 class TomogramRequest(BaseModel):
     dataset: str
@@ -244,10 +307,122 @@ class TomogramRequest(BaseModel):
     first_row: Optional[int] = None
     last_row: Optional[int] = None
     binning: int = 1
+    # Multi-tomogram scans: reconstruct the tomograms of all runs of the same scan and series. Each run uses its own
+    # saved rotation center, else the center given here shifted by the displacement of the object.
+    all_tomograms: bool = False
 
 
 def _user(request: Request) -> str:
     return getattr(request.state, "user", None) or "anonymous"
+
+
+def _job_spec(beamtime, user: str, req: TomogramRequest, dataset: str, center: float, name: str) -> Dict[str, Any]:
+    """Checked TomogramJob arguments for one run (HTTPException if something is wrong)."""
+    if not NAME_PATTERN.fullmatch(name) or name in (".", ".."):
+        raise HTTPException(status_code=400, detail="Use only letters, digits and . _ + - in the name")
+    try:
+        info = _dataset_info(beamtime, dataset)
+        _, projections, raw_scan = _run_folders(beamtime, dataset)
+        files, angles, _ = _projections_and_angles(projections, raw_scan)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=f"{dataset}: {e}")
+    rows, cols = info["rows"], info["cols"]
+    first = 0 if req.first_row is None else req.first_row
+    last = rows - 1 if req.last_row is None else req.last_row
+    if not 0 <= first <= last < rows:
+        raise HTTPException(status_code=400, detail=f"Slices must lie between 0 and {rows - 1} ({dataset})")
+    if (last - first + 1) // req.binning < 1:
+        raise HTTPException(status_code=400, detail="The slice range is shorter than the binning")
+    if not 0 <= center < cols:
+        raise HTTPException(
+            status_code=400, detail=f"The rotation center must lie between 0 and {cols - 1} ({dataset}: {center:g})"
+        )
+
+    scan = dataset.split("/")[0]
+    run_folder = _run_folders(beamtime, dataset)[0]
+    output = run_folder / TOMOGRAM_SUBDIR / name
+    link = Path(beamtime.path_processed) / scan / RECON_SUBDIR / name
+    if output.exists() and any(p.suffix.lower() in (".tif", ".tiff") for p in output.iterdir()):
+        raise HTTPException(
+            status_code=409, detail=f"{output} already contains slices; choose another name (nothing is overwritten)."
+        )
+    if link.exists() or link.is_symlink():
+        ours = link.is_symlink() and Path(os.readlink(link)) == Path(os.path.relpath(output, link.parent))
+        if not ours:
+            raise HTTPException(
+                status_code=409,
+                detail=f"{link} already exists in recon_dir; choose another name (nothing is replaced).",
+            )
+    return dict(
+        beamtime=beamtime,
+        user=user,
+        dataset=dataset,
+        files=files,
+        angles=angles,
+        raw_scan=raw_scan,
+        shape=(rows, cols),
+        center=center,
+        filters=req.filters,
+        first_row=first,
+        last_row=last,
+        binning=req.binning,
+        output=output,
+        output_dataset=f"{scan}/{name}",
+        link=link,
+    )
+
+
+CENTER_IN_NAME = re.compile(r"_c-?\d+(\.\d+)?")
+
+
+def _fmt_center(c: float) -> str:
+    return str(int(c)) if float(c).is_integer() else f"{c:.2f}".rstrip("0")
+
+
+def _batch_specs(beamtime, user: str, req: TomogramRequest) -> List[Dict[str, Any]]:
+    """Job arguments for all tomograms of the scan of ``req.dataset`` (runs of the same series, by tomogram index)."""
+    run_folder, _, raw_scan = _run_folders(beamtime, req.dataset)
+    marker = read_tomogram_marker(run_folder)
+    if not marker:
+        raise HTTPException(status_code=400, detail="This run is not a tomogram of a multi-tomogram scan")
+    scan = req.dataset.split("/")[0]
+    runs = []
+    for sibling in run_folder.parent.iterdir():
+        other = read_tomogram_marker(sibling)
+        if (
+            other
+            and other.get("series") == marker.get("series")
+            and (raw_scan.parent / str(other["tomogram"])).is_dir()
+        ):
+            runs.append((subset_index(str(other["tomogram"])) or 0, sibling, str(other["tomogram"])))
+    runs.sort()
+    own_tomogram = str(marker["tomogram"])
+    raw_rows = _raw_rows(raw_scan)
+    specs = []
+    for _, sibling, tomogram in runs:
+        dataset = f"{scan}/{sibling.name}"
+        saved = _read_saved(sibling) if sibling != run_folder else None
+        if sibling == run_folder:
+            center = req.center
+        elif saved and "rotation_center" in saved:
+            center = float(saved["rotation_center"])
+        else:  # the center given for this run, moved with the object
+            try:
+                cols = _dataset_info(beamtime, dataset)["cols"]
+                shift, _ = _row_shift(raw_scan.parent, own_tomogram, tomogram)
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=f"{dataset}: {e}")
+            except Exception as e:
+                raise HTTPException(status_code=422, detail=f"Could not determine the shift of {tomogram}: {e}")
+            center = round(req.center + shift / max(1, round((raw_rows or cols) / cols)), 2)
+        name = req.name.replace(own_tomogram, tomogram) if own_tomogram in req.name else f"{req.name}_{tomogram}"
+        if sibling != run_folder:
+            name = CENTER_IN_NAME.sub(lambda m: f"_c{_fmt_center(center)}", name, count=1)
+        specs.append(_job_spec(beamtime, user, req, dataset, center, name))
+    names = [s["output_dataset"] for s in specs]
+    if len(set(names)) != len(names):
+        raise HTTPException(status_code=400, detail="The output names of the tomograms are not unique")
+    return specs
 
 
 @router.post("/api/tomography/start")
@@ -260,57 +435,13 @@ async def start_tomogram(req: TomogramRequest, request: Request):
         raise HTTPException(status_code=409, detail="You already have a tomogram reconstruction running.")
     if req.binning not in (1, 2, 4):
         raise HTTPException(status_code=400, detail="Binning must be 1, 2 or 4")
-    if not NAME_PATTERN.fullmatch(req.name) or req.name in (".", ".."):
-        raise HTTPException(status_code=400, detail="Use only letters, digits and . _ + - in the name")
-    try:
-        info = await run_in_threadpool(_dataset_info, beamtime, req.dataset)
-        _, projections, raw_scan = _run_folders(beamtime, req.dataset)
-        files, angles, _ = await run_in_threadpool(_projections_and_angles, projections, raw_scan)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    rows, cols = info["rows"], info["cols"]
-    first = 0 if req.first_row is None else req.first_row
-    last = rows - 1 if req.last_row is None else req.last_row
-    if not 0 <= first <= last < rows:
-        raise HTTPException(status_code=400, detail=f"Slices must lie between 0 and {rows - 1}")
-    if (last - first + 1) // req.binning < 1:
-        raise HTTPException(status_code=400, detail="The slice range is shorter than the binning")
-    if not 0 <= req.center < cols:
-        raise HTTPException(status_code=400, detail=f"The rotation center must lie between 0 and {cols - 1}")
 
-    scan = req.dataset.split("/")[0]
-    run_folder = _run_folders(beamtime, req.dataset)[0]
-    output = run_folder / TOMOGRAM_SUBDIR / req.name
-    link = Path(beamtime.path_processed) / scan / RECON_SUBDIR / req.name
-    if output.exists() and any(p.suffix.lower() in (".tif", ".tiff") for p in output.iterdir()):
-        raise HTTPException(
-            status_code=409, detail=f"{output} already contains slices; choose another name (nothing is overwritten)."
-        )
-    if link.exists() or link.is_symlink():
-        ours = link.is_symlink() and Path(os.readlink(link)) == Path(os.path.relpath(output, link.parent))
-        if not ours:
-            raise HTTPException(
-                status_code=409,
-                detail=f"{link} already exists in recon_dir; choose another name (nothing is replaced).",
-            )
-
-    job = TomogramJob(
-        beamtime,
-        user,
-        req.dataset,
-        files,
-        angles,
-        raw_scan,
-        (rows, cols),
-        req.center,
-        req.filters,
-        first,
-        last,
-        req.binning,
-        output,
-        f"{scan}/{req.name}",
-        link,
-    )
+    if req.all_tomograms:
+        specs = await run_in_threadpool(_batch_specs, beamtime, user, req)
+        job = TomogramBatch(user, specs)
+    else:
+        spec = await run_in_threadpool(_job_spec, beamtime, user, req, req.dataset, req.center, req.name)
+        job = TomogramJob(**spec)
     with _jobs_lock:
         _jobs[job.id] = job
         _user_jobs[user] = job.id
@@ -339,7 +470,10 @@ async def cancel_tomogram(job_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Reconstruction not found")
     if job.user != _user(request):
         raise HTTPException(status_code=403, detail="Only the user who started a reconstruction can cancel it")
-    job.cancelled = True
+    if isinstance(job, TomogramBatch):
+        job.cancel()
+    else:
+        job.cancelled = True
     return job.state()
 
 
