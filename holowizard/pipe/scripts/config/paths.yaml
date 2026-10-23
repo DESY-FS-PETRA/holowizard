@@ -1,8 +1,0 @@
-paths:
-  base_dir: "holopipe"
-  phase_dir: "phase_retrieval"
-  absorption_dir: "absorption"
-  tomo_dir: "tomo_reco"
-  params_dir: "params"
-  logs_dir: "logs"
-  pipe_config: "pipe_config"

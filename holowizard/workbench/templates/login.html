@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <title>Log in</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+        /* Logo above the login frame */
+        .login { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; width: 100%; max-width: 340px; }
+        .login-logo { width: 128px; height: 128px; object-fit: contain; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+        h1 { font-size: 18px; font-weight: 500; }
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 12px; font-weight: 500; color: #555; }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 7px 10px;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            border-radius: 6px;
+            outline: none;
+        }
+        input:focus { border-color: rgba(0,0,0,0.35); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); background: #fff; }
+        .btn {
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid #1a1a1a;
+            background: #1a1a1a;
+            color: #fff;
+            cursor: pointer;
+        }
+        .btn:hover { background: #333; }
+        .error {
+            font-size: 13px;
+            color: #993c1d;
+            background: #faece7;
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login">
+    <img class="login-logo" src="/static/logo.png" alt="HoloWizard">
+    <form class="panel" method="post" action="/login">
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <div class="field">
+            <label for="username">User</label>
+            <input type="text" id="username" name="username" value="{{ user }}" autocomplete="username" required>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required autofocus>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="btn" type="submit">Log in</button>
+    </form>
+    </div>
+</body>
+</html>

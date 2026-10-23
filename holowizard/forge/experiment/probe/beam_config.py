@@ -51,7 +51,8 @@ def get_random_beam_config(offset: float | Tuple[float, float], linear: float = 
 
     def symmetric_uniform(val: float) -> float:
         val = abs(val)
-        return float(random.uniform(-val, val))
+        print(val)
+        return float(random.uniform(-val, val).item())
 
     if type(offset) in [float, int]:
         C = float(offset)

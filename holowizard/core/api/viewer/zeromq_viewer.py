@@ -1,8 +1,8 @@
 import zmq
 import json
 import numpy as np
-from holowizard.core.utils.transform import crop_center
-from holowizard.core.reconstruction.viewer.viewer import Viewer
+from holowizard.core.src.misc.transform import crop_center
+from holowizard.core.src.visualization.viewer import Viewer
 
 
 class ZeroMQViewer(Viewer):
@@ -12,30 +12,32 @@ class ZeroMQViewer(Viewer):
         self.reco_socket = self.reco_context.socket(zmq.PUB)
         self.reco_socket.bind("tcp://*:" + str(port))
 
-    def update(self, iteration, object, probe, data_dimensions, loss):
-        object_cropped = crop_center(object, data_dimensions.fov_size)
-        probe_cropped = crop_center(probe, data_dimensions.fov_size)
+    def update(self, iteration, hologram_measured, hologram_guess, object, probe, data_dimensions, loss):
+        object_cropped = crop_center(object, data_dimensions.fov_size) if object is not None else None
+        probe_cropped = crop_center(probe, data_dimensions.fov_size) if probe is not None else None
 
-        datasources = [
-            "ObjectReal",
-            "ObjectRealCropped",
-            "ObjectImag",
-            "ObjectImagCropped",
-            "ProbeReal",
-            "ProbeRealCropped",
-            "ProbeImag",
-            "ProbeImagCropped",
-        ]
-        data = [
-            object.real,
-            object_cropped.real,
-            object.imag,
-            object_cropped.imag,
-            probe.real,
-            probe_cropped.real,
-            probe.imag,
-            probe_cropped.imag,
-        ]
+        datasources = []
+        data = []
+
+        if object is not None:
+            datasources.append("ObjectReal")
+            data.append(object.real)
+            datasources.append("ObjectRealCropped")
+            data.append(object_cropped.real)
+            datasources.append("ObjectImag")
+            data.append(object.imag)
+            datasources.append("ObjectImagCropped")
+            data.append(object_cropped.imag)
+
+        if probe is not None:
+            datasources.append("ProbeReal")
+            data.append(probe.real)
+            datasources.append("ProbeRealCropped")
+            data.append(probe_cropped.real)
+            datasources.append("ProbeImag")
+            data.append(probe.imag)
+            datasources.append("ProbeImagCropped")
+            data.append(probe_cropped.imag)
 
         metadata = {"datasources:": datasources}
 

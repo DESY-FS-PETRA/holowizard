@@ -1,0 +1,12 @@
+defaults:
+- dask_options
+- flatfield
+- paths
+- beamtime
+- server
+- scan
+- phase_retrieval: 
+  - defaults_thin
+  - defaults_thick
+- find_focus: 
+  - defaults

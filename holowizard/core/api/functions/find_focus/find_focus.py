@@ -1,10 +1,10 @@
 import torch
 from typing import List
 
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.find_focus.find_focus_z01 import find_focus as find_focus_internal
-from holowizard.core.reconstruction.viewer import Viewer
-from holowizard.core.reconstruction.plotter import Plotter
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.methods.find_focus.find_focus_z01 import find_focus as find_focus_internal
+from holowizard.core.src.visualization.viewer import Viewer
+from holowizard.core.src.visualization.plotter import Plotter
 
 
 def find_focus(reco_params: RecoParams, viewer: List[Viewer] = None, plotter: List[Plotter] = None):

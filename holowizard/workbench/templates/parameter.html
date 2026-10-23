@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/png" href="static/logo.png">
+    <title>Phase Retrieval</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+
+        h1 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 0rem;
+            color: #1a1a1a;
+        }
+
+        .topbar{
+          display:flex;
+          align-items:center;
+          gap: 1rem;
+          margin-bottom:1.5rem
+        }
+
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary)}
+        .logo-btn svg{width:18px;height:18px;display:block}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;white-space:nowrap;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .layout {
+            display: grid;
+            /* Parameter form | scan controls | test image; the live preview spans below the last two.
+               The flexible second row takes any extra height of an expanded parameter form. */
+            grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+            grid-template-rows: auto 1fr;
+            grid-template-areas: "params scan test" "params live live";
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label, .field-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #1a1a1a;
+            background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            -webkit-appearance: none;
+        }
+
+        select:focus, input[type="text"]:focus, input[type="number"]:focus {
+            border-color: rgba(0,0,0,0.35);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+            background: #fff;
+        }
+
+        select:disabled, input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 0.75rem 0 1.5rem 0;
+        }
+
+        .btn {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: background 0.12s, box-shadow 0.12s;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        .btn-primary:hover { background: #333; }
+
+        .btn-danger {
+            color: #993c1d;
+            border-color: rgba(153,60,29,0.3);
+        }
+        .btn-danger:hover { background: #faece7; }
+
+        .btn-success {
+            background: #eaf4ed;
+            color: #1f6b3a;
+            border-color: rgba(31,107,58,0.35);
+        }
+        .btn-success:hover { background: #dbeee1; }
+        .btn-success:focus-visible { outline: 2px solid rgba(31,107,58,0.45); outline-offset: 2px; }
+        .btn:focus-visible { outline: 2px solid rgba(0,0,0,0.25); outline-offset: 2px; }
+
+        .submit-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+        }
+        .submit-row .python-btn { margin-right: auto; }  /* left; the rest stays on the right */
+        .submit-row { flex-wrap: wrap; row-gap: 8px; }
+        .submit-row .btn-submit { white-space: nowrap; }
+        /* checkbox and submit button stay together (on the next line if the row is too narrow) */
+        .submit-group { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            font-weight: 600;
+        }
+        .btn-submit svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        /* Plain form buttons (e.g. "Save"); buttons with the .btn classes are styled above. */
+        input[type="submit"]:not(.btn), input[type="button"]:not(.btn) {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #1a1a1a;
+            cursor: pointer;
+        }
+
+        fieldset {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        legend {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            padding: 0 4px;
+            text-transform: capitalize;
+        }
+        fieldset label {
+            font-size: 12px;
+            font-weight: 400;
+            color: #555;
+        }
+        fieldset input[type="text"] {
+            margin-bottom: 6px;
+        }
+
+        details.stage-top {
+            border: 0.5px solid rgba(0,0,0,0.2);
+            border-radius: 8px;
+            background: #f8f7f4;
+            padding: 0.5rem 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        details.stage-top > summary {
+            font-size: 12px;
+            font-weight: 600;
+            color: #444;
+            text-transform: capitalize;
+            cursor: pointer;
+            padding: 2px 0;
+        }
+        details.stage-top[open] > summary {
+            margin-bottom: 0.6rem;
+        }
+        details.stage-top fieldset {
+            background: #fff;
+        }
+
+        /* "Save as" frame of the parameter form: name field and button in one row */
+        fieldset.save-as {
+            margin-top: 0.25rem;
+        }
+        .save-as-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .save-as-row #param-set-name {
+            flex: 1;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
+        .stages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .stage-card {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            background: #fafaf9;
+        }
+
+        .stage-card .stage-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stage-card label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .divider {
+            height: 0.5px;
+            background: rgba(0,0,0,0.08);
+            margin: 0.75rem 0;
+        }
+
+        /* Geometry row: everything sits on the line of the holder input; its label stays above it. */
+        .geom-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+        .geom-row .checkbox-label,
+        .geom-row input[type="number"],
+        .geom-row .btn {
+            height: 32px;
+        }
+        .geom-row .holder-field { flex: 1; min-width: 100px; }
+        .checkbox-label:has(input:disabled) { color: #aaa; cursor: default; }
+        .checkbox-label input:disabled { cursor: default; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn:disabled:hover { background: #fff; }
+
+        .col-params { grid-area: params; }
+        .col-scan { grid-area: scan; min-width: 0; }
+        .col-test { grid-area: test; min-width: 0; }
+        .col-live { grid-area: live; min-width: 0; }
+        /* Status of a running test run until its first image or plot arrives */
+        .preview-status { font-size: 12px; color: #555; text-align: center; margin: 0.25rem 0 0; font-variant-numeric: tabular-nums; }
+        .preview-status[hidden] { display: none; }
+        /* Value read from the raw data (e.g. the energy from scan_parameters.txt) */
+        .field-note { font-size: 11px; line-height: 1.3; color: #1f6b3a; }
+        .field-note.changed { color: #8a4b0f; }
+        .field-note[hidden] { display: none; }
+        input.from-scan { border-color: #7fb894; background: #f3faf5; }
+        .field[hidden], .checkbox-label[hidden] { display: none; }
+        /* Narrow windows: test image and live preview move below the scan panel. */
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr);
+                grid-template-rows: auto auto 1fr;
+                grid-template-areas: "params scan" "params test" "params live";
+            }
+        }
+
+        #preview-image, #loss-image {
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+
+        #live-preview {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 8px;
+            margin: 0.75rem auto;
+        }
+
+        .loader {
+            width: 60px;
+            margin: 1rem auto;
+            aspect-ratio: 1;
+            --g: conic-gradient(from -90deg at 10px 10px,#740000 90deg,#0000 0);
+            background: var(--g), var(--g), var(--g);
+            background-size: 50% 50%;
+            animation: l16 1s infinite;
+        }
+        @keyframes l16 {
+            0%   {background-position:0    0   ,10px 10px,20px 20px}
+            50%  {background-position:0    20px,10px 10px,20px 0   }
+            100% {background-position:20px 20px,10px 10px,0    0   }
+        }
+
+        #form-container {
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #form-container::-webkit-scrollbar { width: 4px; }
+        #form-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+    </style>
+
+</head>
+<body>
+
+<div class="topbar">
+  {% include "_nav.html" %}
+  <h1>Phase Retrieval</h1>
+</div>
+
+<div class="layout">
+
+    <!-- LEFT: Parameter form -->
+    <div class="panel col-params">
+        <div class="panel-title">Phase Retrieval Parameters</div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="parameter-select">Parameter Set</label>
+                <select id="parameter-select"></select>
+            </div>
+        </div>
+
+        <div id="form-container">
+            <form id="parameter-form" method="post" action="/tuning">
+                {% from "_macros.html" import render_field %}
+                {{ render_field(scans, '') }}
+            </form>
+        </div>
+    </div>
+
+    <!-- MIDDLE: Scan controls -->
+        <div class="panel col-scan" id="scan-panel">
+        <div class="panel-title">Scan Parameters</div>
+
+           <!-- Folder + Image -->
+        <div class="field-row">
+            <div class="field">
+                <label for="scan-select">Folder</label>
+                <select id="scan-select"></select>
+            </div>
+            <div class="field" id="tomogram-field" hidden>
+                <label for="tomogram-select">Tomogram</label>
+                <select id="tomogram-select"></select>
+            </div>
+            <div class="field">
+                <label for="img-select">Test Image</label>
+                <select id="img-select"></select>
+            </div>
+        </div>
+
+        <!-- Physical params -->
+        <div class="field-row">
+            <div class="field">
+                <label for="energy">Energy (keV)</label>
+                <input id="energy" name="energy" type="number" step="any" value="{{ energy }}" autocomplete="off">
+                <div class="field-note" id="energy-note" hidden></div>
+            </div>
+            <div class="field">
+                <label for="a0">A₀</label>
+                <input id="a0" name="a0" type="number" step="any" value="1.0">
+            </div>
+            <div class="field">
+                <label for="prefix">Save prefix</label>
+                <input id="prefix" name="prefix" type="text" value="{{ basepath }}" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Z params + geometry -->
+        <div class="field-row">
+            <div class="field">
+                <label for="z01">z₀₁ (mm)</label>
+                <input id="z01" name="z01" type="number" step="any" value="{{ z01 }}" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="z02">z₀₂ (mm)</label>
+                <input id="z02" name="z02" type="number" step="any" value="{{ z02 }}" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="geom-row">
+            <label class="checkbox-label">
+                <input type="checkbox" id="use-p05"> Use P05 geometry
+            </label>
+            <div class="field holder-field">
+                <label for="holder">Holder (mm)</label>
+                <input id="holder" name="holder" type="number" step="1" min="0" disabled>
+            </div>
+            <label class="checkbox-label">
+                <input type="checkbox" id="use-qp" disabled> QP optics
+            </label>
+            <button id="btn-geom-calc" type="button" class="btn" disabled>Calculate</button>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="btn-row">
+            <input id="optimize-btn" type="submit" value="Test Phase Retrieval" class="btn btn-primary">
+            <input id="find-focus-btn" type="button" value="Find Focus" class="btn">
+            <input id="stop-btn" type="button" value="Stop" class="btn btn-danger">
+        </div>
+
+
+        <div class="submit-row">
+            <input id="python-btn" type="button" value="Download Python" class="btn python-btn"
+                   title="Python script that runs the test phase retrieval of the chosen test image with these parameters, without the workbench">
+            <div class="submit-group">
+                <label class="checkbox-label" id="all-tomograms-label" hidden
+                       title="Submit Phase Retrieval processes all tomograms of the scan, one run each">
+                    <input type="checkbox" id="all-tomograms"> All tomograms
+                </label>
+                <button id="submit-btn" type="button" class="btn btn-success btn-submit">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8.5 14 2l-3.5 12-2.7-4.6L2 8.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.8 9.4 14 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    Submit Phase Retrieval
+                </button>
+            </div>
+        </div>
+    
+      </div>
+
+    <!-- RIGHT: Test image -->
+    <div class="panel col-test" id="test-panel">
+        <div class="panel-title">Test Image</div>
+
+        <!-- Preview image (Plotly) -->
+        <div id="preview-image" style="display:none;"></div>
+
+        <!-- vmin/vmax -->
+        <div class="field-row">
+            <div class="field">
+                <label for="vmin">v_min</label>
+                <input id="vmin" onchange="changeRange()" name="vmin" type="number" step="any" value="1.0" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="vmax">v_max</label>
+                <input id="vmax" onchange="changeRange()" name="vmax" type="number" step="any" value="10.0" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM (columns 2 and 3): images streamed over zeromq during a test run, and the find focus loss -->
+    <div class="panel col-live">
+        <div class="panel-title">Live Preview</div>
+        <div class="preview-status" id="preview-status" hidden></div>
+        <div id="loss-image" style="display:none;"></div>
+        <img id="live-preview" style="display:none;" alt="Preview">
+    </div>
+</div>
+
+<script>
+    const endpoints = {
+        stage: v => `/stage/${v}`,
+        parameter: v => `/parameter/${v}`,
+        folder: v => `/folder/${v}`
+    };
+    const tomogramQuery = () => {
+        const t = qs('tomogram-field').hidden ? '' : qs('tomogram-select').value;
+        return t ? `?tomogram=${encodeURIComponent(t)}` : '';
+    };
+    const qs = s => document.getElementById(s);
+    const fetchJson = async (url, opts) => (await fetch(url, opts)).json();
+
+    // --- Persisted UI state (stored server-side next to the beamtime log path) ---
+    const STATE_URL = '/api/ui_state/parameter';
+    const PERSISTED_IDS = [
+        'parameter-select', 'scan-select', 'tomogram-select', 'img-select', 'all-tomograms',
+        'energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp',
+        'vmin', 'vmax'
+    ];
+    let restoring = false;
+    let saveTimer = null;
+    let formKey = null;      // "<stage>/<parameter set>" the loaded parameter form belongs to
+    let restorePrefs = {};   // select id -> value to pick on the next fill()
+
+    const setField = (el, v) => { if (el.type === 'checkbox') el.checked = !!v; else el.value = v; };
+    const hasOption = (sel, v) => Array.from(sel.options).some(o => o.value === String(v));
+
+    const collectState = () => {
+        const fields = {};
+        PERSISTED_IDS.forEach(id => {
+            const el = qs(id);
+            if (el) fields[id] = el.type === 'checkbox' ? el.checked : el.value;
+        });
+        const form_data = {};
+        const form = document.querySelector('#form-container form');
+        if (form) {
+            form.querySelectorAll('input[name]:not([type=hidden]):not([type=submit])')
+                .forEach(el => { form_data[el.name] = el.value; });
+        }
+        return { fields, form_key: formKey, form_data };
+    };
+    const saveState = (keepalive = false) => {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        if (restoring) return;
+        fetch(STATE_URL, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(collectState()), keepalive
+        }).then(async res => {
+            if (!res.ok) console.error(`Could not save UI state (HTTP ${res.status}):`, await res.text());
+        }).catch(err => console.error('Could not save UI state:', err));
+    };
+    const scheduleSave = () => {
+        if (restoring) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveState, 500);
+    };
+    document.addEventListener('input', scheduleSave);
+    document.addEventListener('change', scheduleSave);
+    window.addEventListener('pagehide', () => { if (saveTimer) saveState(true); });
+
+    const fill = (sel, items) => {
+        if (!Array.isArray(items)) {
+            console.error(`Cannot fill select #${sel.id}: expected array, got`, items);
+            return;
+        }
+        sel.innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join('');
+        const pref = restorePrefs[sel.id];
+        delete restorePrefs[sel.id];
+        if (pref != null && hasOption(sel, pref)) sel.value = pref;
+        return sel.onchange();
+    };
+
+    // Parameter sets are always those of the phase retrieval stage.
+    const STAGE = 'phase_retrieval';
+    const loadParameterSets = async () => {
+        const opts = await fetchJson(endpoints.stage(STAGE));
+        await fill(qs('parameter-select'), opts);
+    };
+    qs('parameter-select').onchange = async () => {
+        const url = endpoints.parameter(qs('parameter-select').value);
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dropdown: STAGE}) });
+        qs('form-container').innerHTML = await res.text();
+        qs('stage-hidden').value = STAGE;
+        formKey = `${STAGE}/${qs('parameter-select').value}`;
+        syncPanelHeights();
+        scheduleSave();
+    };
+
+    // The first row (parameter panel with all stages collapsed, scan parameters, test image) gets one height.
+    // It is measured only in that default state, so expanding a stage lets the parameter panel grow on its own.
+    // The test image plot is fitted into that height.
+    let panelHeight = null;
+    const narrowLayout = window.matchMedia('(max-width: 1200px)');
+    const syncPanelHeights = () => {
+        const panels = [document.querySelector('.col-params'), qs('scan-panel')];
+        if (!document.querySelector('details.stage-top[open]')) {
+            panels.forEach(p => { p.style.minHeight = ''; });
+            panelHeight = Math.max(...panels.map(p => p.offsetHeight));
+            panels.forEach(p => { p.style.minHeight = `${panelHeight}px`; });
+        }
+        fitTestPanel();
+    };
+    const fitTestPanel = () => {
+        const panel = qs('test-panel'), plot = qs('preview-image');
+        panel.style.height = '';
+        const hasPlot = plot.data && plot.style.display !== 'none';
+        if (narrowLayout.matches || !panelHeight) {
+            // Test image below the scan panel: size the plot from the column width.
+            if (hasPlot && plot.dataset.rows) Plotly.relayout(plot, { height: imageHeight(plot, +plot.dataset.rows, +plot.dataset.cols) });
+            return;
+        }
+        if (hasPlot) {
+            const chrome = panel.offsetHeight - plot.offsetHeight;   // title, v_min/v_max, paddings, margins
+            Plotly.relayout(plot, { height: Math.max(200, panelHeight - chrome) });
+        }
+        panel.style.height = `${panelHeight}px`;
+    };
+    let panelResizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(panelResizeTimer);
+        panelResizeTimer = setTimeout(syncPanelHeights, 150);
+    });
+
+    // Every edit of the parameter form goes into the user's own custom_<user>.yaml, which becomes the selected parameter set.
+    const CUSTOM_SET = {{ custom_set | tojson }};
+    let customTimer = null;
+    const addOption = (sel, value) => {
+        if (hasOption(sel, value)) return;
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = value;
+        sel.appendChild(opt);
+    };
+    const saveCustom = async (keepalive = false) => {
+        clearTimeout(customTimer);
+        customTimer = null;
+        try {
+            const res = await fetch('/api/parameter_sets/custom', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(getFormData()), keepalive
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        } catch (err) {
+            console.error(`Could not save ${CUSTOM_SET}:`, err);
+        }
+    };
+    const flushCustom = () => customTimer ? saveCustom() : Promise.resolve();
+    qs('form-container').addEventListener('input', e => {
+        if (restoring || !e.target.closest('form') || e.target.name === 'param_set_name') return;
+        addOption(qs('parameter-select'), CUSTOM_SET);
+        qs('parameter-select').value = CUSTOM_SET;
+        formKey = `${STAGE}/${CUSTOM_SET}`;
+        clearTimeout(customTimer);
+        customTimer = setTimeout(saveCustom, 600);
+    });
+    window.addEventListener('pagehide', () => { if (customTimer) saveCustom(true); });
+
+    // Scans with several tomograms (tomo_* subfolders): choose the tomogram of the test image; submit processes it
+    // or all tomograms.
+    // Energy recorded with the scan (scan_parameters.txt of ptychography scans): fills the energy field and shows where
+    // it came from; a value entered by hand afterwards is marked as changed.
+    let scanEnergy = null;
+    const showEnergyNote = () => {
+        const note = qs('energy-note'), input = qs('energy');
+        const changed = scanEnergy && Math.abs(parseFloat(input.value) - scanEnergy.energy_kev) > 1e-9;
+        note.hidden = !scanEnergy;
+        input.classList.toggle('from-scan', !!scanEnergy && !changed);
+        note.classList.toggle('changed', !!changed);
+        if (!scanEnergy) return;
+        const source = `${scanEnergy.source}, wavelength ${(scanEnergy.wavelength_m * 1e12).toFixed(3)} pm`;
+        note.textContent = changed ? `Changed by hand; read from the scan: ${scanEnergy.energy_kev} keV` : `Read from the scan`;
+        note.title = source;
+    };
+    qs('energy').addEventListener('input', showEnergyNote);
+    // overwrite: false when the page state is restored, so that an energy entered by hand is kept after a reload.
+    const loadScanEnergy = async (scan, overwrite) => {
+        const { energy = null } = scan ? await fetchJson(`${endpoints.folder(scan)}/energy`).catch(() => ({})) : {};
+        if (scan !== qs('scan-select').value) return;
+        scanEnergy = energy;
+        if (energy && overwrite) { qs('energy').value = energy.energy_kev; scheduleSave(); }
+        showEnergyNote();
+    };
+
+    qs('scan-select').onchange = async () => {
+        const scan = qs('scan-select').value;
+        loadScanEnergy(scan, !restoring);
+        const { tomograms = [] } = scan ? await fetchJson(`${endpoints.folder(scan)}/tomograms`).catch(() => ({})) : {};
+        const multi = tomograms.length > 0;
+        qs('tomogram-field').hidden = !multi;
+        qs('all-tomograms-label').hidden = !multi;
+        if (multi) return fill(qs('tomogram-select'), tomograms);
+        qs('tomogram-select').innerHTML = '';
+        return loadImages();
+    };
+    qs('tomogram-select').onchange = () => loadImages();
+    const loadImages = async () => {
+        const opts = await fetchJson(endpoints.folder(qs('scan-select').value) + tomogramQuery());
+        resetLivePreview();
+        await fill(qs('img-select'), opts);
+    };
+    const resetLivePreview = () => {
+        qs('live-preview').src = '';
+        qs('live-preview').style.display = 'none';
+        qs('loss-image').children = [];
+        qs('loss-image').style.display = 'none';
+    };
+
+    // Fit the test image plot to its column: small margins, thin colour bar, height from the image aspect ratio.
+    const IMG_MARGIN = { l: 42, r: 8, t: 8, b: 28 };
+    const COLORBAR_SPACE = 58;   // colour bar plus its tick labels
+    const imageShape = z => Array.isArray(z) ? [z.length, (z[0] || []).length]
+        : (z && z.shape ? String(z.shape).split(',').map(Number) : [1, 1]);
+    const imageHeight = (el, rows, cols) => {
+        const plotWidth = Math.max(100, el.clientWidth - IMG_MARGIN.l - IMG_MARGIN.r - COLORBAR_SPACE);
+        return Math.round(plotWidth * rows / cols) + IMG_MARGIN.t + IMG_MARGIN.b;
+    };
+    const tightImageLayout = (el, fig) => {
+        const [rows, cols] = imageShape(fig.data[0] && fig.data[0].z);
+        el.dataset.rows = rows;
+        el.dataset.cols = cols;
+        const coloraxis = fig.layout.coloraxis || {};
+        return {
+            ...fig.layout,
+            margin: IMG_MARGIN,
+            height: imageHeight(el, rows, cols),
+            coloraxis: { ...coloraxis, colorbar: { ...(coloraxis.colorbar || {}), thickness: 12, xpad: 6 } },
+        };
+    };
+    qs('img-select').onchange = async () => {
+        const url = `/image/${qs('scan-select').value}/${qs('img-select').value}${tomogramQuery()}`;
+        qs('preview-image').style.display = 'block';
+        resetLivePreview();
+        const fig = await fetchJson(url);
+        await Plotly.react(qs('preview-image'), fig.data, tightImageLayout(qs('preview-image'), fig), { responsive: true });
+        fitTestPanel();
+        qs('vmin').value = fig.layout.coloraxis.cmin || '1.0';
+        qs('vmax').value = fig.layout.coloraxis.cmax || '10.0';
+        scheduleSave();
+    };
+
+    const changeRange = () => {
+        const vmin = parseFloat(qs('vmin').value);
+        const vmax = parseFloat(qs('vmax').value);
+        if (isNaN(vmin) || isNaN(vmax)) { console.warn('Invalid vmin/vmax values'); return; }
+        Plotly.relayout(qs('preview-image'), { 'coloraxis.cmin': vmin, 'coloraxis.cmax': vmax });
+    };
+
+    const getFormData = () => {
+        const form = document.querySelector('#form-container form');
+        if (!form) { console.error('Parameter form not found'); return {}; }
+        return Object.fromEntries(new FormData(form));
+    };
+    const retrieveReco = () => ({
+        form_data: getFormData(qs('parameter-form')),
+        a0: +qs('a0').value,
+        z01: +qs('z01').value,
+        z02: +qs('z02').value,
+        scan_name: qs('scan-select').value,
+        img_name: qs('img-select').value,
+        tomogram: qs('tomogram-field').hidden ? null : qs('tomogram-select').value,
+        all_tomograms: !qs('tomogram-field').hidden && qs('all-tomograms').checked,
+        energy: +qs('energy').value,
+        base_dir: qs('prefix').value
+    });
+
+    const toggleGeomControls = () => {
+        const on = qs('use-p05').checked;
+        ['holder', 'use-qp', 'btn-geom-calc'].forEach(id => {
+            const el = qs(id);
+            if (el) el.disabled = !on;
+        });
+    };
+
+    qs('use-p05').addEventListener('change', toggleGeomControls);
+    document.addEventListener('DOMContentLoaded', toggleGeomControls);
+
+    qs('btn-geom-calc').addEventListener('click', async () => {
+        const payload = {
+            holder: Number(qs('holder').value),
+            qp: !!qs('use-qp').checked,
+            energy: Number(qs('energy').value) || null,
+            scan_name: qs('scan-select').value,
+        };
+        try {
+            const res = await fetch('/api/compute_z_params', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const { z01, z02 } = await res.json();
+            if (Number.isFinite(Number(z01))) qs('z01').value = Number(z01).toFixed(3);
+            if (Number.isFinite(Number(z02))) qs('z02').value = Number(z02).toFixed(3);
+            scheduleSave();
+        } catch (e) {
+            console.error('Geometry compute failed:', e);
+            alert('Could not compute geometry. Check inputs and try again.');
+        }
+    });
+
+    const applyFormData = (state) => {
+        if (!state.form_data || state.form_key !== formKey) return;
+        const form = document.querySelector('#form-container form');
+        if (!form) return;
+        Object.entries(state.form_data).forEach(([name, v]) => {
+            const el = form.querySelector(`input[name="${CSS.escape(name)}"]`);
+            if (el && el.type !== 'hidden') el.value = v;
+        });
+    };
+
+    const restoreState = async () => {
+        let state = {};
+        try {
+            const res = await fetch(STATE_URL);
+            if (res.ok) state = await res.json();
+            else console.error(`Could not load UI state (HTTP ${res.status}):`, await res.text());
+        } catch (err) {
+            console.error('Could not load UI state:', err);
+        }
+        const f = state.fields || {};
+        restoring = true;
+        try {
+            ['energy', 'a0', 'prefix', 'z01', 'z02', 'use-p05', 'holder', 'use-qp', 'all-tomograms']
+                .forEach(id => { if (id in f && qs(id)) setField(qs(id), f[id]); });
+            toggleGeomControls();
+
+            restorePrefs = {
+                'parameter-select': f['parameter-select'],
+                'scan-select': f['scan-select'],
+                'tomogram-select': f['tomogram-select'],
+                'img-select': f['img-select'],
+            };
+
+            const results = await Promise.allSettled([
+                loadParameterSets().then(() => applyFormData(state)),
+                fetchJson(endpoints.folder('')).then(folders => fill(qs('scan-select'), folders)).then(() => {
+                    if ('vmin' in f) qs('vmin').value = f.vmin;
+                    if ('vmax' in f) qs('vmax').value = f.vmax;
+                    if (qs('preview-image').data) changeRange();
+                }),
+            ]);
+            results.filter(r => r.status === 'rejected').forEach(r => console.error(r.reason));
+        } finally {
+            restoring = false;
+            restorePrefs = {};
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        restoreState();
+
+        // Live preview websocket. The server keeps a running preview across page reloads and reattaches
+        // this page to it; if the connection drops, the page reconnects automatically.
+        let socket = null;
+        // Status line ("Waiting for a SLURM worker…", "Flatfield correction…") until the first image or plot.
+        let firstFrameSeen = false;
+        let runActive = false;   // status lines arriving after the result (race with the server's reporter) are ignored
+        const setStatus = text => {
+            const el = qs('preview-status');
+            el.textContent = text || '';
+            el.hidden = !text || firstFrameSeen;
+        };
+        const showRunning = () => {
+            qs('loss-image').style.display = 'block';
+            qs('loss-image').classList.add('loader');
+        };
+        const startRun = () => { runActive = true; firstFrameSeen = false; setStatus('Starting…'); showRunning(); };
+        const handleMessage = e => {
+            const data = e.data;
+            if (data instanceof ArrayBuffer) {
+                firstFrameSeen = true;
+                setStatus('');
+                qs('loss-image').classList.remove('loader');
+                const blob = new Blob([data]);
+                qs('live-preview').src = URL.createObjectURL(blob);
+                qs('live-preview').style.display = 'block';
+                return;
+            }
+            const json_data = JSON.parse(data);
+            if (json_data.status !== undefined && !json_data.running) { if (runActive) setStatus(json_data.status); return; }
+            if (json_data.running) { runActive = true; setStatus(json_data.status); showRunning(); return; }
+            qs('loss-image').classList.remove('loader');
+            runActive = false;
+            firstFrameSeen = false;
+            setStatus('');
+            if (json_data.stopped) return;
+            if (json_data.error) {
+                alert(json_data.error);
+                return;
+            }
+            const z01 = parseFloat(json_data.z01);
+            const z02 = parseFloat(json_data.z02);
+            if (!isNaN(z01)) {
+                qs('z01').value = z01.toFixed(3);
+            } else if (!isNaN(z02)) {
+                qs('z02').value = z02.toFixed(3);
+            } else {
+                console.warn('Received non-numeric data:', data);
+            }
+            scheduleSave();
+            const fig = json_data.data;
+            if (fig) {
+                Plotly.react(qs('loss-image'), fig.data, fig.layout, { responsive: true });
+                qs('loss-image').style.display = 'block';
+            }
+        };
+        const connectPreview = () => {
+            socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/preview`);
+            socket.binaryType = 'arraybuffer';
+            socket.onmessage = handleMessage;
+            socket.onclose = () => setTimeout(connectPreview, 2000);
+        };
+        const sendPreview = message => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                alert('No connection to the server, reconnecting. Please try again in a moment.');
+                return false;
+            }
+            socket.send(JSON.stringify(message));
+            return true;
+        };
+        connectPreview();
+
+        qs('optimize-btn').onclick = () => {
+            resetLivePreview();
+            if (sendPreview(retrieveReco())) startRun();
+        };
+        qs('find-focus-btn').onclick = () => {
+            resetLivePreview();
+            if (sendPreview({ ...retrieveReco(), find_focus: true })) startRun();
+        };
+        qs('stop-btn').onclick = () => {
+            try { socket.send(JSON.stringify({ action: 'cancel_preview' })); } catch (_) {}
+            runActive = false;
+            setStatus('');
+            qs('loss-image').classList.remove('loader');
+            resetLivePreview();
+        };
+        qs('python-btn').onclick = async () => {
+            // Script of the test phase retrieval with the parameters of the page (generated by the server).
+            await flushCustom();
+            const btn = qs('python-btn');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/phase_retrieval/python', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(retrieveReco()) });
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    throw new Error(body.detail || res.statusText);
+                }
+                const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/);
+                const url = URL.createObjectURL(await res.blob());
+                const a = Object.assign(document.createElement('a'), { href: url, download: name ? name[1] : 'test_phase_retrieval.py' });
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (e) {
+                alert(`Could not create the Python script: ${e.message}`);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        qs('submit-btn').onclick = async () => {
+            // Phase retrieval (after flatfield) with the parameters of the form on the left.
+            await flushCustom();
+            const res = await fetch('api/submit_scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(retrieveReco()) });
+            const body = await res.json().catch(() => ({}));
+            const runs = body.runs || [];
+            alert(res.ok ? (runs.length > 1 ? `Submitted ${runs.length} runs:\n${runs.join('\n')}` : 'Submitted!')
+                : `Submit failed: ${body.detail || res.statusText}`);
+        };
+    });
+
+
+
+    const btn = document.getElementById('logo-btn');
+    const menu = document.getElementById('nav-menu');
+    btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+    document.addEventListener('click', () => menu.classList.remove('open'));
+</script>
+</body>
+</html>

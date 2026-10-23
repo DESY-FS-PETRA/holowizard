@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="static/logo.png">
+    <title>{{ title }}</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --border-radius-md: 6px;
+            --border-radius-lg: 10px;
+            --color-background-secondary: #f5f4f1;
+            --color-border-primary: rgba(0,0,0,0.3);
+            --color-border-secondary: rgba(0,0,0,0.15);
+            --color-border-tertiary: rgba(0,0,0,0.08);
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #555;
+            --color-text-tertiary: #888;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+        h1 { font-size: 18px; font-weight: 500; }
+
+        .topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{border-color:var(--color-border-primary)}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;white-space:nowrap;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .toolbar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+            margin-bottom: 1.25rem; color: #555; font-size: 12px;
+        }
+        .toolbar .path { font-family: ui-monospace, monospace; color: #888; }
+        .toolbar .spacer { flex: 1; }
+        .toolbar-label { display: flex; align-items: center; gap: 6px; }
+        input[type="text"], select {
+            padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
+        }
+        input[type="text"]:focus, select:focus { border-color: rgba(0,0,0,0.35); background: #fff; }
+        .btn {
+            padding: 6px 12px; font-size: 13px; font-weight: 500; border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18); background: #fff; color: #1a1a1a; cursor: pointer;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:disabled { opacity: 0.4; cursor: default; }
+        .btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #28a745; display: inline-block; }
+        .status-dot.error { background: #d9534f; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax({{ '420px' if source in ('raw', 'summary') else '330px' }}, 1fr));
+            gap: 1rem;
+        }
+        .tile {
+            background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px;
+            padding: 0.75rem; cursor: pointer; transition: box-shadow 0.12s, border-color 0.12s;
+        }
+        .tile:hover { border-color: rgba(0,0,0,0.3); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .tile.new { animation: flash 2s ease-out; }
+        @keyframes flash { from { box-shadow: 0 0 0 3px rgba(40,167,69,0.5); } to { box-shadow: none; } }
+        /* Long names (scan / save prefix) wrap; the meta text then moves to the next line. */
+        .tile-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.5rem; margin-bottom: 0.5rem; }
+        .tile-name { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; min-width: 0; }
+        .tile-meta { margin-left: auto; font-size: 11px; color: #888; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .thumb { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .thumb-img {
+            aspect-ratio: 1; width: 100%; background: #ecebe7; border-radius: 4px;
+            object-fit: contain; display: block;
+        }
+        /* Tomograms view, "XY only": no XZ/YZ rows (and no XY row title) */
+        .grid.xy-only .ortho-rows, .grid.xy-only .xy-title { display: none; }
+        /* Scale bar on phase retrieval and tomogram thumbnails */
+        .thumb-frame { position: relative; }
+        .scale-bar { position: absolute; bottom: 6%; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .scale-bar .bar { width: 100%; height: 3px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+        /* Label on a translucent dark background, like the scale bar in the opened data set view */
+        .scale-bar .txt { font-size: 9px; line-height: 1; color: #fff; white-space: nowrap; background: rgba(0,0,0,0.35); padding: 1px 3px; border-radius: 2px; }
+        .thumb-label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .empty { color: #888; padding: 2rem; text-align: center; grid-column: 1 / -1; }
+        /* Progress bars: filling (width set from the script) or animated while the duration is unknown */
+        .pbar { width: 160px; height: 4px; background: #ecebe7; border-radius: 2px; overflow: hidden; position: relative; flex-shrink: 0; }
+        .pbar > span { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #1a1a1a; transition: width 0.2s; }
+        .pbar.indeterminate > span { width: 35%; transition: none; animation: pbar-slide 1.1s ease-in-out infinite; }
+        @keyframes pbar-slide { from { left: -35%; } to { left: 100%; } }
+        .empty .pbar { margin: 0.6rem auto 0; }
+        #thumb-progress { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 12px; color: #888; font-variant-numeric: tabular-nums; }
+        #thumb-progress .pbar { width: 90px; }
+        #thumb-progress[hidden] { display: none; }
+
+        /* Summary page: three rows per scan with aligned columns (first column: ref image or row info). */
+        .tile.summary { cursor: default; }
+        .summary-row { border-radius: 6px; padding: 4px; margin: 0 -4px; cursor: pointer; }
+        .summary-row:hover { background: #f5f4f1; }
+        .summary-row.missing { cursor: default; }
+        .summary-row.missing:hover { background: none; }
+        .summary-row + .summary-row { margin-top: 4px; }
+        .row-title { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #888; margin-bottom: 2px; }
+        .summary-row .thumbs { grid-template-columns: repeat(4, 1fr); }
+        .row-info {
+            aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+            font-size: 11px; color: #555; overflow: hidden; overflow-wrap: anywhere; padding-right: 4px;
+        }
+        .row-info .run { font-weight: 500; color: #1a1a1a; }
+        .summary-row.missing .row-info { color: #aaa; }
+        /* Rows without images shrink to one line of text. */
+        .summary-row.no-images .thumb { display: none; }
+        .summary-row.no-images .row-info { aspect-ratio: auto; flex-direction: row; justify-content: flex-start; gap: 6px; grid-column: 1 / -1; padding: 2px 0; }
+
+        /* Popup */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200;
+            display: none; align-items: center; justify-content: center; padding: 2vh 2vw;
+        }
+        .modal-bg.open { display: flex; }
+        .modal {
+            background: #fff; border-radius: 12px; width: min(1200px, 100%); height: 100%;
+            display: flex; flex-direction: column; padding: 0.75rem 1rem; gap: 0.5rem;
+        }
+        .modal-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .modal-head h2 { font-size: 16px; font-weight: 500; }
+        .modal-head .spacer { flex: 1; }
+        .controls { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 12px; color: #555; }
+        .controls input[type="range"] { flex: 1; min-width: 200px; accent-color: #1a1a1a; }
+        .file-name { font-family: ui-monospace, monospace; font-size: 12px; min-width: 16ch; }
+        .counter { font-variant-numeric: tabular-nums; color: #888; min-width: 10ch; text-align: right; }
+        #viewer { flex: 1; min-height: 0; position: relative; }
+        /* Pixel value under the mouse (replaces Plotly's coordinate tooltip) */
+        #pixel-value { position: absolute; z-index: 5; pointer-events: none; padding: 2px 7px; border-radius: 4px; font-size: 12px;
+                       font-variant-numeric: tabular-nums; color: #fff; background: rgba(0,0,0,0.72); white-space: nowrap; }
+        #pixel-value[hidden] { display: none; }
+        #viewer-msg {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 0.6rem; align-items: center; justify-content: center;
+            color: #888; pointer-events: none;
+        }
+        label.check { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        #subset-wrap[hidden] { display: none; }   /* .controls sets display: flex, which would override [hidden] */
+        .hint { font-size: 11px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+  {% include "_nav.html" %}
+  <h1>{{ title }}</h1>
+</div>
+
+<div class="toolbar">
+    <label class="toolbar-label">View
+        <select id="view">
+            {% for key, label in views.items() %}<option value="{{ key }}"{% if key == source %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </label>
+    <input type="text" id="filter" placeholder="Filter {{ prefix }}…" autocomplete="off">
+    <select id="sort">
+        <option value="desc">Newest first</option>
+        <option value="asc">Oldest first</option>
+    </select>
+    {% if source == 'tomo' %}
+    <label class="toolbar-label">Planes
+        <select id="planes">
+            <option value="xy">XY only</option>
+            <option value="all">XY, XZ, YZ</option>
+        </select>
+    </label>
+    {% endif %}
+    {% if source in ('phase', 'summary') %}
+    <label class="toolbar-label">Save prefix
+        <select id="save-prefix">
+            <option value="">{{ 'Newest run' if source == 'summary' else 'All prefixes' }}</option>
+        </select>
+    </label>
+    {% endif %}
+    <span id="count"></span>
+    <span id="thumb-progress" hidden title="Thumbnails on screen that are loaded"><span class="pbar"><span></span></span><span class="txt"></span></span>
+    <span class="spacer"></span>
+    <span class="path" id="raw-path"></span>
+    <span class="status-dot" id="status-dot" title="Live"></span>
+</div>
+
+<div class="grid" id="grid"><div class="empty">Loading…<div class="pbar indeterminate"><span></span></div></div></div>
+
+<div class="modal-bg" id="modal-bg">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head">
+            <h2 id="modal-title"></h2>
+            <label class="controls" id="subset-wrap" hidden>Tomogram <select id="subset-select"></select></label>
+            <span class="controls" id="prefix-filter"></span>
+            <span class="spacer"></span>
+            <label class="controls">Resolution
+                <select id="resolution">
+                    <option value="512">512</option>
+                    <option value="1024" selected>1024</option>
+                    <option value="2048">full</option>
+                </select>
+            </label>
+            <label class="controls check" title="Jump to newest image when new files arrive">
+                <input type="checkbox" id="follow"> follow new
+            </label>
+            <button class="btn" id="close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="controls">
+            <button class="btn" id="first-btn" title="First (Home)">⏮</button>
+            <button class="btn" id="prev-btn" title="Previous (←)">◀</button>
+            <input type="range" id="slider" min="0" max="0" value="0">
+            <button class="btn" id="next-btn" title="Next (→)">▶</button>
+            <button class="btn" id="last-btn" title="Last (End)">⏭</button>
+            <button class="btn" id="play-btn" title="Play (space)">Play</button>
+            <span class="file-name" id="file-name"></span>
+            <span class="counter" id="counter"></span>
+        </div>
+        <div id="viewer"><div id="viewer-msg"></div><div id="pixel-value" hidden></div></div>
+        <div class="hint">← → / mouse wheel on slider: step · PgUp/PgDn: ±10 · Home/End · space: play · Esc: close · drag in image to zoom, double-click to reset</div>
+    </div>
+</div>
+
+<script>
+const qs = id => document.getElementById(id);
+const POLL_MS = 5000;
+const enc = encodeURIComponent;
+// Which overview this is ("raw", "phase", "tomo" or "summary"); data set names may contain a "/".
+const PAGE = {{ source | tojson }};
+const apiBase = src => `/api/overview/${src}`;
+// `v` changes the URL when the rendering changes (e.g. orientation), so browsers do not show cached old images.
+const IMAGE_VERSION = 2;
+const imageUrl = (src, dir, file, size) => `${apiBase(src)}/image?dataset=${enc(dir)}&file=${enc(file)}&size=${size}&v=${IMAGE_VERSION}`;
+const displayName = name => name.replace('/', ' / ');
+
+/* ---------- Tile grid ---------- */
+const tiles = new Map();          // name -> {el, data}
+let dirs = [];
+let firstLoad = true;
+
+function fmtTime(t) {
+    const d = new Date(t * 1000);
+    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* ---------- Scale bars (pixel size from the phase retrieval README.html, see the server) ---------- */
+function niceLength(x) {                 // largest 1, 2 or 5 x 10^k not above x
+    const p = Math.pow(10, Math.floor(Math.log10(x)));
+    return [5, 2, 1].map(m => m * p).find(v => v <= x) || p;
+}
+function fmtLength(nm) {
+    if (nm >= 1e6) return `${+(nm / 1e6).toPrecision(3)} mm`;
+    if (nm >= 1e3) return `${+(nm / 1e3).toPrecision(3)} µm`;
+    return `${+nm.toPrecision(3)} nm`;
+}
+function setScaleBar(frame, data, hasImage) {
+    const bar = frame && frame.querySelector('.scale-bar');
+    if (!bar) return;
+    const px = data && data.pixel_size_nm, size = data && data.image_size;
+    if (!hasImage || !px || !size) { bar.hidden = true; return; }
+    const [w, h] = size;
+    const shown = Math.min(1, w / h);          // displayed image width / frame width (object-fit: contain)
+    const field = px * w;                      // image width in nm
+    const length = niceLength(field * 0.25);
+    bar.style.width = `${100 * shown * length / field}%`;
+    bar.style.right = `${100 * ((1 - shown) / 2 + 0.05 * shown)}%`;
+    bar.querySelector('.txt').textContent = fmtLength(length);
+    bar.title = `${px.toFixed(1)} nm per pixel (${data.pixel_note || 'from the phase retrieval README.html'})`;
+    bar.hidden = false;
+}
+
+function setThumb(img, src, dir, file) {
+    // Only reload when the selected image changed (or a previous load failed).
+    const key = file ? `${src}|${dir}|${file}` : '';
+    if (img.dataset.key === key && !img.dataset.failed) return;
+    img.dataset.key = key;
+    delete img.dataset.failed;
+    if (file) {
+        img.src = imageUrl(src, dir, file, 256);
+        img.title = file;
+    } else {
+        img.removeAttribute('src');
+        img.title = 'no image';
+    }
+}
+
+/* ---------- Loading progress of the thumbnails on screen (the others load lazily when scrolled into view) ---------- */
+const onScreen = new Set();
+const thumbObserver = new IntersectionObserver(entries => {
+    for (const e of entries) e.isIntersecting ? onScreen.add(e.target) : onScreen.delete(e.target);
+    scheduleThumbProgress();
+});
+function trackThumbs(el) {
+    el.querySelectorAll('.thumb-img').forEach(img => {
+        thumbObserver.observe(img);
+        img.addEventListener('load', scheduleThumbProgress);
+        img.addEventListener('error', scheduleThumbProgress);
+    });
+}
+let thumbProgressQueued = false;
+function scheduleThumbProgress() {
+    if (thumbProgressQueued) return;
+    thumbProgressQueued = true;
+    requestAnimationFrame(() => { thumbProgressQueued = false; updateThumbProgress(); });
+}
+function updateThumbProgress() {
+    // Thumbnails on screen with an image (hidden rows, e.g. XZ/YZ with "XY only", do not count).
+    const imgs = [...onScreen].filter(img => img.isConnected && img.getAttribute('src') && img.offsetParent !== null);
+    const done = imgs.filter(img => img.complete).length;
+    const box = qs('thumb-progress');
+    box.hidden = !imgs.length || done >= imgs.length;
+    if (box.hidden) return;
+    box.querySelector('.pbar > span').style.width = `${100 * done / imgs.length}%`;
+    box.querySelector('.txt').textContent = `Thumbnails ${done} / ${imgs.length}`;
+}
+
+function buildTile(d) {
+    if (PAGE === 'summary') return buildSummaryTile(d);
+    const el = document.createElement('div');
+    el.className = 'tile';
+    el.innerHTML = `
+        <div class="tile-head">
+            <span class="tile-name"></span>
+            <span class="tile-meta"></span>
+        </div>
+        ${PAGE === 'tomo' ? '<div class="row-title xy-title">XY</div>' : ''}
+        <div class="thumbs main-thumbs" style="grid-template-columns: repeat(${d.thumbs.length}, 1fr);">
+            ${d.thumbs.map(t => `
+                <div class="thumb">
+                    <div class="thumb-frame"><img class="thumb-img" loading="lazy" alt=""><div class="scale-bar" hidden><span class="bar"></span><span class="txt"></span></div></div>
+                    <div class="thumb-label"></div>
+                </div>`).join('')}
+        </div>
+        ${PAGE === 'tomo' ? `<div class="ortho-rows">${ORTHO_PLANES.map(p => `
+            <div class="row-title">${p.toUpperCase()}</div>
+            <div class="thumbs ortho-thumbs" data-plane="${p}" style="grid-template-columns: repeat(3, 1fr);">
+                ${thumbCell()}${thumbCell()}${thumbCell()}
+            </div>`).join('')}</div>` : ''}`;
+    el.querySelector('.tile-name').textContent = displayName(d.name);
+    el.querySelectorAll('.thumb-img').forEach(img => {
+        img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
+    });
+    el.addEventListener('click', () => openViewer(d.name, PAGE, (tiles.get(d.name) || {}).data || d));
+    trackThumbs(el);
+    return el;
+}
+
+function updateTile(el, d) {
+    if (PAGE === 'summary') return updateSummaryTile(el, d);
+    el.querySelector('.tile-meta').textContent =
+        `${d.meta} · ${fmtTime(d.mtime)}`;
+    const main = el.querySelector('.main-thumbs');
+    const imgs = main.querySelectorAll('.thumb-img');
+    const labels = main.querySelectorAll('.thumb-label');
+    const frames = main.querySelectorAll('.thumb-frame');
+    d.thumbs.forEach((t, i) => {
+        setScaleBar(frames[i], d, !!t.file);
+        setThumb(imgs[i], PAGE, t.dataset || d.name, t.file);   // multi-tomogram scans: images from a subfolder
+        labels[i].textContent = t.file || `no ${t.label.split(' ')[0]}`;
+        labels[i].title = t.label;
+    });
+    if (PAGE === 'tomo') updateOrthoRows(el, d);
+}
+
+/* ---------- Tomograms: XZ and YZ sections at 25 / 50 / 75 % of y and x (z downwards) ---------- */
+const ORTHO_PLANES = ['xz', 'yz'];
+const PLANES_KEY = 'workbench.tomoOverview.planes';
+const planesSelect = qs('planes');
+const showOrtho = () => !!planesSelect && planesSelect.value === 'all';
+if (planesSelect) {
+    // Default "XY only": the XZ/YZ sections cost a pass over the volume on first view.
+    planesSelect.value = 'xy';
+    try { planesSelect.value = localStorage.getItem(PLANES_KEY) || 'xy'; } catch (e) { /* storage unavailable */ }
+    qs('grid').classList.toggle('xy-only', !showOrtho());
+    planesSelect.addEventListener('change', () => {
+        try { localStorage.setItem(PLANES_KEY, planesSelect.value); } catch (e) { /* storage unavailable */ }
+        qs('grid').classList.toggle('xy-only', !showOrtho());
+        renderGrid();   // loads the XZ/YZ sections when they are switched on
+    });
+}
+function updateOrthoRows(el, d) {
+    if (!showOrtho()) return;   // hidden: do not request the sections
+    ORTHO_PLANES.forEach(plane => {
+        const row = el.querySelector(`.ortho-thumbs[data-plane="${plane}"]`);
+        const info = d.ortho && d.ortho[plane];
+        row.querySelectorAll('.thumb').forEach((cell, i) => {
+            const img = cell.querySelector('.thumb-img'), label = cell.querySelector('.thumb-label');
+            const has = !!(info && d.count);
+            // The slice count is part of the URL: a growing tomogram gets new sections.
+            const url = has ? `${apiBase('tomo')}/ortho?dataset=${enc(d.name)}&plane=${plane}&index=${i}&size=256&n=${d.count}&v=${IMAGE_VERSION}` : '';
+            if (img.dataset.key !== url || img.dataset.failed) {
+                img.dataset.key = url;
+                delete img.dataset.failed;
+                if (url) img.src = url; else img.removeAttribute('src');
+            }
+            const axis = plane === 'xz' ? 'y' : 'x';
+            label.textContent = has ? `${axis} = ${info.positions[i]}` : '';
+            label.title = has ? `${plane.toUpperCase()} section at ${axis} = ${info.positions[i]} px` : '';
+            setScaleBar(cell.querySelector('.thumb-frame'),
+                has ? { pixel_size_nm: d.pixel_size_nm, image_size: info.size, pixel_note: d.pixel_note } : null, has);
+        });
+    });
+}
+
+/* ---------- Summary tiles: raw data, phase retrieval and tomogram of one scan ---------- */
+const SUMMARY_ROWS = [
+    { kind: 'raw', title: 'Raw data', missing: 'no raw data' },
+    { kind: 'phase', title: 'Phase retrieval', missing: 'no phase retrieval yet' },
+    { kind: 'tomo', title: 'Tomogram', missing: 'no tomogram yet' },
+];
+const thumbCell = () => `<div class="thumb"><div class="thumb-frame"><img class="thumb-img" loading="lazy" alt=""><div class="scale-bar" hidden><span class="bar"></span><span class="txt"></span></div></div><div class="thumb-label"></div></div>`;
+
+function buildSummaryTile(d) {
+    const el = document.createElement('div');
+    el.className = 'tile summary';
+    el.innerHTML = `
+        <div class="tile-head">
+            <span class="tile-name"></span>
+            <span class="tile-meta"></span>
+        </div>
+        ${SUMMARY_ROWS.map(r => `
+            <div class="summary-row" data-kind="${r.kind}">
+                <div class="row-title">${r.title}</div>
+                <div class="thumbs">
+                    ${r.kind === 'raw' ? thumbCell() : '<div class="row-info"></div>'}
+                    ${thumbCell()}${thumbCell()}${thumbCell()}
+                </div>
+            </div>`).join('')}`;
+    el.querySelector('.tile-name').textContent = d.name;
+    el.querySelectorAll('.thumb-img').forEach(img => {
+        img.onerror = () => { img.dataset.failed = '1'; img.removeAttribute('src'); };
+    });
+    el.querySelectorAll('.summary-row').forEach(row => {
+        row.addEventListener('click', () => { if (row.dataset.dataset) openViewer(row.dataset.dataset, row.dataset.kind, row._data); });
+    });
+    trackThumbs(el);
+    return el;
+}
+
+// The data set shown in each row: phase retrieval run by the "Save prefix" choice (default: newest),
+// tomogram: the newest version.
+function summaryRowData(d, kind) {
+    if (kind === 'raw') return d.raw;
+    if (kind === 'tomo') return d.tomo[0] || null;
+    const prefix = selectedSavePrefix();
+    return prefix ? d.phase.find(r => r.name.split('/')[1] === prefix) || null : d.phase[0] || null;
+}
+
+function updateSummaryTile(el, d) {
+    el.querySelector('.tile-meta').textContent = fmtTime(d.mtime);
+    SUMMARY_ROWS.forEach(r => {
+        const row = el.querySelector(`.summary-row[data-kind="${r.kind}"]`);
+        const data = summaryRowData(d, r.kind);
+        row.classList.toggle('missing', !data);
+        row.classList.toggle('no-images', !(data && data.thumbs.some(t => t.file)));
+        row.dataset.dataset = data ? data.name : '';
+        row._data = data;
+        row.title = data ? `Open ${displayName(data.name)}` : '';
+        const imgs = row.querySelectorAll('.thumb-img');
+        const labels = row.querySelectorAll('.thumb-label');
+        const thumbs = data ? data.thumbs : [];
+        const frames = row.querySelectorAll('.thumb-frame');
+        imgs.forEach((img, i) => {
+            const t = thumbs[i];
+            setScaleBar(frames[i], r.kind === 'raw' ? null : data, !!(t && t.file));
+            setThumb(img, r.kind, (t && t.dataset) || (data ? data.name : ''), t && t.file);
+            labels[i].textContent = t && t.file ? t.file : '';
+            labels[i].title = t ? t.label : '';
+        });
+        const info = row.querySelector('.row-info');
+        if (info) {
+            if (!data) {
+                const prefix = r.kind === 'phase' && selectedSavePrefix();
+                info.textContent = prefix ? `no run "${prefix}"` : r.missing;
+            } else {
+                const others = (r.kind === 'phase' ? d.phase : d.tomo).length - 1;
+                info.innerHTML = '';
+                const span = (text, cls) => Object.assign(document.createElement('span'), { textContent: text, className: cls || '' });
+                info.append(span(data.name.split('/')[1], 'run'), span(data.meta));
+                if (others > 0) info.append(span(`+${others} more`));
+            }
+        }
+    });
+}
+
+function renderGrid() {
+    const grid = qs('grid');
+    const filter = qs('filter').value.trim().toLowerCase();
+    const ordered = qs('sort').value === 'desc' ? [...dirs].reverse() : dirs;
+    const savePrefix = PAGE === 'phase' ? selectedSavePrefix() : '';
+    const visible = ordered.filter(d => d.name.toLowerCase().includes(filter)
+        && (!savePrefix || d.name.split('/')[1] === savePrefix));
+
+    const names = new Set(dirs.map(d => d.name));
+    for (const [name, t] of tiles) {
+        if (!names.has(name)) { t.el.remove(); tiles.delete(name); }
+    }
+    grid.querySelector('.empty')?.remove();
+
+    let prev = null;
+    for (const d of visible) {
+        let t = tiles.get(d.name);
+        if (!t) {
+            t = { el: buildTile(d) };
+            if (!firstLoad) t.el.classList.add('new');
+            tiles.set(d.name, t);
+        }
+        t.data = d;
+        updateTile(t.el, d);
+        // Keep DOM order in sync without rebuilding (preserves loaded thumbnails).
+        const expected = prev ? prev.nextSibling : grid.firstChild;
+        if (expected !== t.el) grid.insertBefore(t.el, expected);
+        prev = t.el;
+    }
+    // Detach tiles hidden by the filter.
+    for (const [name, t] of tiles) {
+        if (!visible.includes(t.data) && t.el.parentNode) t.el.remove();
+    }
+    if (!visible.length) {
+        grid.insertAdjacentHTML('beforeend',
+            `<div class="empty">${dirs.length ? 'No directory matches the filter.' : {{ empty_text | tojson }}}</div>`);
+    }
+    qs('count').textContent = `${visible.length} / ${dirs.length} ${ {{ unit | tojson }} }`;
+    scheduleThumbProgress();
+}
+
+async function pollDirs() {
+    try {
+        const res = await fetch(PAGE === 'summary' ? '/api/overview/summary' : `${apiBase(PAGE)}/dirs`);
+        if (res.status === 401) { location.reload(); return; }   // session expired: go to the login page
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        const body = await res.json();
+        dirs = body.dirs;
+        updateSavePrefixes();
+        qs('raw-path').textContent = body.path;
+        qs('status-dot').classList.remove('error');
+        qs('status-dot').title = 'Live – updated ' + new Date().toLocaleTimeString();
+        renderGrid();
+        firstLoad = false;
+    } catch (e) {
+        qs('status-dot').classList.add('error');
+        qs('status-dot').title = 'Update failed: ' + e.message;
+        if (firstLoad) qs('grid').innerHTML = `<div class="empty">Could not load directories: ${e.message}</div>`;
+    } finally {
+        setTimeout(pollDirs, POLL_MS);
+    }
+}
+
+qs('filter').addEventListener('input', renderGrid);
+// One overview page; each view is rendered by the server (/overview?view=...).
+qs('view').addEventListener('change', e => { location.href = `/overview?view=${enc(e.target.value)}`; });
+qs('sort').addEventListener('change', renderGrid);
+
+/* ---------- Save prefix (phase retrieval overview: data sets are "<scan>/<save prefix>") ---------- */
+const SAVE_PREFIX_KEY = `workbench.${PAGE}Overview.savePrefix`;
+const savePrefixSelect = qs('save-prefix');
+const selectedSavePrefix = () => savePrefixSelect ? savePrefixSelect.value : '';
+function updateSavePrefixes() {
+    if (!savePrefixSelect) return;
+    const runNames = PAGE === 'summary' ? dirs.flatMap(d => d.phase.map(r => r.name)) : dirs.map(d => d.name);
+    const prefixes = [...new Set(runNames.map(n => n.split('/')[1]).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    // Rebuild only when the set of prefixes changed, so an open dropdown is not disturbed by the refresh.
+    const key = prefixes.join('\n');
+    if (savePrefixSelect.dataset.prefixes === key) return;
+    let wanted = savePrefixSelect.value;
+    if (savePrefixSelect.dataset.prefixes === undefined) {   // first load: restore the last choice
+        try { wanted = localStorage.getItem(SAVE_PREFIX_KEY) || ''; } catch (e) { /* storage unavailable */ }
+    }
+    savePrefixSelect.dataset.prefixes = key;
+    savePrefixSelect.innerHTML = `<option value="">${PAGE === 'summary' ? 'Newest run' : 'All prefixes'}</option>` +
+        prefixes.map(p => `<option value="${p.replace(/"/g, '&quot;')}">${p.replace(/</g, '&lt;')}</option>`).join('');
+    savePrefixSelect.value = prefixes.includes(wanted) ? wanted : '';
+}
+if (savePrefixSelect) {
+    savePrefixSelect.addEventListener('change', () => {
+        try { localStorage.setItem(SAVE_PREFIX_KEY, savePrefixSelect.value); } catch (e) { /* storage unavailable */ }
+        renderGrid();
+    });
+}
+
+/* ---------- Popup viewer ---------- */
+const viewer = {
+    dir: null,
+    source: PAGE,
+    allFiles: [],
+    files: [],
+    prefix: 'all',
+    index: 0,
+    token: 0,
+    pollTimer: null,
+    playTimer: null,
+    cache: new Map(),   // url -> Promise<{src, factor, range}>
+};
+const CACHE_MAX = 60;
+
+function fetchImage(url) {
+    if (viewer.cache.has(url)) {
+        const p = viewer.cache.get(url);
+        viewer.cache.delete(url);           // move to the end (LRU)
+        viewer.cache.set(url, p);
+        return p;
+    }
+    const p = fetch(url).then(async res => {
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+        const factor = parseFloat(res.headers.get('X-Downsample')) || 1;
+        // Value range mapped to black .. white in the rendered image (for the colour bar).
+        const range = (res.headers.get('X-Range') || '').split(',').map(Number);
+        const blob = await res.blob();
+        const src = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = reject;
+            r.readAsDataURL(blob);
+        });
+        return { src, factor, range: range.length === 2 && range.every(Number.isFinite) ? range : null };
+    });
+    p.catch(() => viewer.cache.delete(url));
+    viewer.cache.set(url, p);
+    while (viewer.cache.size > CACHE_MAX) viewer.cache.delete(viewer.cache.keys().next().value);
+    return p;
+}
+
+function prefixOf(f) {
+    const m = f.match(/^([A-Za-z]+)_/);
+    return m ? m[1] : 'other';
+}
+
+function renderPrefixFilter() {
+    const counts = {};
+    viewer.allFiles.forEach(f => { const p = prefixOf(f); counts[p] = (counts[p] || 0) + 1; });
+    const opts = ['all', ...Object.keys(counts).sort((a, b) => (a === 'img' ? -1 : b === 'img' ? 1 : a.localeCompare(b)))];
+    const box = qs('prefix-filter');
+    box.innerHTML = '';
+    for (const p of opts) {
+        const b = document.createElement('button');
+        b.className = 'btn' + (p === viewer.prefix ? ' active' : '');
+        b.textContent = p === 'all' ? `all (${viewer.allFiles.length})` : `${p} (${counts[p]})`;
+        b.onclick = () => setPrefix(p);
+        box.appendChild(b);
+    }
+}
+
+function applyFiles(allFiles, keepFile) {
+    viewer.allFiles = allFiles;
+    viewer.files = viewer.prefix === 'all' ? allFiles : allFiles.filter(f => prefixOf(f) === viewer.prefix);
+    const slider = qs('slider');
+    slider.max = Math.max(0, viewer.files.length - 1);
+    const i = keepFile ? viewer.files.indexOf(keepFile) : -1;
+    viewer.index = i >= 0 ? i : Math.min(viewer.index, Math.max(0, viewer.files.length - 1));
+    renderPrefixFilter();
+}
+
+function setPrefix(p) {
+    const current = viewer.files[viewer.index];
+    viewer.prefix = p;
+    applyFiles(viewer.allFiles, current);
+    show(viewer.index);
+}
+
+async function loadFileList() {
+    const res = await fetch(`${apiBase(viewer.source)}/files?dataset=${enc(viewer.dir)}`);
+    if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    return (await res.json()).files;
+}
+
+// Multi-tomogram scans (e.g. ptychographic): tomo_* subfolders with the images, ref_* subfolders with the references.
+// The popup shows one subfolder at a time, the first tomogram by default; the dropdown switches between them.
+const fmtMicron = m => `${(m * 1e6).toFixed(1)} µm`;
+function fillSubsets(subsets, positions) {
+    const sel = qs('subset-select');
+    qs('subset-wrap').hidden = !subsets;
+    if (!subsets) { sel.innerHTML = ''; return; }
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const tomo = subsets.tomo.map((t, i) => {
+        const pos = positions && positions[i] ? ` · x ${fmtMicron(positions[i][0])}, y ${fmtMicron(positions[i][1])}` : '';
+        return `<option value="${esc(t.name)}">${esc(t.name)} · ${t.count} img${pos}</option>`;
+    }).join('');
+    const refs = subsets.ref.map(t => `<option value="${esc(t.name)}">${esc(t.name)} · ${t.count} ref</option>`).join('');
+    sel.innerHTML = `<optgroup label="Tomograms">${tomo}</optgroup>` + (refs ? `<optgroup label="References">${refs}</optgroup>` : '');
+    sel.value = subsets.tomo[0].name;
+}
+
+async function openViewer(dir, source, info) {
+    // A multi-tomogram raw scan opens its first tomogram; viewer.dir is then "<scan>/<subfolder>".
+    const subsets = source === 'raw' && info && info.subsets && info.subsets.tomo && info.subsets.tomo.length ? info.subsets : null;
+    fillSubsets(subsets, info && info.positions);
+    viewer.scan = dir;
+    viewer.dir = subsets ? `${dir}/${subsets.tomo[0].name}` : dir;
+    viewer.source = source;
+    // Pixel size for the scale bar (phase retrieval and tomograms only).
+    viewer.pixel = source !== 'raw' && info && info.pixel_size_nm ? info.pixel_size_nm : null;
+    viewer.pixelNote = info && info.pixel_note;
+    viewer.prefix = 'img';
+    viewer.index = 0;
+    viewer.cache.clear();
+    const kindLabel = { raw: 'Raw data', phase: 'Phase retrieval', tomo: 'Tomogram' }[source];
+    qs('modal-title').textContent = PAGE === 'summary' ? `${kindLabel} · ${displayName(dir)}` : displayName(dir);
+    qs('modal-bg').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    Plotly.purge(qs('viewer'));
+    message('Loading…', true);
+    try {
+        const files = await loadFileList();
+        if (!files.some(f => prefixOf(f) === 'img')) viewer.prefix = 'all';
+        applyFiles(files, null);
+        show(0);
+    } catch (e) {
+        message('Could not load directory: ' + e.message);
+    }
+    viewer.pollTimer = setInterval(refreshViewerFiles, POLL_MS);
+}
+
+qs('subset-select').addEventListener('change', async e => {
+    // Same image position in the other tomogram (compare the same angle at different positions).
+    const keep = viewer.index;
+    viewer.dir = `${viewer.scan}/${e.target.value}`;
+    viewer.prefix = 'img';
+    message('Loading…', true);
+    try {
+        const files = await loadFileList();
+        if (!files.some(f => prefixOf(f) === 'img')) viewer.prefix = 'all';
+        applyFiles(files, null);
+        show(Math.min(keep, Math.max(0, viewer.files.length - 1)));
+    } catch (err) {
+        message('Could not load directory: ' + err.message);
+    }
+});
+
+async function refreshViewerFiles() {
+    if (!viewer.dir) return;
+    try {
+        const files = await loadFileList();
+        if (files.length === viewer.allFiles.length) return;
+        const current = viewer.files[viewer.index];
+        const wasLast = viewer.index === viewer.files.length - 1;
+        applyFiles(files, current);
+        if (qs('follow').checked || (wasLast && viewer.playTimer)) {
+            show(viewer.files.length - 1);
+        } else {
+            updateCounter();
+        }
+    } catch (e) { /* keep showing what we have */ }
+}
+
+function closeViewer() {
+    viewer.dir = null;
+    clearInterval(viewer.pollTimer);
+    stopPlay();
+    viewer.cache.clear();
+    qs('modal-bg').classList.remove('open');
+    document.body.style.overflow = '';
+    Plotly.purge(qs('viewer'));
+}
+
+function message(text, loading = false) {
+    const box = qs('viewer-msg');
+    box.textContent = text || '';
+    if (loading) box.insertAdjacentHTML('beforeend', '<div class="pbar indeterminate"><span></span></div>');
+}
+
+function updateCounter() {
+    const n = viewer.files.length;
+    qs('slider').value = viewer.index;
+    qs('file-name').textContent = n ? viewer.files[viewer.index] : '';
+    qs('counter').textContent = n ? `${viewer.index + 1} / ${n}` : '0 / 0';
+    qs('prev-btn').disabled = qs('first-btn').disabled = viewer.index <= 0;
+    qs('next-btn').disabled = qs('last-btn').disabled = viewer.index >= n - 1;
+}
+
+async function show(index) {
+    const n = viewer.files.length;
+    if (!n) { updateCounter(); message('No images in this selection.'); return; }
+    viewer.index = Math.max(0, Math.min(n - 1, index));
+    updateCounter();
+    hideValue();
+    const dir = viewer.dir, file = viewer.files[viewer.index];
+    const size = qs('resolution').value;
+    const token = ++viewer.token;
+    try {
+        const { src, factor, range } = await fetchImage(imageUrl(viewer.source, dir, file, size));
+        if (token !== viewer.token) return;   // a newer request superseded this one
+        message('');
+        // No Plotly tooltip: the pixel value under the mouse is shown instead (see onViewerMouseMove).
+        const trace = { type: 'image', source: src, dx: factor, dy: factor, x0: 0, y0: 0, hoverinfo: 'none', name: file };
+        const layout = {
+            margin: { l: 40, r: 10, t: 10, b: 30 },
+            xaxis: { constrain: 'domain', showgrid: false },
+            yaxis: { scaleanchor: 'x', autorange: 'reversed', constrain: 'domain', showgrid: false },
+            uirevision: dir,                  // keep zoom while scrolling through the stack
+            dragmode: 'zoom',
+            paper_bgcolor: '#fff',
+        };
+        await Plotly.react(qs('viewer'), [trace, ...colorBarTrace(range)], layout, { responsive: true, displaylogo: false });
+        attachScaleBarListener();
+        updateViewerScaleBar();
+        prefetch(dir, size);
+    } catch (e) {
+        if (token !== viewer.token) return;
+        message(`${file}: ${e.message}`);
+    }
+}
+
+// Scale bar in the popup: in image coordinates at the bottom right of the visible region, sized to it,
+// and redrawn after zooming or panning.
+function updateViewerScaleBar() {
+    const gd = qs('viewer');
+    if (!gd._fullLayout || !gd._fullLayout.xaxis) return;
+    if (!viewer.pixel) { if ((gd.layout.shapes || []).length) Plotly.relayout(gd, { shapes: [], annotations: [] }); return; }
+    const xr = gd._fullLayout.xaxis.range, yr = gd._fullLayout.yaxis.range;
+    const visX = Math.abs(xr[1] - xr[0]), visY = Math.abs(yr[1] - yr[0]);
+    const length = niceLength(visX * viewer.pixel * 0.25), lengthPx = length / viewer.pixel;
+    const x1 = Math.max(...xr) - 0.05 * visX, x0 = x1 - lengthPx, y = Math.max(...yr) - 0.06 * visY;
+    const line = (color, width) => ({ type: 'line', xref: 'x', yref: 'y', x0, x1, y0: y, y1: y, line: { color, width } });
+    Plotly.relayout(gd, {
+        shapes: [line('rgba(0,0,0,0.6)', 6), line('#fff', 3)],
+        annotations: [{ xref: 'x', yref: 'y', x: (x0 + x1) / 2, y: y - 0.015 * visY, yanchor: 'bottom', showarrow: false,
+                        text: fmtLength(length), font: { color: '#fff', size: 12 }, bgcolor: 'rgba(0,0,0,0.35)', borderpad: 2,
+                        hovertext: `${viewer.pixel.toFixed(1)} nm per pixel (${viewer.pixelNote || ''})` }],
+    });
+}
+// Redraw the scale bar after zooming/panning. Attached on every image load, because Plotly.purge (when a
+// data set is opened or the popup closed) removes the plot's event handlers.
+function onViewerRelayout(ev) {
+    // Next frame: Plotly adjusts the ranges to the image aspect ratio after the zoom event.
+    if (Object.keys(ev || {}).some(k => k.startsWith('xaxis') || k.startsWith('yaxis') || k === 'autosize')) requestAnimationFrame(updateViewerScaleBar);
+}
+function attachScaleBarListener() {
+    const gd = qs('viewer');
+    if (!gd.on) return;
+    if (gd.removeListener) gd.removeListener('plotly_relayout', onViewerRelayout);
+    gd.on('plotly_relayout', onViewerRelayout);
+}
+
+// Colour bar of the displayed image: the image trace is a rendered picture (black .. white = the value range of
+// its X-Range header), which Plotly cannot give a colour bar; an empty marker trace with the same grey scale and
+// range carries it.
+function colorBarTrace(range) {
+    if (!range || !(range[1] > range[0])) return [];
+    return [{
+        type: 'scatter', mode: 'markers', x: [null], y: [null], hoverinfo: 'skip', showlegend: false,
+        marker: {
+            color: range, cmin: range[0], cmax: range[1], colorscale: [[0, '#000'], [1, '#fff']], showscale: true,
+            // Plain numbers (e.g. raw counts); exponent form only for small values such as phase shifts.
+            colorbar: { thickness: 12, len: 0.92, outlinewidth: 0.5, outlinecolor: 'rgba(0,0,0,0.3)', tickfont: { size: 11 },
+                        exponentformat: Math.max(Math.abs(range[0]), Math.abs(range[1])) < 0.01 ? 'e' : 'none' },
+        },
+    }];
+}
+
+/* ---------- Pixel value under the mouse ---------- */
+// Read on the server from the full resolution image (the display may be downsampled); one request at a time,
+// the latest mouse position wins; values already seen are cached.
+const valueCache = new Map();
+const VALUE_CACHE_MAX = 2000;
+const hover = { key: null, pending: null, busy: false };
+
+function fmtValue(r) {
+    if (!r || !r.inside) return null;
+    if (r.nan) return 'NaN';
+    const v = r.value, a = Math.abs(v);
+    if (Number.isInteger(v)) return String(v);
+    return a >= 1e4 || (a < 1e-3 && v !== 0) ? v.toExponential(4) : v.toPrecision(5);
+}
+function hideValue() { qs('pixel-value').hidden = true; hover.key = null; }
+function setValueLabel(text) {
+    const box = qs('pixel-value');
+    if (text == null) { box.hidden = true; return; }
+    box.textContent = text; box.hidden = false;
+}
+
+function onViewerMouseMove(e) {
+    const gd = qs('viewer'), fl = gd._fullLayout;
+    if (!fl || !fl.xaxis || !fl.yaxis || !viewer.dir || !viewer.files.length) { hideValue(); return; }
+    const xa = fl.xaxis, ya = fl.yaxis, rect = gd.getBoundingClientRect();
+    const px = e.clientX - rect.left - xa._offset, py = e.clientY - rect.top - ya._offset;
+    if (px < 0 || py < 0 || px > xa._length || py > ya._length) { hideValue(); return; }
+    // Image pixels are centred on integer coordinates (x0 = 0, dx = downsampling factor).
+    const x = Math.round(xa.p2c(px)), y = Math.round(ya.p2c(py));
+    if (x < 0 || y < 0) { hideValue(); return; }
+    const box = qs('pixel-value');
+    box.style.left = `${e.clientX - rect.left + 14}px`;
+    box.style.top = `${e.clientY - rect.top - 26}px`;
+    const file = viewer.files[viewer.index];
+    const key = `${viewer.source}|${viewer.dir}|${file}|${x}|${y}`;
+    if (key === hover.key) return;
+    hover.key = key;
+    if (valueCache.has(key)) { setValueLabel(valueCache.get(key)); return; }
+    if (box.hidden) setValueLabel('…');
+    hover.pending = { key, url: `${apiBase(viewer.source)}/value?dataset=${enc(viewer.dir)}&file=${enc(file)}&x=${x}&y=${y}` };
+    if (!hover.busy) fetchHoverValue();
+}
+
+async function fetchHoverValue() {
+    const job = hover.pending;
+    if (!job) return;
+    hover.pending = null;
+    hover.busy = true;
+    try {
+        const res = await fetch(job.url);
+        if (res.ok) {
+            const text = fmtValue(await res.json());
+            valueCache.set(job.key, text);
+            while (valueCache.size > VALUE_CACHE_MAX) valueCache.delete(valueCache.keys().next().value);
+            if (hover.key === job.key) setValueLabel(text);
+        }
+    } catch (e) { /* no value shown */ }
+    hover.busy = false;
+    if (hover.pending) fetchHoverValue();
+}
+
+qs('viewer').addEventListener('mousemove', onViewerMouseMove);
+qs('viewer').addEventListener('mouseleave', hideValue);
+
+function prefetch(dir, size) {
+    for (const off of [1, -1, 2, 3]) {
+        const f = viewer.files[viewer.index + off];
+        if (f) fetchImage(imageUrl(viewer.source, dir, f, size)).catch(() => {});
+    }
+}
+
+function step(delta) { show(viewer.index + delta); }
+
+function togglePlay() {
+    if (viewer.playTimer) { stopPlay(); return; }
+    qs('play-btn').textContent = 'Pause';
+    qs('play-btn').classList.add('active');
+    const tick = async () => {
+        if (!viewer.playTimer) return;
+        if (viewer.index < viewer.files.length - 1) await show(viewer.index + 1);
+        viewer.playTimer = setTimeout(tick, 150);
+    };
+    viewer.playTimer = setTimeout(tick, 0);
+}
+
+function stopPlay() {
+    clearTimeout(viewer.playTimer);
+    viewer.playTimer = null;
+    qs('play-btn').textContent = 'Play';
+    qs('play-btn').classList.remove('active');
+}
+
+qs('slider').addEventListener('input', e => show(parseInt(e.target.value)));
+qs('slider').addEventListener('wheel', e => { e.preventDefault(); step(e.deltaY > 0 ? 1 : -1); }, { passive: false });
+qs('prev-btn').onclick = () => step(-1);
+qs('next-btn').onclick = () => step(1);
+qs('first-btn').onclick = () => show(0);
+qs('last-btn').onclick = () => show(viewer.files.length - 1);
+qs('play-btn').onclick = togglePlay;
+qs('close-btn').onclick = closeViewer;
+qs('resolution').onchange = () => { viewer.cache.clear(); show(viewer.index); };
+qs('modal-bg').addEventListener('click', e => { if (e.target === qs('modal-bg')) closeViewer(); });
+
+document.addEventListener('keydown', e => {
+    if (!viewer.dir || e.target.tagName === 'SELECT') return;
+    const keys = {
+        ArrowRight: () => step(1), ArrowDown: () => step(1),
+        ArrowLeft: () => step(-1), ArrowUp: () => step(-1),
+        PageDown: () => step(10), PageUp: () => step(-10),
+        Home: () => show(0), End: () => show(viewer.files.length - 1),
+        ' ': togglePlay, Escape: closeViewer,
+    };
+    if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
+});
+
+/* ---------- Nav ---------- */
+const btn = qs('logo-btn');
+const menu = qs('nav-menu');
+btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+document.addEventListener('click', () => menu.classList.remove('open'));
+
+pollDirs();
+</script>
+</body>
+</html>

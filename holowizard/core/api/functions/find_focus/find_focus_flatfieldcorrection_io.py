@@ -1,12 +1,12 @@
 import logging
 from typing import List
 
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
-from holowizard.core.reconstruction.viewer import Viewer
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.parameters.flatfield_correction_params import FlatfieldCorrectionParams
+from holowizard.core.src.visualization.viewer import Viewer
 from holowizard.core.api.functions.find_focus.find_focus_flatfieldcorrection import find_focus as find_focus_internal
 from holowizard.core.api.functions.default_load_data_callback import default_load_data_callback
-from holowizard.core.reconstruction.plotter import Plotter
+from holowizard.core.src.visualization.plotter import Plotter
 
 
 def find_focus(

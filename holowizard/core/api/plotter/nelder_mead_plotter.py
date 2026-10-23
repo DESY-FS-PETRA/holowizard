@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-from holowizard.core.reconstruction.plotter.plotter import Plotter
+from holowizard.core.src.misc.plotter.plotter import Plotter
 
 
 class NelderMeadPlotter(Plotter):

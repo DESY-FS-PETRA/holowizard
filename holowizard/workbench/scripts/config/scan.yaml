@@ -1,0 +1,22 @@
+scan:
+  _target_: holowizard.workbench.scan.P05Scan
+  name: t
+  energy: 17.0
+  holder: 220
+  z01: 190
+  z02: 19826.473541018642
+  tasks:
+    - flatfield
+    - find_focus
+    - phase_retrieval
+  px_size: 0.0065
+  z01_confidence: 5
+  detector: Hamamatsu
+  data:
+    total_size:
+      - 2048
+      - 2048
+    fov_size:
+      - 2048
+      - 2048
+    window_type: blackman

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/png" href="static/logo.png">
+    <title>Worker Status</title>
+     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+
+        h1 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 0rem;
+            color: #1a1a1a;
+        }
+
+        .topbar{
+          display:flex;
+          align-items:center;
+          gap: 1rem;
+          margin-bottom:1.5rem
+        }
+
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary)}
+        .logo-btn svg{width:18px;height:18px;display:block}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;white-space:nowrap;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label, .field-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #1a1a1a;
+            background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            -webkit-appearance: none;
+        }
+
+        select:focus, input[type="text"]:focus, input[type="number"]:focus {
+            border-color: rgba(0,0,0,0.35);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+            background: #fff;
+        }
+
+        select:disabled, input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 0.75rem 0;
+        }
+
+        .btn {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: background 0.12s, box-shadow 0.12s;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        .btn-primary:hover { background: #333; }
+
+        .btn-danger {
+            color: #993c1d;
+            border-color: rgba(153,60,29,0.3);
+        }
+        .btn-danger:hover { background: #faece7; }
+
+        input[type="submit"], input[type="button"] {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18);
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+        }
+        #optimize-btn {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        #stop-btn {
+            color: #993c1d;
+            border-color: rgba(153,60,29,0.3);
+        }
+        #stop-btn:hover { background: #faece7; }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #1a1a1a;
+            cursor: pointer;
+        }
+
+        fieldset {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        legend {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            padding: 0 4px;
+            text-transform: capitalize;
+        }
+        fieldset label {
+            font-size: 12px;
+            font-weight: 400;
+            color: #555;
+        }
+        fieldset input[type="text"] {
+            margin-bottom: 6px;
+        }
+
+        .stages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .stage-card {
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            background: #fafaf9;
+        }
+
+        .stage-card .stage-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stage-card label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .divider {
+            height: 0.5px;
+            background: rgba(0,0,0,0.08);
+            margin: 0.75rem 0;
+        }
+
+        .geom-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        #preview-image, #loss-image {
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+
+        #live-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 0.75rem 0;
+        }
+
+        .loader {
+            width: 60px;
+            margin: 1rem auto;
+            aspect-ratio: 1;
+            --g: conic-gradient(from -90deg at 10px 10px,#740000 90deg,#0000 0);
+            background: var(--g), var(--g), var(--g);
+            background-size: 50% 50%;
+            animation: l16 1s infinite;
+        }
+        @keyframes l16 {
+            0%   {background-position:0    0   ,10px 10px,20px 20px}
+            50%  {background-position:0    20px,10px 10px,20px 0   }
+            100% {background-position:20px 20px,10px 10px,0    0   }
+        }
+
+        #form-container {
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #form-container::-webkit-scrollbar { width: 4px; }
+        #form-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+        /* Frames: cluster status on top, scan table below */
+        .page { display: flex; flex-direction: column; gap: 1.25rem; }
+        .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .live-note { font-size: 12px; color: #993c1d; text-transform: none; letter-spacing: normal; }
+        .live-note[hidden] { display: none; }
+        .stats { display: flex; flex-wrap: wrap; gap: 0.75rem 3rem; }
+        .stat-label { font-size: 12px; color: #888; }
+        .stat-value { font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+        .stat-detail { font-size: 12px; color: #555; }
+        .state-dot { width: 9px; height: 9px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
+        .state-dot.on { background: #28a745; }
+        .cancel-btn { padding: 4px 12px; font-size: 12px; }
+        .cancel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cancel-btn:disabled:hover { background: #fff; }
+        .empty-note { color: #888; font-size: 13px; padding: 0.75rem 0 0.25rem; }
+        /* Progress: one row per task (name | bar | count); bar segments done, failed, running, rest = waiting */
+        .progress { display: grid; grid-template-columns: max-content minmax(180px, 320px) max-content; gap: 5px 0.75rem; align-items: center; }
+        .progress .task-name { font-size: 12px; color: #555; white-space: nowrap; }
+        .progress .task-count { font-size: 12px; color: #555; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .progress .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #e6e5e1; }
+        .progress .seg { display: block; height: 100%; flex: none; }
+        .progress .seg.done { background: #28a745; }
+        .progress .seg.failed { background: #d9534f; }
+        .progress .seg.running {
+            background: repeating-linear-gradient(-45deg, #f0ad00 0 6px, #ffd24d 6px 12px);
+            background-size: 17px 17px; animation: progress-stripes 0.8s linear infinite;
+        }
+        @keyframes progress-stripes { to { background-position: 17px 0; } }
+        .progress.is-cancelled { opacity: 0.45; }
+        .progress.is-cancelled .seg.running { animation: none; }
+        /* Scan table (the reset at the top removes all cell padding) */
+        .scan-table { width: 100%; border-collapse: collapse; }
+        .scan-table th, .scan-table td { padding: 10px 1.5rem 10px 0; text-align: left; vertical-align: middle; }
+        .scan-table th:last-child, .scan-table td:last-child { padding-right: 0; }
+        .scan-table th { padding-top: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888;
+                         border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+        .scan-table #scan-rows tr + tr td { border-top: 0.5px solid rgba(0,0,0,0.06); }
+        .scan-table a { color: #1a1a1a; text-decoration: none; }
+        .scan-table a:hover { text-decoration: underline; }
+        .scan-table .scan-link { font-weight: 500; }
+        .scan-table .dir-link { color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+  {% include "_nav.html" %}
+  <h1>Worker Status</h1>
+</div>
+
+<div class="page">
+    <div class="panel">
+        <div class="panel-title panel-title-row">
+            <span>Cluster</span>
+            <span class="live-note" id="live-note" hidden>Connection to the server lost – retrying…</span>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Active workers</div>
+                <div class="stat-value" id="num-workers"></div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SLURM workers</div>
+                <div class="stat-value"><span class="state-dot" id="cluster-dot"></span><span id="cluster-state"></span></div>
+                <div class="stat-detail" id="cluster-detail"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">Scans</div>
+    <table class="scan-table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Scan</th>
+                <th>Base directory</th>
+                <th>Progress</th>
+            </tr>
+        </thead>
+        <tbody id="scan-rows"></tbody>
+        <tbody><tr id="empty-row" hidden><td colspan="4" class="empty-note">No scans submitted yet.</td></tr></tbody>
+    </table>
+    </div>
+</div>
+
+<script>
+    // The table is rendered here from the data of /api/progress and updated in place every 5 s (no page reloads:
+    // the scroll position stays and the running animations do not restart).
+    // Embedded by the page route; missing if the server still runs older code (templates are read from disk on
+    // every request, the Python code only at a restart): then the table is loaded from /api/progress right away.
+    const INITIAL = {% if initial is defined %}{{ initial | safe }}{% else %}null{% endif %};
+    const POLL_MS = 5000;
+    const qs = id => document.getElementById(id);
+
+    function renderCluster(c) {
+        const running = !!(c && c.running);
+        qs('cluster-dot').classList.toggle('on', running);
+        qs('cluster-state').textContent = running ? 'Running' : 'Stopped';
+        qs('cluster-detail').textContent = !running ? 'start automatically when work is submitted'
+            : c.idle_minutes != null ? `idle for ${c.idle_minutes} min · stop after ${c.idle_limit_minutes} min without work` : 'working';
+    }
+
+    // Numbers of one task for its bar (clamped so the segments never exceed the bar) and the text next to it.
+    function taskView(t, cancelled) {
+        const total = Math.max(t.total, 1);
+        const done = Math.min(t.done, total), failed = Math.min(t.failed, total - done);
+        const running = Math.min(t.running, total - done - failed);
+        let label;
+        if (t.total > 1) {
+            label = [`${done} / ${t.total}`, running ? `${running} running` : '', failed ? `${failed} failed` : ''].filter(Boolean).join(' · ');
+        } else {
+            label = failed ? 'failed' : done ? 'done' : running ? 'running' : cancelled ? 'cancelled' : 'waiting';
+        }
+        return { total, done, failed, running, label };
+    }
+
+    function updateProgress(box, info) {
+        box.classList.toggle('is-cancelled', !!info.cancelled);
+        const names = Object.keys(info.tasks);
+        if (box.dataset.tasks !== names.join('|')) {   // build the rows once; later only widths and texts change
+            box.dataset.tasks = names.join('|');
+            box.innerHTML = names.map(() => '<div class="task-name"></div><div class="bar"><span class="seg done"></span>'
+                + '<span class="seg failed"></span><span class="seg running"></span></div><div class="task-count"></div>').join('');
+        }
+        const nameEls = box.querySelectorAll('.task-name'), bars = box.querySelectorAll('.bar'), counts = box.querySelectorAll('.task-count');
+        names.forEach((name, i) => {
+            const v = taskView(info.tasks[name], info.cancelled);
+            nameEls[i].textContent = name.replace(/_/g, ' ');
+            bars[i].title = `${name}: ${v.label}`;
+            const [d, f, r] = bars[i].children;
+            d.style.width = `${100 * v.done / v.total}%`;
+            f.style.width = `${100 * v.failed / v.total}%`; f.style.minWidth = v.failed ? '3px' : '0';
+            r.style.width = `${100 * v.running / v.total}%`; r.style.minWidth = v.running ? '3px' : '0';
+            counts[i].textContent = v.label;
+        });
+    }
+
+    const rows = new Map();   // scan key -> <tr>
+    function buildRow(key) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td><button class="btn btn-danger cancel-btn">Cancel</button></td><td><a class="scan-link"></a></td>'
+            + '<td><a class="dir-link"></a></td><td><div class="progress"></div></td>';
+        tr.querySelector('.cancel-btn').addEventListener('click', () => confirmCancel(key));
+        return tr;
+    }
+
+    function render(data) {
+        qs('num-workers').textContent = data.num_workers;
+        renderCluster(data.cluster);
+        const body = qs('scan-rows'), keys = Object.keys(data.progress);
+        for (const [key, tr] of rows) if (!keys.includes(key)) { tr.remove(); rows.delete(key); }
+        let prev = null;
+        for (const key of keys) {   // newest first, as sent by the server
+            const info = data.progress[key];
+            let tr = rows.get(key);
+            if (!tr) { tr = buildRow(key); rows.set(key, tr); }
+            tr.querySelector('.cancel-btn').disabled = !!info.cancelled;
+            const scan = tr.querySelector('.scan-link');
+            scan.href = `/scan/${encodeURIComponent(key)}`; scan.textContent = info.name;
+            const dir = tr.querySelector('.dir-link');
+            dir.href = `file://${info.path}`; dir.textContent = info.base_dir;
+            updateProgress(tr.querySelector('.progress'), info);
+            const expected = prev ? prev.nextSibling : body.firstChild;
+            if (expected !== tr) body.insertBefore(tr, expected);
+            prev = tr;
+        }
+        qs('empty-row').hidden = keys.length > 0;
+    }
+
+    async function refresh() {
+        try {
+            const res = await fetch('/api/progress', { cache: 'no-store' });
+            if (res.status === 401) { location.reload(); return; }   // session expired: to the login page
+            if (!res.ok) throw new Error(res.statusText);
+            render(await res.json());
+            qs('live-note').hidden = true;
+        } catch (e) {
+            qs('live-note').hidden = false;
+        }
+    }
+    async function poll() { await refresh(); setTimeout(poll, POLL_MS); }
+
+    async function confirmCancel(key) {
+        if (!confirm("Are you sure you want to cancel this scan?")) return;
+        try { await fetch(`/api/cancel/${encodeURIComponent(key)}`); } catch (e) { /* shown by the next update */ }
+        refresh();
+    }
+
+    if (INITIAL) { render(INITIAL); setTimeout(poll, POLL_MS); } else { poll(); }
+
+    const btn = document.getElementById('logo-btn');
+    const menu = document.getElementById('nav-menu');
+    btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+    document.addEventListener('click', () => menu.classList.remove('open'));
+</script>
+</body>
+</html>

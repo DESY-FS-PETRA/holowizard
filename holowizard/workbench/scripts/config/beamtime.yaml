@@ -1,0 +1,5 @@
+beamtime:
+  _target_: holowizard.workbench.beamtime.P05
+  id: 11021679
+  year: 2025
+

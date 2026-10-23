@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <title>Rotation Center</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --border-radius-md: 6px;
+            --border-radius-lg: 10px;
+            --color-background-secondary: #f5f4f1;
+            --color-border-primary: rgba(0,0,0,0.3);
+            --color-border-secondary: rgba(0,0,0,0.15);
+            --color-border-tertiary: rgba(0,0,0,0.08);
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #555;
+            --color-text-tertiary: #888;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: #f5f4f1;
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+        h1 { font-size: 18px; font-weight: 500; }
+        .topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+        .nav-wrap{position:relative}
+        .logo-btn{width:48px;height:48px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+        .logo-btn:hover{border-color:var(--color-border-primary)}
+        .nav-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fafaf9;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:4px;min-width:180px;z-index:100;display:none}
+        .nav-menu.open{display:block}
+        .nav-section{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:6px 10px 4px;letter-spacing:.05em;text-transform:uppercase}
+        .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;white-space:nowrap;border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-primary);cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:var(--color-background-secondary)}
+        .nav-item svg{width:14px;height:14px;flex-shrink:0;color:var(--color-text-secondary)}
+        .nav-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        .panel {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.25rem;
+            min-width: 0;
+        }
+        .panel-title {
+            font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888;
+            margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+        .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.9rem; }
+        .field-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+        label, .field-label { font-size: 12px; font-weight: 500; color: #555; }
+        select, input[type="number"] {
+            width: 100%; padding: 6px 10px; font-size: 13px; color: #1a1a1a; background: #fafaf9;
+            border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; outline: none;
+        }
+        select:focus, input[type="number"]:focus { border-color: rgba(0,0,0,0.35); background: #fff; }
+        input[type="range"] { width: 100%; accent-color: #1a1a1a; }
+        .slider-row { display: flex; align-items: center; gap: 0.6rem; }
+        .slider-row input[type="number"] { width: 6.5rem; flex-shrink: 0; }
+        .hint { font-size: 11px; color: #888; }
+        .info { font-size: 12px; color: #555; margin: -0.4rem 0 0.9rem; }
+        .saved { font-size: 12px; color: #1f6b3a; background: #eaf4ed; border-radius: 6px; padding: 6px 10px; margin-bottom: 0.9rem; overflow-wrap: anywhere; }
+        .saved.none { color: #888; background: #f5f4f1; }
+
+        .filters { border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 0.6rem 0.75rem 0.4rem; margin-bottom: 0.9rem; }
+        .filters legend { font-size: 11px; font-weight: 500; color: #888; padding: 0 4px; }
+        /* Normal text flow, so long filter descriptions wrap naturally after the checkbox. */
+        .filter { display: block; font-size: 12px; font-weight: 400; color: #333; margin-bottom: 0.45rem; line-height: 1.9; padding-left: 20px; text-indent: -20px; }
+        .filter input[type="checkbox"] { accent-color: #1a1a1a; vertical-align: middle; margin: 0 6px 0 0; width: 14px; }
+        .filter input[type="number"] { width: 4.2rem; padding: 1px 6px; font-size: 12px; text-indent: 0; display: inline-block; vertical-align: middle; }
+        .removed { font-size: 12px; color: #555; margin-top: 0.3rem; }
+
+        .btn {
+            padding: 7px 14px; font-size: 13px; font-weight: 500; border-radius: 6px;
+            border: 0.5px solid rgba(0,0,0,0.18); background: #fff; color: #1a1a1a; cursor: pointer;
+        }
+        .btn:hover { background: #f5f4f1; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn:disabled:hover { background: #fff; }
+        .btn:focus-visible { outline: 2px solid rgba(0,0,0,0.25); outline-offset: 2px; }
+        .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .btn-primary:hover { background: #333; }
+        .btn-success { background: #eaf4ed; color: #1f6b3a; border-color: rgba(31,107,58,0.35); font-weight: 600; }
+        .btn-success:hover { background: #dbeee1; }
+        .btn-success:disabled:hover { background: #eaf4ed; }
+
+        .progress { height: 4px; background: #ecebe7; border-radius: 2px; overflow: hidden; margin: 0.4rem 0 0.2rem; }
+        .progress > div { height: 100%; width: 0; background: #1a1a1a; transition: width 0.2s; }
+        .status { font-size: 12px; color: #555; min-height: 1.2em; }
+        .status.error { color: #993c1d; }
+
+        .center-bar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .center-bar input[type="range"] { flex: 1; min-width: 200px; }
+        .center-value { font-variant-numeric: tabular-nums; min-width: 13ch; font-size: 13px; }
+        .center-value strong { font-size: 15px; }
+        #viewer { width: 100%; aspect-ratio: 1; max-height: 78vh; position: relative; }
+        #viewer-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #888; pointer-events: none; text-align: center; padding: 1rem; }
+        /* First, middle and last projection of the run, oriented as in the overviews (phase images are shown
+           as stored, which matches the raw data overview), with the test slice (a stored row) marked. */
+        .run-thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: -0.3rem 0 0.9rem; }
+        .run-thumbs:empty { display: none; }
+        .run-thumb { min-width: 0; }
+        .run-thumb .frame { position: relative; aspect-ratio: 1; background: #ecebe7; border-radius: 4px; overflow: hidden; }
+        .run-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .run-thumb .slice-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px solid #e0533d; pointer-events: none; }
+        .run-thumb .label { font-size: 10px; color: #888; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Switch between the rotation center and tomography pages (keeps the selected run) */
+        /* Switch between the rotation center and tomography pages (keeps the selected run), in the Data Set title row */
+        .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .panel-title-row .switch-btn {
+            text-decoration: none; white-space: nowrap; text-transform: none; letter-spacing: normal;
+            font-size: 12px; padding: 3px 10px; color: #1a1a1a;
+        }
+        .action-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .action-row #save-btn { margin-left: auto; }   /* "Save center" at the right edge */
+        .result-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+  {% include "_nav.html" %}
+  <h1>Rotation Center</h1>
+</div>
+
+<div class="layout">
+    <!-- LEFT: data set, test slice, center range -->
+    <div class="panel">
+        <div class="panel-title panel-title-row">
+            <span>Data Set</span>
+            <a class="btn switch-btn" id="switch-btn" href="/tomography" title="Current view: Rotation Center. Click to switch to Tomography (keeps the selected run).">Rotation Center</a>
+        </div>
+        <div class="field">
+            <label for="dataset">Phase retrieval run</label>
+            <select id="dataset"><option value="">Loading…</option></select>
+        </div>
+        <div class="info" id="dataset-info"></div>
+        <div class="run-thumbs" id="run-thumbs"></div>
+        <div class="saved none" id="saved">No rotation center saved for this run yet.</div>
+
+        <div class="field">
+            <label for="slice">Test slice (detector row)</label>
+            <div class="slider-row">
+                <input type="range" id="slice" min="0" max="0" value="0">
+                <input type="number" id="slice-num" min="0" step="1" value="0">
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="guess">Initial guess</label>
+                <input type="number" id="guess" step="any">
+            </div>
+            <div class="field">
+                <label for="range">Range ± (px)</label>
+                <input type="number" id="range" min="0" step="any" value="100">
+            </div>
+            <div class="field">
+                <label for="step">Step (px)</label>
+                <input type="number" id="step" min="0.1" step="any" value="1">
+            </div>
+        </div>
+        <div class="hint" style="margin:-0.5rem 0 0.9rem;">The initial guess defaults to the center pixel of the detector.</div>
+
+        <fieldset class="filters">
+            <legend>Leave out bad projections</legend>
+            <label class="filter"><input type="checkbox" id="f-nan" checked> phase image contains NaN</label>
+            <label class="filter"><input type="checkbox" id="f-dark" checked> dark hologram: mean &lt;
+                <input type="number" id="f-dark-factor" step="0.05" min="0" value="0.5"> × |mean of holograms|</label>
+            <label class="filter"><input type="checkbox" id="f-min" checked> phase outlier: minimum &lt;
+                <input type="number" id="f-min-factor" step="0.5" min="0" value="5"> × median of minima, or = 0</label>
+            <label class="filter"><input type="checkbox" id="f-neighbours"> differs strongly from neighbouring angles (test slice)</label>
+            <div class="hint">The first three use whole images and are computed once per run (cached).</div>
+        </fieldset>
+
+        <div class="action-row">
+            <button class="btn btn-primary" id="run-btn" disabled>Create series</button>
+            <button class="btn btn-success" id="save-btn" disabled>Save center</button>
+        </div>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <div class="status" id="status"></div>
+    </div>
+
+    <!-- RIGHT: test reconstructions -->
+    <div class="panel">
+        <div class="panel-title">Test Reconstructions (FBP_CUDA)</div>
+        <div class="center-bar">
+            <button class="btn" id="prev-btn" title="Previous center (←)">◀</button>
+            <input type="range" id="center-slider" min="0" max="0" value="0" disabled>
+            <button class="btn" id="next-btn" title="Next center (→)">▶</button>
+            <span class="center-value" id="center-value"></span>
+        </div>
+        <div id="viewer"><div id="viewer-msg">Choose a phase retrieval run.</div></div>
+        <div class="result-actions">
+            <span class="hint">← → / mouse wheel on the slider: step through the centers · drag in the image to zoom (kept while scrolling), double-click to reset</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const qs = id => document.getElementById(id);
+const enc = encodeURIComponent;
+const DATASET_KEY = 'workbench.rotation.dataset';
+const FILTERS_KEY = 'workbench.rotation.filters';
+const FILTER_IDS = ['f-nan', 'f-dark', 'f-dark-factor', 'f-min', 'f-min-factor', 'f-neighbours'];
+const currentFilters = () => ({
+    nan: qs('f-nan').checked,
+    dark: qs('f-dark').checked,
+    dark_factor: parseFloat(qs('f-dark-factor').value) || 0.5,
+    phase_min: qs('f-min').checked,
+    min_factor: parseFloat(qs('f-min-factor').value) || 5,
+    neighbours: qs('f-neighbours').checked,
+});
+function restoreFilters() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(FILTERS_KEY) || '{}');
+        FILTER_IDS.forEach(id => {
+            if (!(id in saved)) return;
+            const el = qs(id);
+            if (el.type === 'checkbox') el.checked = !!saved[id]; else el.value = saved[id];
+        });
+    } catch (e) { /* storage unavailable */ }
+}
+function storeFilters() {
+    const values = {};
+    FILTER_IDS.forEach(id => { const el = qs(id); values[id] = el.type === 'checkbox' ? el.checked : el.value; });
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(values)); } catch (e) { /* storage unavailable */ }
+}
+function removedSummary(s) {
+    const r = s.removed || {};
+    const parts = [
+        [r.unreadable, 'unreadable'], [r.nan, 'with NaN'], [r.dark, 'dark holograms'],
+        [r.phase_min, 'phase outliers'], [r.neighbours, 'neighbour outliers'],
+    ].filter(([n]) => n).map(([n, what]) => `${n} ${what}`);
+    const left = parts.length ? ` Left out: ${parts.join(', ')}.` : ' No projections left out.';
+    return ` Using ${s.used} of ${s.projections} projections.${left}` + (s.notes || []).map(n => ` ${n}`).join('');
+}
+const state = {
+    dataset: null,     // info of the selected run
+    job: null,         // current center scan
+    centers: [],
+    index: 0,
+    images: new Map(), // center -> Promise<data URL> (current job)
+    token: 0,
+    pollTimer: null,
+};
+
+async function api(url, opts) {
+    const res = await fetch(url, opts);
+    if (res.status === 401) { location.reload(); throw new Error('Not logged in'); }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail || res.statusText);
+    return body;
+}
+const setStatus = (text, error = false) => { qs('status').textContent = text; qs('status').classList.toggle('error', error); };
+const setProgress = frac => { qs('progress-bar').style.width = `${Math.round(100 * Math.min(1, Math.max(0, frac)))}%`; };
+const message = text => { qs('viewer-msg').textContent = text || ''; };
+const fmt = c => Number.isInteger(c) ? String(c) : c.toFixed(2).replace(/0+$/, '');
+
+/* ---------- Data sets ---------- */
+async function loadDatasets() {
+    try {
+        const { datasets } = await api('/api/rotation/datasets');
+        const sel = qs('dataset');
+        sel.innerHTML = '<option value="">Choose a run…</option>' + datasets.map(d =>
+            `<option value="${d.name.replace(/"/g, '&quot;')}">${d.name.replace('/', ' / ').replace(/</g, '&lt;')} (${d.meta})</option>`).join('');
+        // The latest series of this user (still in server memory) is shown again after a page reload.
+        const current = await api('/api/rotation/current').catch(() => null);
+        let wanted = datasetFromUrl || (current ? current.dataset : '');
+        if (!wanted) { try { wanted = localStorage.getItem(DATASET_KEY) || ''; } catch (e) { /* storage unavailable */ } }
+        if (datasets.some(d => d.name === wanted)) {
+            sel.value = wanted;
+            await selectDataset();
+            if (current && current.dataset === wanted && state.dataset) restoreSeries(current);
+        }
+        else message(datasets.length ? 'Choose a phase retrieval run.' : 'No phase retrieval runs with projections yet.');
+    } catch (e) {
+        setStatus('Could not load the runs: ' + e.message, true);
+    }
+}
+
+// Text on the center derived from another tomogram of the same scan (multi-tomogram scans), or ''.
+function derivedText(d) {
+    if (!d) return '';
+    if (d.error) return d.error;
+    return `Derived from ${d.from_dataset} (${d.from_tomogram}, center ${fmt(d.from_center)}): ` +
+        `${fmt(d.rotation_center)}, shift ${d.shift_px >= 0 ? '+' : ''}${fmt(d.shift_px)} px from ${d.method}`;
+}
+
+function showSaved() {
+    const s = state.dataset && state.dataset.saved;
+    const d = state.dataset && state.dataset.derived;
+    const box = qs('saved');
+    box.classList.toggle('none', !s && !(d && !d.error));
+    box.textContent = s
+        ? `Saved rotation center: ${fmt(s.rotation_center)} (slice ${s.slice}${s.saved_by ? `, by ${s.saved_by}` : ''}${s.saved_at ? `, ${s.saved_at.replace('T', ' ')}` : ''})`
+        : d ? `${derivedText(d)}. Not saved for this run yet; save it to use it as is, or tune it.`
+        : 'No rotation center saved for this run yet.';
+    box.title = state.dataset ? state.dataset.config_file : '';
+}
+
+// Switch button to the other tool page, taking the selected run along (?dataset=...).
+const SWITCH_TARGET = '/tomography';
+const datasetFromUrl = new URLSearchParams(location.search).get('dataset') || '';
+function updateSwitch() {
+    const name = qs('dataset').value;
+    qs('switch-btn').href = name ? `${SWITCH_TARGET}?dataset=${encodeURIComponent(name)}` : SWITCH_TARGET;
+}
+
+async function selectDataset() {
+    const name = qs('dataset').value;
+    updateSwitch();
+    try { localStorage.setItem(DATASET_KEY, name); } catch (e) { /* storage unavailable */ }
+    stopPolling();
+    state.job = null; state.centers = []; state.images.clear();
+    updateCenterControls();
+    Plotly.purge(qs('viewer'));
+    if (!name) { state.dataset = null; qs('dataset-info').textContent = ''; qs('run-thumbs').innerHTML = ''; showSaved(); qs('run-btn').disabled = true; return; }
+    message('Loading…'); setStatus(''); setProgress(0);
+    try {
+        const info = await api(`/api/rotation/dataset?dataset=${enc(name)}`);
+        state.dataset = info;
+        qs('dataset-info').textContent = `${info.projections} projections · ${info.angle_range_deg.toFixed(1)}° · ${info.cols} × ${info.rows} px`;
+        qs('dataset-info').title = info.angle_info;
+        loadThumbs(name);
+        const saved = info.saved;
+        qs('slice').max = qs('slice-num').max = info.rows - 1;
+        const from = saved || (info.derived && !info.derived.error ? info.derived : null);
+        const slice = from && from.slice != null && from.slice < info.rows ? from.slice : Math.floor(info.rows / 2);
+        qs('slice').value = qs('slice-num').value = slice;
+        qs('guess').value = info.default_center;
+        qs('run-btn').disabled = false;
+        showSaved();
+        message('Press Create series to start.');
+    } catch (e) {
+        state.dataset = null; qs('run-btn').disabled = true;
+        message(''); setStatus(e.message, true);
+    }
+}
+
+/* ---------- Thumbnails of the run (as in the phase retrieval overview: as stored) ---------- */
+async function loadThumbs(name) {
+    const box = qs('run-thumbs');
+    box.innerHTML = '';
+    try {
+        const run = await api(`/api/overview/phase/files?dataset=${enc(name)}`);
+        if (qs('dataset').value !== name) return;   // another run was chosen meanwhile
+        box.innerHTML = run.thumbs.filter(t => t.file).map(t => `
+            <div class="run-thumb" title="${t.label}: ${t.file}">
+                <div class="frame" style="aspect-ratio: ${state.dataset ? `${state.dataset.cols} / ${state.dataset.rows}` : '1'};">
+                    <img alt="" src="/api/overview/phase/image?dataset=${enc(name)}&file=${enc(t.file)}&size=256&v=2">
+                    <div class="slice-line"></div>
+                </div>
+                <div class="label">${t.file}</div>
+            </div>`).join('');
+        updateSliceLines();
+    } catch (e) {
+        box.innerHTML = '';
+    }
+}
+
+function updateSliceLines() {
+    if (!state.dataset) return;
+    const frac = (parseInt(qs('slice-num').value) + 0.5) / state.dataset.rows;
+    // The thumbnails are not rotated, so detector row r of the stored image is row r of the display.
+    document.querySelectorAll('#run-thumbs .slice-line').forEach(l => { l.style.top = `${100 * frac}%`; });
+}
+
+/* ---------- Center scan ---------- */
+async function runScan() {
+    if (!state.dataset) return;
+    stopPolling();
+    const body = {
+        dataset: state.dataset.dataset,
+        slice: parseInt(qs('slice-num').value),
+        center: parseFloat(qs('guess').value),
+        range: parseFloat(qs('range').value),
+        step: parseFloat(qs('step').value),
+        filters: currentFilters(),
+    };
+    state.images.clear(); state.centers = []; state.job = null;
+    updateCenterControls();
+    message('Reading projections…'); setStatus('Starting…'); setProgress(0);
+    try {
+        const job = await api('/api/rotation/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        state.job = job;
+        state.centers = job.centers;
+        // Start at the saved center if it lies in the range, otherwise at the initial guess.
+        const saved = state.dataset.saved && state.dataset.saved.rotation_center;
+        const start = saved != null && saved >= job.centers[0] && saved <= job.centers[job.centers.length - 1] ? saved : body.center;
+        state.index = nearestIndex(start);
+        updateCenterControls();
+        poll();
+    } catch (e) {
+        message(''); setStatus(e.message, true);
+    }
+}
+
+// The center being viewed, per series, so that a page reload returns to it.
+const VIEWED_KEY = 'workbench.rotation.viewed';
+// Show a series again (after a page reload): its settings in the form, its results in the viewer.
+function restoreSeries(job) {
+    const s = job.settings || {};
+    if (s.slice != null) { qs('slice').value = qs('slice-num').value = s.slice; updateSliceLines(); }
+    if (s.center != null) qs('guess').value = s.center;
+    if (s.range != null) qs('range').value = s.range;
+    if (s.step != null) qs('step').value = s.step;
+    const f = s.filters || {};
+    const set = (id, v) => { if (v == null) return; const el = qs(id); if (el.type === 'checkbox') el.checked = !!v; else el.value = v; };
+    set('f-nan', f.nan); set('f-dark', f.dark); set('f-dark-factor', f.dark_factor);
+    set('f-min', f.phase_min); set('f-min-factor', f.min_factor); set('f-neighbours', f.neighbours);
+    state.images.clear();
+    state.job = job;
+    state.centers = job.centers;
+    const saved = state.dataset.saved && state.dataset.saved.rotation_center;
+    let viewed = null;
+    try { const v = JSON.parse(sessionStorage.getItem(VIEWED_KEY) || 'null'); if (v && v.job === job.id) viewed = v.center; } catch (e) { /* storage unavailable */ }
+    const start = viewed != null ? viewed
+        : saved != null && saved >= job.centers[0] && saved <= job.centers[job.centers.length - 1] ? saved : s.center;
+    state.index = nearestIndex(start != null ? start : job.centers[Math.floor(job.centers.length / 2)]);
+    updateCenterControls();
+    message('Loading…');
+    poll();
+}
+
+function nearestIndex(center) {
+    let best = 0;
+    state.centers.forEach((c, i) => { if (Math.abs(c - center) < Math.abs(state.centers[best] - center)) best = i; });
+    return best;
+}
+
+function stopPolling() { clearTimeout(state.pollTimer); state.pollTimer = null; }
+
+async function poll() {
+    const job = state.job;
+    if (!job) return;
+    try {
+        const s = await api(`/api/rotation/scan/${job.id}`);
+        if (state.job !== job) return;   // replaced meanwhile
+        job.status = s.status;
+        if (s.status === 'checking') {
+            setStatus(`Checking projections (once per run)… ${s.checked} / ${s.projections}`); setProgress(0.2 * s.checked / s.projections);
+        } else if (s.status === 'reading') {
+            setStatus(`Reading projections… ${s.read} / ${s.projections}`); setProgress(0.2 + 0.1 * s.read / s.projections);
+        } else if (s.status === 'reconstructing' || s.status === 'done') {
+            const n = s.done, total = s.total;
+            job.used = s.used;
+            setStatus((s.status === 'done' ? `${total} test reconstructions ready (slice ${qs('slice-num').value}).` : `Reconstructing… ${n} / ${total}.`) + removedSummary(s));
+            setProgress(0.3 + 0.7 * n / total);
+            if (!job.shown) { job.shown = true; show(state.index); }
+        } else if (s.status === 'error') {
+            setStatus(s.message, true); message(''); return;
+        } else if (s.status === 'cancelled') {
+            return;
+        }
+        if (s.status !== 'done') state.pollTimer = setTimeout(poll, 400);
+    } catch (e) {
+        setStatus(e.message, true);
+    }
+}
+
+function fetchImage(center) {
+    const job = state.job;
+    if (state.images.has(center)) return state.images.get(center);
+    const p = fetch(`/api/rotation/scan/${job.id}/image?center=${center}`).then(async res => {
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+        const blob = await res.blob();
+        return await new Promise((resolve, reject) => {
+            const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(blob);
+        });
+    });
+    p.catch(() => state.images.delete(center));
+    state.images.set(center, p);
+    return p;
+}
+
+async function show(index) {
+    if (!state.centers.length || !state.job) return;
+    state.index = Math.max(0, Math.min(state.centers.length - 1, index));
+    updateCenterControls();
+    const job = state.job, center = state.centers[state.index], token = ++state.token;
+    try { sessionStorage.setItem(VIEWED_KEY, JSON.stringify({ job: job.id, center })); } catch (e) { /* storage unavailable */ }
+    try {
+        const src = await fetchImage(center);
+        if (token !== state.token || job !== state.job) return;
+        message('');
+        const layout = {
+            margin: { l: 40, r: 10, t: 10, b: 30 },
+            xaxis: { constrain: 'domain', showgrid: false },
+            yaxis: { scaleanchor: 'x', autorange: 'reversed', constrain: 'domain', showgrid: false },
+            uirevision: `${state.dataset.dataset}|${qs('slice-num').value}`,   // keep zoom while scrolling centers
+            dragmode: 'zoom',
+            paper_bgcolor: '#fff',
+        };
+        Plotly.react(qs('viewer'), [{ type: 'image', source: src, hoverinfo: 'x+y' }], layout, { responsive: true, displaylogo: false });
+        for (const off of [1, -1, 2, -2]) {
+            const c = state.centers[state.index + off];
+            if (c != null) fetchImage(c).catch(() => {});
+        }
+    } catch (e) {
+        if (token === state.token) message(`Center ${fmt(center)}: ${e.message}`);
+    }
+}
+
+function updateCenterControls() {
+    const n = state.centers.length, slider = qs('center-slider');
+    slider.max = Math.max(0, n - 1);
+    slider.value = state.index;
+    slider.disabled = !n;
+    qs('prev-btn').disabled = !n || state.index <= 0;
+    qs('next-btn').disabled = !n || state.index >= n - 1;
+    qs('save-btn').disabled = !n;
+    if (!n || !state.dataset) { qs('center-value').textContent = ''; qs('save-btn').textContent = 'Save center'; return; }
+    const c = state.centers[state.index];
+    const offset = c - state.dataset.default_center;
+    qs('center-value').innerHTML = `Center <strong>${fmt(c)}</strong> <span class="hint">(${offset >= 0 ? '+' : ''}${fmt(offset)} px from the center pixel)</span>`;
+    qs('save-btn').textContent = `Save center ${fmt(c)}`;
+}
+
+async function saveCenter() {
+    if (!state.centers.length) return;
+    const center = state.centers[state.index];
+    qs('save-btn').disabled = true;
+    try {
+        const r = await api('/api/rotation/center', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dataset: state.dataset.dataset, center, slice: parseInt(qs('slice-num').value),
+                range: [state.centers[0], state.centers[state.centers.length - 1]],
+                filters: currentFilters(),
+                projections_used: state.job ? state.job.used : null,
+            }),
+        });
+        state.dataset.saved = r.saved;
+        showSaved();
+        setStatus(`Saved rotation center ${fmt(center)} to ${r.path}`);
+    } catch (e) {
+        setStatus('Could not save: ' + e.message, true);
+    } finally {
+        qs('save-btn').disabled = false;
+    }
+}
+
+/* ---------- Events ---------- */
+qs('dataset').addEventListener('change', selectDataset);
+// Scans only start with the Create series button; changed settings are only pointed out.
+function settingsChanged() {
+    if (state.job) setStatus('Settings changed – press Create series to update the test reconstructions.');
+}
+FILTER_IDS.forEach(id => qs(id).addEventListener('change', () => { storeFilters(); settingsChanged(); }));
+['guess', 'range', 'step'].forEach(id => qs(id).addEventListener('change', settingsChanged));
+qs('run-btn').addEventListener('click', runScan);
+const sliceChanged = value => {
+    updateSliceLines();
+    qs('slice').value = qs('slice-num').value = value;
+    settingsChanged();
+};
+qs('slice').addEventListener('input', e => { qs('slice-num').value = e.target.value; updateSliceLines(); });
+qs('slice').addEventListener('change', e => sliceChanged(e.target.value));
+qs('slice-num').addEventListener('change', e => sliceChanged(Math.max(0, Math.min(parseInt(e.target.max), parseInt(e.target.value) || 0))));
+qs('center-slider').addEventListener('input', e => show(parseInt(e.target.value)));
+qs('center-slider').addEventListener('wheel', e => { e.preventDefault(); show(state.index + (e.deltaY > 0 ? 1 : -1)); }, { passive: false });
+qs('prev-btn').addEventListener('click', () => show(state.index - 1));
+qs('next-btn').addEventListener('click', () => show(state.index + 1));
+qs('save-btn').addEventListener('click', saveCenter);
+document.addEventListener('keydown', e => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;   // fields (incl. sliders) handle keys themselves
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(state.index + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(state.index - 1); }
+});
+
+const navBtn = qs('logo-btn'), navMenu = qs('nav-menu');
+navBtn.addEventListener('click', e => { e.stopPropagation(); navMenu.classList.toggle('open'); });
+document.addEventListener('click', () => navMenu.classList.remove('open'));
+
+restoreFilters();
+loadDatasets();
+</script>
+</body>
+</html>

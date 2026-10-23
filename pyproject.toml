@@ -16,17 +16,17 @@ dependencies = {file = "requirements.txt"}
 [tool.setuptools.package-data]
 "*" = ["logo.png", "*.json", "*.csv", "README.md"]
 "holowizard" = ["VERSION"]
-"holowizard.pipe.scripts.config" = ["*.ini", "*.yaml", "*.yml", "**/*.yaml", "**/*.yml"]
-"holowizard.pipe.templates" = ["*.html"]
-"holowizard.pipe" = ["*.yaml" , "*.md"]
+"holowizard.workbench.scripts.config" = ["*.ini", "*.yaml", "*.yml", "**/*.yaml", "**/*.yml"]
+"holowizard.workbench.templates" = ["*.html"]
+"holowizard.workbench" = ["*.yaml" , "*.md"]
 
 [project]
 name="holowizard"
 dynamic = ["version", "dependencies"]
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.11,<3.13"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco/LICENSE", "holowizard/pipe/LICENSE"]
+license-files = ["LICENSE", "holowizard/forge/LICENSE", "holowizard/core/LICENSE", "holowizard/livereco/LICENSE", "holowizard/workbench/LICENSE"]
 keywords = ["near-field holography", "phase retrieval", "tomography"]
 
 authors = [
@@ -60,8 +60,9 @@ holowizard_forge_generate_data = "holowizard.forge.scripts.generate_data:main"
 holowizard_forge_create_testconfig = "holowizard.forge.scripts.create_testconfig:main"
 holowizard_livereco_server_start = "holowizard.livereco.server.main:main"
 holowizard_core_create_examples = "holowizard.core.scripts.create_examples:main"
-holowizard_pipe_start = "holowizard.pipe.scripts.holopipe:main"
-holowizard_pipe_reconstruct_scan = "holowizard.pipe.script.reco:main"
+holowizard_workbench_start = "holowizard.workbench.scripts.workbench:main"
+holowizard_workbench_users = "holowizard.workbench.server.auth:main"
+holowizard_workbench_reconstruct_scan = "holowizard.workbench.script.reco:main"
 
 [project.optional-dependencies]
 dev = [
@@ -75,8 +76,12 @@ line-length = 120
 exclude = [
   "holowizard/forge",
   "tests/forge",
-  "holowizard/pipe/gui/windows/main_window.py", # temporary
 ]
 
 [tool.ruff.lint]
 ignore = ["E722"]
+
+[tool.pytest.ini_options]
+markers = [
+    "gpu: tests that require a CUDA-capable GPU",
+]

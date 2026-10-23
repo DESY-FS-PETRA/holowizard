@@ -1,10 +1,9 @@
 tqdm
-numpy==1.26.4
+numpy>=2,<2.6
 torch==2.10
 torchvision==0.25
 matplotlib
-PySide2
-pandas
+pandas<3
 h5py
 hdf5plugin
 selenium
@@ -13,7 +12,7 @@ requests
 xraylib
 cupy-cuda12x
 pyzmq
-pyqt5-tools
+PyQt5
 scikit-learn
 scikit-image
 GitPython
@@ -29,3 +28,4 @@ fastapi[standard]
 markdown
 plotly
 starlette==0.52.1
+neuroglancer

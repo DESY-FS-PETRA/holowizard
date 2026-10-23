@@ -6,9 +6,9 @@ from holowizard.core.api.functions.find_focus.find_focus_flatfieldcorrection imp
     find_focus,
 )
 from holowizard.core.api.viewer.loss_viewer import LossViewer
-from holowizard.core.reconstruction.viewer import Viewer
-from holowizard.core.parameters.reco_params import RecoParams
-from holowizard.core.parameters.flatfield_correction_params import (
+from holowizard.core.src.visualization.viewer import Viewer
+from holowizard.core.src.parameters.reco_params import RecoParams
+from holowizard.core.src.parameters.flatfield_correction_params import (
     FlatfieldCorrectionParams,
 )
 

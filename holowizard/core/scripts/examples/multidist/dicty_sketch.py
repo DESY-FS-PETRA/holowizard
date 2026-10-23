@@ -6,7 +6,7 @@ import pathlib
 import torch
 
 import holowizard.core
-from holowizard.core.logging.logger import Logger
+from holowizard.core.src.logging.logger import Logger
 from holowizard.core.api.viewer import LossViewer, PyPlotViewer
 from holowizard.core.api.functions.single_projection.reconstruction import reconstruct
 from holowizard.core.api.models import ConeBeam
@@ -21,15 +21,15 @@ from holowizard.core.api.parameters import (
 )
 
 if "cuda" in holowizard.core.torch_running_device_name:
-    from holowizard.core.models.fresnel_propagator import FresnelPropagator
+    from holowizard.core.models.propagators.fresnel_propagator_cupy import FresnelPropagator
 else:
-    from holowizard.core.models.fresnel_propagator_torch import FresnelPropagator
+    from holowizard.core.models.propagators.fresnel_propagator_torch import FresnelPropagator
 
-from holowizard.core.phantoms import dicty_sketch
-from holowizard.core.preprocessing.process_data_dimensions import (
+from holowizard.core.src.misc.phantoms import dicty_sketch
+from holowizard.core.methods.preprocessing.process_data_dimensions import (
     process_data_dimensions,
 )
-from holowizard.core.utils.transform import pad_to_size, crop_center
+from holowizard.core.src.misc.transform import pad_to_size, crop_center
 
 matplotlib.use("Qt5Agg")
 

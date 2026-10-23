@@ -1,6 +1,8 @@
 import pickle
-from holowizard.core.preprocessing.correct_flatfield import get_synthetic_flatfield as get_synthetic_flatfield_internal
-from holowizard.core.parameters.flatfield_correction_params import FlatfieldCorrectionParams
+from holowizard.core.src.methods.preprocessing.correct_flatfield import (
+    get_synthetic_flatfield as get_synthetic_flatfield_internal,
+)
+from holowizard.core.src.parameters.flatfield_correction_params import FlatfieldCorrectionParams
 
 
 def get_synthetic_flatfield(flatfield_correction_params: FlatfieldCorrectionParams):

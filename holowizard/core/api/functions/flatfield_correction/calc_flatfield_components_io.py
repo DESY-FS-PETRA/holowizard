@@ -1,9 +1,9 @@
 import logging
 import pickle
 
-from holowizard.core.utils.fileio import load_multi_img_data
-from holowizard.core.parameters.flatfield_components_params import FlatfieldComponentsParams
-from holowizard.core.preprocessing.calculate_flatfield_components import (
+from holowizard.core.src.misc.fileio import load_multi_img_data
+from holowizard.core.src.parameters.flatfield_components_params import FlatfieldComponentsParams
+from holowizard.core.src.methods.preprocessing.calculate_flatfield_components import (
     calculate_flatfield_components as calculate_flatfield_components_internal,
 )
 

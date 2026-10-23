@@ -12,7 +12,7 @@ It is developed at DESY, Hamburg in the group X-Ray Nanoscience and X-Ray Optics
 The software is designed to cover all steps in experimental/algorithm development:
 - The Forge generates datasets within given variation bouds either for testing new algorithms or provide training data sets for ML applications
 - The Core implements the ASRM algorithm, our phase retrieval engine. It includes also all neccessary auxillary functions to load and preprocess single holograms/diffraction patterns.
-- The Pipe enables the **online** and **offline** batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.
+- The Workbench enables the **online** and **offline** batch processing of holo tomograms, i.e. the phase retrieval of individual projections(along with all preprocessing steps) and the computation of the tomographic volume from the retrieved projections.
 - The Livereco module can show online reconstructions of single projections during an experiment i.e. for finding a suited region of interest. It can be integrated in existing experimental control software.
 
 # Table of Contents
@@ -21,7 +21,8 @@ The software is designed to cover all steps in experimental/algorithm developmen
   - [Install package](#install-package)
 - [Tools](#tools)
   - [The Core](#the-core)
-  - [The Pipe](#the-pipe)
+  - [The Workbench](#the-workbench)
+    - [User Administration](#user-administration)
   - [The Forge](#the-forge)
   - [The Livereco](#the-livereco)
 - [Citations](#citations)
@@ -59,73 +60,73 @@ To create examples, open a terminal and run
 $ holowizard_core_create_examples <directory>
 ```
 
-## The Pipe
+## The Workbench
 
-### Setting Up an Instance
+The workbench is a webinterface that provides an overview over scanned and processed datasets during and after a beamtime.
+A toolbox is avalialbe for data postprocessing and 3D visualization.
+
+### Starting an Instance
 
 We provide a CLI command to initialize everything:
 
 ```bash
-$ holowizard_pipe_start beamtime.name=YOUR_BEAMTIME_NAME beamtime.year=YEAR_OF_BEAMTIME
+$ holowizard_workbench_start beamtime.id=YOUR_BEAMTIME_ID beamtime.year=YEAR_OF_BEAMTIME
 ```
 
-This command sets up the pipeline. You can override any other configuration value using Hydra’s override syntax:  
-👉 [Hydra Override Syntax Documentation](https://hydra.cc/docs/advanced/override_grammar/basic/)
-
+This command starts the web interface. 
 If the startup is successful, you’ll see output like:
 
 ```
 INFO:     Uvicorn running on http://MY_IP_ADDRESS:MY_PORT (Press CTRL+C to quit)
 ```
 
-Click the address to open a browser window showing that `holopipe` is running.  
-Visit: `http://MY_IP_ADDRESS:MY_PORT/dashboard` for useful runtime information.
+Click the address to open a browser window
 
+### User Administration
 
-### Add a scan with default parameters. 
+Every page of the workbench requires a login. Users and their password hashes (PBKDF2-SHA256) are stored in a JSON file,
+by default
 
-You can submit scans using a simple `curl` POST request:
-
-```bash
-curl -X POST \
-     -H "Content-Type: application/json" \
-     -d '{ "a0": 1.0,
-           "scan_name": "nano145014_s7_1_tum",
-           "holder": 220,
-           "base_dir": "holopipe",
-           "reconstruction": "wire",
-           "find_focus": "wire",
-           "energy": 17.0
-         }' \
-     http://MY_IP_ADDRESS:MY_PORT/api/submit_scan
+```
+~/.config/holowizard/holowizard_workbench_users.json
 ```
 
-If you are on the same machine as the server is running you can use the python script:
-```bash
-holowizard_pipe_reconstruct_scan --help # will tell you all important parameters
+of the account that runs the server. Set the environment variable `HOLOWIZARD_WORKBENCH_USERS_FILE` to use another file, e.g. one
+shared by several instances. The file is readable only by its owner and also holds the secret used to sign the login
+cookies, so keep it private.
+
+**First start:** if the file does not exist yet, the server creates it with the user `p05user` and a random password,
+which is printed once to the console:
+
+```
+========================================================================
+Created login user file /home/<account>/.config/holowizard/holowizard_workbench_users.json
+  user:     p05user
+  password: <random password>
+Change it with: holowizard_workbench_users passwd p05user
+========================================================================
 ```
 
-#### Required Parameters
+**Managing users** (on the machine and with the account that runs the server):
 
-- `name`: Folder name of the current scan  
-- `holder`: Height of the holder  
-- `energy`: Scan energy in keV  
+```bash
+$ holowizard_workbench_users list              # show all users
+$ holowizard_workbench_users add <user>        # add a user (asks for the password)
+$ holowizard_workbench_users passwd <user>     # change a password
+$ holowizard_workbench_users remove <user>     # remove a user
+```
 
-#### Optional Parameters
+- User names may contain letters, digits, `_` and `-` (at most 64 characters); passwords need at least 8 characters.
+- The last remaining user cannot be removed.
+- Changes take effect immediately, without restarting the server. Changing a password or removing a user signs out all
+  existing logins of that user.
+- A login stays valid for 7 days. *Logout* in the menu ends it earlier.
 
-- `a0`: Optional numeric parameter; if not provided, it will be computed automatically  
-- `reconstruction`: Instruction set for reconstruction — `wire` (default) or `spider`  
-- `find_focus`: Instruction set to find focus — `wire` (default) or `spider`  
-- `base_dir`: Root directory for output files (default: `holopipe`)
-
-### Parameter Optimization
-
-To performe parameter optimization go to `http://MY_IP_ADDRESS:MY_PORT/parameter`. Here you can set all parameter for all stages. To test them click `Reconstruct`. If the parameters work well, you can save them to the current beamtime folder using the `Save as` at the lower left. 
-If you want to reconstruct the whole scan you can click `Submit All` after chosing the Options. If you select `Custom` it will take the parameters from the left. 
-
-### Other changes during beamtime
-
-If you change the detector or anything else like removing tasks adapt parameters the full config files are located in the `beamtime/processed/holowizard_config/`folder. Changes here will reflect onto future curl requests!
+**What is stored per user:** each user has their own editable parameter set on the Phase Retrieval page
+(`holowizard_workbench_config/phase_retrieval/custom_<user>.yaml` in the beamtime's log folder, e.g.
+`scratch_cc/holowizard_workbench/`), and the rotation center and tomography pages track running
+jobs per user (only the user who started a reconstruction can cancel it). The user who saved a rotation center or
+started a tomogram is recorded in `rotation_center.yaml` and `reconstruction.yaml`.
 
 ## The Forge
 
